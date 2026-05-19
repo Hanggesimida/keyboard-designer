@@ -1,0 +1,265 @@
+﻿"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useShallow } from "zustand/react/shallow"
+import {
+  computeLabelAlignPatch,
+  resolveTextHalfDimensionsMulti,
+  type AlignH,
+  type AlignV,
+} from "@/modules/design/lib/keycap-inspector/align"
+import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/modules/design/lib/keycap-inspector/constants"
+import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
+import {
+  getMixedColorField,
+  getMixedFontFamily,
+  getMixedFontSize,
+} from "@/modules/design/lib/keycap-inspector/mixed"
+import {
+  useDesignUIStore,
+  type KeycapOverride,
+} from "@/modules/design/store/designUiStore"
+import {
+  isGradientValue,
+  parseCssLinearGradient,
+  interpolateGradientColor,
+} from "@/modules/design/lib/design/gradientUtils"
+import { getLayoutData } from "@/modules/design/data/layouts"
+import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
+
+export function useMultiKeycapEditor({
+  selectedIds,
+  layerId,
+  layerOverrides,
+  disabled,
+}: {
+  selectedIds: string[]
+  layerId: string
+  layerOverrides: Record<string, KeycapOverride>
+  disabled?: boolean
+}) {
+  const { keysById: KEYS_BY_ID, baseUnit: LAYOUT_BASE_UNIT } = useLayoutKeys()
+  const setMultipleKeycapOverrides = useDesignUIStore(
+    (s) => s.setMultipleKeycapOverrides,
+  )
+  const clearMultipleKeycapOverrides = useDesignUIStore(
+    (s) => s.clearMultipleKeycapOverrides,
+  )
+  const batchSetKeycapOverrides = useDesignUIStore(
+    (s) => s.batchSetKeycapOverrides,
+  )
+  // 用 useShallow 只选取实际用到的字段，任意其他全局样式字段变化不触发重渲染
+  const globalKeycapStyle = useDesignUIStore(
+    useShallow((s) => ({
+      labelColor: s.globalKeycapStyle.labelColor,
+      bgColor: s.globalKeycapStyle.bgColor,
+      topColor: s.globalKeycapStyle.topColor,
+      borderColor: s.globalKeycapStyle.borderColor,
+      borderHidden: s.globalKeycapStyle.borderHidden,
+      fontSize: s.globalKeycapStyle.fontSize,
+    })),
+  )
+  const globalFontFamily = useDesignUIStore((s) => s.fontFamily)
+
+  // 用 useMemo 缓存 O(n) 的混合值计算，仅在依赖变化时重算
+  const { labelColor, bgColor, topColor, borderColor, fontSize, fontFamily } = useMemo(
+    () => ({
+      labelColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "labelColor", "labelColor"),
+      bgColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "bgColor", "bgColor"),
+      topColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "topColor", "topColor"),
+      borderColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "borderColor", "borderColor"),
+      fontSize: getMixedFontSize(selectedIds, layerOverrides, globalKeycapStyle),
+      fontFamily: getMixedFontFamily(selectedIds, layerOverrides, globalFontFamily),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedIds, layerOverrides, globalKeycapStyle.labelColor, globalKeycapStyle.bgColor,
+     globalKeycapStyle.topColor, globalKeycapStyle.borderColor, globalKeycapStyle.fontSize,
+     globalKeycapStyle.borderHidden, globalFontFamily],
+  )
+
+  const [fontSizeInput, setFontSizeInput] = useState(String(fontSize.value))
+  const [fontPopoverOpen, setFontPopoverOpen] = useState(false)
+
+  useEffect(() => {
+    setFontSizeInput(String(fontSize.value))
+  }, [fontSize.value])
+
+  const hasAnyOverride = selectedIds.some(
+    (id) => layerOverrides[id] && Object.keys(layerOverrides[id]!).length > 0,
+  )
+
+  const applyPatch = useCallback(
+    (patch: Partial<KeycapOverride>) => {
+      if (disabled) return
+      setMultipleKeycapOverrides(layerId, selectedIds, patch)
+    },
+    [disabled, layerId, selectedIds, setMultipleKeycapOverrides],
+  )
+
+  /**
+   * 将渐变"扩展"到整个选区：根据每个键帽中心在选区包围盒内沿渐变方向的位置，
+   * 从渐变里采样出各自对应的纯色，实现跨键帽的统一渐变效果。
+   */
+  const applyGradientAcrossSelection = useCallback(
+    (gradientCSS: string, field: "bgColor" | "topColor") => {
+      if (disabled) return
+      const parsed = parseCssLinearGradient(gradientCSS)
+      if (!parsed) {
+        setMultipleKeycapOverrides(layerId, selectedIds, { [field]: gradientCSS })
+        return
+      }
+
+      // 收集各键帽中心坐标（使用 layout 单位，结果等比，最终会归一化）
+      const centers: Array<{ id: string; cx: number; cy: number }> = []
+      for (const keyId of selectedIds) {
+        const keyDef = KEYS_BY_ID.get(keyId)
+        if (!keyDef) continue
+        centers.push({
+          id: keyId,
+          cx: keyDef.x + keyDef.w / 2,
+          cy: keyDef.y + keyDef.h / 2,
+        })
+      }
+      if (centers.length === 0) return
+
+      // CSS 角度约定：0deg = 向上，90deg = 向右；梯度方向向量为 (sin θ, -cos θ)
+      const rad = (parsed.angle * Math.PI) / 180
+      const dx = Math.sin(rad)
+      const dy = -Math.cos(rad)
+
+      // 将每个中心投影到渐变方向轴
+      const projections = centers.map((c) => ({
+        id: c.id,
+        proj: c.cx * dx + c.cy * dy,
+      }))
+
+      const minProj = Math.min(...projections.map((p) => p.proj))
+      const maxProj = Math.max(...projections.map((p) => p.proj))
+      const range = maxProj - minProj
+
+      // 采样每个键帽的颜色并生成批量 override
+      const batchOverrides: Record<string, Partial<KeycapOverride>> = {}
+      for (const { id, proj } of projections) {
+        const t = range === 0 ? 0 : ((proj - minProj) / range) * 100
+        batchOverrides[id] = { [field]: interpolateGradientColor(parsed, t) }
+      }
+      batchSetKeycapOverrides(layerId, batchOverrides)
+    },
+    [
+      disabled,
+      layerId,
+      selectedIds,
+      KEYS_BY_ID,
+      setMultipleKeycapOverrides,
+      batchSetKeycapOverrides,
+    ],
+  )
+
+  const handleAlignMulti = useCallback(
+    (alignH: AlignH, alignV: AlignV) => {
+      if (disabled) return
+      const batchOverrides: Record<string, Partial<KeycapOverride>> = {}
+      for (const keyId of selectedIds) {
+        const keyDef = KEYS_BY_ID.get(keyId)
+        if (!keyDef) continue
+        const metrics = getTextMetrics(keyId)
+        const ov = layerOverrides[keyId]
+        const fs = ov?.fontSize ?? globalKeycapStyle.fontSize  // globalKeycapStyle.fontSize 已由 useShallow 选取
+        const { halfW, halfH } = resolveTextHalfDimensionsMulti(metrics, fs)
+        const patch = computeLabelAlignPatch(
+          keyDef,
+          LAYOUT_BASE_UNIT,
+          alignH,
+          alignV,
+          halfW,
+          halfH,
+        )
+        batchOverrides[keyId] = patch
+      }
+      batchSetKeycapOverrides(layerId, batchOverrides)
+    },
+    [
+      batchSetKeycapOverrides,
+      disabled,
+      globalKeycapStyle.fontSize,
+      layerId,
+      layerOverrides,
+      selectedIds,
+    ],
+  )
+
+  const commitFontSize = useCallback(
+    (directValue?: string) => {
+      if (disabled) return
+      const parsed = Number.parseInt(directValue ?? fontSizeInput, 10)
+      if (Number.isNaN(parsed)) {
+        setFontSizeInput(String(fontSize.value))
+        return
+      }
+      const clamped = Math.min(FONT_SIZE_MAX, Math.max(FONT_SIZE_MIN, parsed))
+      setFontSizeInput(String(clamped))
+      applyPatch({ fontSize: clamped })
+    },
+    [applyPatch, disabled, fontSize.value, fontSizeInput],
+  )
+
+  const handleFontSizeStepperChange = useCallback(
+    (value: string) => {
+      setFontSizeInput(value)
+      if (disabled) return
+      const parsed = Number.parseInt(value, 10)
+      if (
+        !Number.isNaN(parsed) &&
+        parsed >= FONT_SIZE_MIN &&
+        parsed <= FONT_SIZE_MAX
+      ) {
+        applyPatch({ fontSize: parsed })
+      }
+    },
+    [applyPatch, disabled],
+  )
+
+  const handleFontFamilyPick = useCallback(
+    (family: string) => {
+      applyPatch({
+        fontFamily: family === globalFontFamily ? undefined : family,
+      })
+      setFontPopoverOpen(false)
+    },
+    [applyPatch, globalFontFamily],
+  )
+
+  const resetSelection = useCallback(() => {
+    if (disabled) return
+    clearMultipleKeycapOverrides(layerId, selectedIds)
+  }, [clearMultipleKeycapOverrides, disabled, layerId, selectedIds])
+
+  return {
+    globalKeycapStyle,
+    globalFontFamily,
+
+    labelColor,
+    bgColor,
+    topColor,
+    borderColor,
+    fontSize,
+    fontFamily,
+
+    fontSizeInput,
+    setFontSizeInput,
+    commitFontSize,
+    handleFontSizeStepperChange,
+    resetFontSizeInput: () => setFontSizeInput(String(fontSize.value)),
+
+    fontPopoverOpen,
+    setFontPopoverOpen,
+    handleFontFamilyPick,
+
+    applyPatch,
+    applyGradientAcrossSelection,
+    handleAlignMulti,
+
+    hasAnyOverride,
+    resetSelection,
+  }
+}

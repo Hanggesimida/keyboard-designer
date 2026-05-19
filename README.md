@@ -4,13 +4,13 @@ This is a Next.js monorepo template with shadcn/ui.
 
 ## Adding components
 
-To add components to your app, run the following command at the root of your `web` app:
+From the monorepo root, add a shadcn component to the shared UI package:
 
 ```bash
-pnpm dlx shadcn@latest add button -c apps/web
+pnpm dlx shadcn@latest add progress -c packages/ui
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+This places generated files under `packages/ui` (for example `packages/ui/src/components`).
 
 ## Using components
 

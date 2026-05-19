@@ -83,6 +83,12 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    /* Design canvas: keycap SVG defaults */
+    --design-keycap-selected-border: oklch(0.623 0.214 259.815);
+    --design-keycap-fill-base: #3c3c3c;
+    --design-keycap-fill-top: #4a4a4a;
+    --design-keycap-stroke: #222;
+    --design-keycap-label: #d0d0d0;
 }
 
 .dark {
@@ -117,6 +123,11 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --design-keycap-selected-border: oklch(0.623 0.214 259.815);
+    --design-keycap-fill-base: #3c3c3c;
+    --design-keycap-fill-top: #4a4a4a;
+    --design-keycap-stroke: #222;
+    --design-keycap-label: #d0d0d0;
 }
 
 @layer base {
@@ -126,4 +137,46 @@
   body {
     @apply bg-background text-foreground;
     }
+}
+
+/* Figma-style scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 18%);
+  border-radius: 9999px;
+  transition: background 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 32%);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(1 0 0 / 18%) transparent;
+}
+
+/* 针对 Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 针对 Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
 }
