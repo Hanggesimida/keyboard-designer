@@ -59,6 +59,10 @@ export interface KeycapOverride {
    */
   borderHidden?: boolean
   fontFamily?: string
+  /** 字间距（SVG letter-spacing，单位 px，默认 0） */
+  letterSpacing?: number
+  /** 行距倍率（相对字号，默认 1.2） */
+  lineHeightRatio?: number
   /** 标签相对顶面中心的 X 偏移（SVG 单位） */
   labelOffsetX?: number
   /** 标签相对顶面中心的 Y 偏移（SVG 单位） */

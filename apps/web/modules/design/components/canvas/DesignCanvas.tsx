@@ -1,6 +1,8 @@
 ﻿"use client"
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react"
+import Link from "next/link"
+import { Home } from "lucide-react"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
@@ -587,6 +589,16 @@ export function DesignCanvas() {
           </button>
         </div>
       )}
+
+      {/* 返回首页按钮 */}
+      <Link
+        href="/"
+        title="返回首页"
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-3 left-3 flex items-center justify-center rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 bg-black/30 backdrop-blur-sm select-none"
+      >
+        <Home className="size-3.5" />
+      </Link>
 
       {/* 顶部工具栏：撤销/重做 + 重置 + 导出 */}
       <CanvasToolbar

@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Eye, EyeOff, Link2, Link2Off } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -9,6 +9,12 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useMultiKeycapEditor } from "@/modules/design/hooks/useMultiKeycapEditor"
 import { resolveEffectiveBorderHidden } from "@/modules/design/lib/keycap-inspector/border"
 import { isGradientValue } from "@/modules/design/lib/design/gradientUtils"
+import {
+  getMixedLetterSpacing,
+  getMixedLineHeightRatio,
+  DEFAULT_LETTER_SPACING,
+  DEFAULT_LINE_HEIGHT_RATIO,
+} from "@/modules/design/lib/keycap-inspector/mixed"
 import type { KeycapOverride } from "@/modules/design/store/designUiStore"
 import { LabelAlignmentGrid } from "./AlignmentGrid"
 import { ColorRow } from "./ColorRow"
@@ -35,6 +41,15 @@ export function MultiKeycapEditor({
   })
 
   const [keycapColorLinked, setKeycapColorLinked] = useState(false)
+
+  const letterSpacing = useMemo(
+    () => getMixedLetterSpacing(selectedIds, layerOverrides),
+    [selectedIds, layerOverrides],
+  )
+  const lineHeightRatio = useMemo(
+    () => getMixedLineHeightRatio(selectedIds, layerOverrides),
+    [selectedIds, layerOverrides],
+  )
 
   const allBordersHidden =
     selectedIds.length > 0 &&
@@ -82,6 +97,54 @@ export function MultiKeycapEditor({
           disabled={disabled}
           className="h-7 text-xs tabular-nums"
         />
+      </div>
+
+      {/* 字间距 + 行距 */}
+      <div className="flex gap-2">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label className="text-[11px] font-normal text-muted-foreground">
+            字间距
+            {letterSpacing.isMixed && (
+              <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+            )}
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={-3}
+            max={10}
+            step={0.5}
+            value={letterSpacing.isMixed ? "" : letterSpacing.value}
+            placeholder={letterSpacing.isMixed ? "混合" : String(DEFAULT_LETTER_SPACING)}
+            onChange={(ev) =>
+              e.applyPatch({ letterSpacing: Number(ev.target.value) })
+            }
+            disabled={disabled}
+            className="h-7 text-xs tabular-nums"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label className="text-[11px] font-normal text-muted-foreground">
+            行距
+            {lineHeightRatio.isMixed && (
+              <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+            )}
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0.8}
+            max={3}
+            step={0.1}
+            value={lineHeightRatio.isMixed ? "" : Number(lineHeightRatio.value.toFixed(1))}
+            placeholder={lineHeightRatio.isMixed ? "混合" : String(DEFAULT_LINE_HEIGHT_RATIO)}
+            onChange={(ev) =>
+              e.applyPatch({ lineHeightRatio: Number(ev.target.value) })
+            }
+            disabled={disabled}
+            className="h-7 text-xs tabular-nums"
+          />
+        </div>
       </div>
 
       <LabelAlignmentGrid disabled={disabled} onAlign={e.handleAlignMulti} />

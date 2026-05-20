@@ -1,10 +1,10 @@
 /** 键帽间距（SVG 单位） */
 export const KEYCAP_GAP = 2
 
-/** 顶面内边距（SVG 单位） */
-export const KEY_PAD_LEFT = 9
+/** 顶面内边距（SVG 单位）横向原来都是9 */
+export const KEY_PAD_LEFT = 11
 export const KEY_PAD_TOP = 6
-export const KEY_PAD_RIGHT = 9
+export const KEY_PAD_RIGHT = 11
 export const KEY_PAD_BOTTOM = 10
 
 /** 圆角半径 */

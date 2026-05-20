@@ -3,11 +3,13 @@
 import { useState } from "react"
 import { Eye, EyeOff, Link2, Link2Off } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { Label } from "@workspace/ui/components/label"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { useSingleKeycapEditor } from "@/modules/design/hooks/useSingleKeycapEditor"
 import { resolveEffectiveBorderHidden } from "@/modules/design/lib/keycap-inspector/border"
+import { DEFAULT_LETTER_SPACING, DEFAULT_LINE_HEIGHT_RATIO } from "@/modules/design/lib/keycap-inspector/mixed"
 import type { RowedKeyDef } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import type { KeycapOverride } from "@/modules/design/store/designUiStore"
 import { LabelAlignmentGrid } from "./AlignmentGrid"
@@ -55,14 +57,12 @@ export function SingleKeycapEditor({
         >
           文案
         </Label>
-        <Input
+        <Textarea
           id="keycap-label-input"
-          type="text"
           value={e.labelInput}
           onChange={(ev) => e.handleLabelChange(ev.target.value)}
           onBlur={e.commitLabel}
           onKeyDown={(ev) => {
-            if (ev.key === "Enter") ev.currentTarget.blur()
             if (ev.key === "Escape") {
               e.onLabelEscape()
               ev.currentTarget.blur()
@@ -70,7 +70,7 @@ export function SingleKeycapEditor({
           }}
           disabled={disabled}
           placeholder={keyDef.label}
-          className="h-7 text-xs"
+          className="min-h-[56px] text-xs"
         />
       </div>
 
@@ -108,6 +108,46 @@ export function SingleKeycapEditor({
           disabled={disabled}
           className="h-7 text-xs tabular-nums"
         />
+      </div>
+
+      {/* 字间距 + 行距 */}
+      <div className="flex gap-2">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label className="text-[11px] font-normal text-muted-foreground">
+            字间距
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={-3}
+            max={10}
+            step={0.5}
+            value={override?.letterSpacing ?? DEFAULT_LETTER_SPACING}
+            onChange={(ev) =>
+              e.patchOverride({ letterSpacing: Number(ev.target.value) })
+            }
+            disabled={disabled}
+            className="h-7 text-xs tabular-nums"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label className="text-[11px] font-normal text-muted-foreground">
+            行距
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0.8}
+            max={3}
+            step={0.1}
+            value={Number((override?.lineHeightRatio ?? DEFAULT_LINE_HEIGHT_RATIO).toFixed(1))}
+            onChange={(ev) =>
+              e.patchOverride({ lineHeightRatio: Number(ev.target.value) })
+            }
+            disabled={disabled}
+            className="h-7 text-xs tabular-nums"
+          />
+        </div>
       </div>
 
       <LabelAlignmentGrid disabled={disabled} onAlign={e.handleAlign} />

@@ -17,6 +17,8 @@ import {
   clamp,
 } from "@/modules/design/lib/design/keycapGeometry"
 import { SvgImageElement, MODAL_VIEW_INSET, type KeycapEditorImage } from "./SvgImageElement"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 // 1. 组件属性接口定义
 interface Props {
@@ -85,6 +87,8 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const labelColor = override?.labelColor ?? globalDefaults.labelColor ?? "#d0d0d0"
   const fontSize = override?.fontSize ?? globalDefaults.fontSize ?? KEY_LABEL_SIZE
   const labelFontFamily = override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif"
+  const letterSpacing = override?.letterSpacing ?? 0
+  const lineHeightRatio = override?.lineHeightRatio ?? 1.2
 
   // 6. 将当前键帽的绝对坐标转换为内部相对坐标
   // 轴心公式 = artPad + keyDef.x * unit + GAP/2
@@ -118,6 +122,13 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   // 9. 刻字（Label）拖拽与范围限制计算
   const committedLabelX = override?.labelOffsetX ?? 0
   const committedLabelY = override?.labelOffsetY ?? 0
+
+  // 多行支持
+  const labelLines = labelText.split("\n")
+  const lineHeight = fontSize * lineHeightRatio
+  const multiLineOffsetY =
+    labelLines.length > 1 ? ((labelLines.length - 1) * lineHeight) / 2 : 0
+
   const maxOffX = Math.max(0, topW / 2 - fontSize / 2)
   const maxOffY = Math.max(0, topH / 2 - fontSize / 2)
 
@@ -132,7 +143,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
   const textX = topX + topW / 2 + displayLabelX
   const textY = topY + topH / 2 + displayLabelY
-  const textYDraw = textY - fontSize * KEY_LABEL_OPTICAL_CENTER_RATIO
+  const textYDraw = textY - fontSize * KEY_LABEL_OPTICAL_CENTER_RATIO - multiLineOffsetY
 
   // 使用 ref 保存缩放比，避免拖拽回调中产生闭包旧值
   const modalScaleRef = useRef(modalScale)
@@ -467,9 +478,15 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                   fill={labelColor}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily }}
+                  style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, letterSpacing }}
                 >
-                  {labelText}
+                  {labelLines.length > 1
+                    ? labelLines.map((line, i) => (
+                      <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                        {line || "\u00A0"}
+                      </tspan>
+                    ))
+                    : labelText}
                 </text>
 
                 {/* 刻字交互热区及选中态虚线框 */}
@@ -528,6 +545,55 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
               </span>
             </div>
           )}
+        </div>
+
+        {/* 刻字编辑栏 */}
+        <div className="flex gap-3 px-4 py-3 border-t border-white/8 items-start">
+          <span className="text-[11px] text-white/40 shrink-0 select-none mt-1.5">刻字</span>
+
+          {/* 文本输入框 */}
+          <Textarea
+            className="flex-1"
+            value={labelText}
+            onChange={(e) =>
+              setKeycapOverride(layerId, keyId, { labelText: e.target.value })
+            }
+            placeholder="输入刻字，支持换行"
+            style={{ fontFamily: labelFontFamily, lineHeight: "1.5" }}
+          />
+
+          {/* 字间距 + 行距 数字输入区，上下排列 */}
+          <div className="flex flex-col gap-2 shrink-0">
+            {/* 字间距 */}
+            <div className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
+              <span className="shrink-0 w-[3em] text-right">字间距</span>
+              <Input
+                type="number"
+                min={-3}
+                max={10}
+                step={0.5}
+                value={letterSpacing}
+                onChange={(e) =>
+                  setKeycapOverride(layerId, keyId, { letterSpacing: Number(e.target.value) })
+                }
+              />
+            </div>
+
+            {/* 行距 */}
+            <div className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
+              <span className="shrink-0 w-[3em] text-right">行距</span>
+              <Input
+                type="number"
+                min={0.8}
+                max={3}
+                step={0.1}
+                value={Number(lineHeightRatio.toFixed(1))}
+                onChange={(e) =>
+                  setKeycapOverride(layerId, keyId, { lineHeightRatio: Number(e.target.value) })
+                }
+              />
+            </div>
+          </div>
         </div>
 
         {/* 底部操作工具栏 */}

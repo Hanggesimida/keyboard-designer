@@ -165,6 +165,12 @@ export function KeycapNode({
     override?.fontSize ?? globalDefaults?.fontSize ?? KEY_LABEL_SIZE
   const labelFontFamily =
     override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif"
+  const letterSpacing = override?.letterSpacing ?? 0
+  const lineHeightRatio = override?.lineHeightRatio ?? 1.2
+
+  // 多行文字支持：按 \n 拆分
+  const labelLines = labelText.split("\n")
+  const lineHeight = fontSize * lineHeightRatio
 
   // ─── 文字尺寸测量 ─────────────────────────────────────
   const textRef = useRef<SVGTextElement>(null)
@@ -175,15 +181,20 @@ export function KeycapNode({
     if (!textRef.current) return
     try {
       const bbox = textRef.current.getBBox()
-      // 宽度用 getBBox 精确测量；高度用 fontSize，因为 getBBox.height 包含行距
+      // 宽度用 getBBox 精确测量；高度根据行数与行距倍率计算
       const halfW = bbox.width / 2
-      const halfH = fontSize / 2
+      const numLines = labelText.split("\n").length
+      const lh = fontSize * (override?.lineHeightRatio ?? 1.2)
+      const halfH =
+        numLines > 1
+          ? ((numLines - 1) * lh + fontSize) / 2
+          : fontSize / 2
       setTextHalfSize({ w: halfW, h: halfH })
       registerTextMetrics(keyDef.keyId, halfW, halfH)
     } catch {
       // 元素不在可见树中时 getBBox 可能抛出，忽略即可
     }
-  }, [labelText, fontSize, labelFontFamily, keyDef.keyId])
+  }, [labelText, fontSize, labelFontFamily, override?.lineHeightRatio, keyDef.keyId])
 
   // ─── 拖拽状态 ─────────────────────────────────────────
   // dragDelta 是当前拖拽过程中相对于 committedOffset 的增量
@@ -297,7 +308,10 @@ export function KeycapNode({
   const textX = topX + topW / 2 + displayOffsetX
   const textY = topY + topH / 2 + displayOffsetY
   const opticalOffsetY = fontSize * KEY_LABEL_OPTICAL_CENTER_RATIO
-  const textYDraw = textY - opticalOffsetY
+  // 多行时将整个文字块垂直居中：第一行上移 (N-1)*lineHeight/2
+  const multiLineOffsetY =
+    labelLines.length > 1 ? ((labelLines.length - 1) * lineHeight) / 2 : 0
+  const textYDraw = textY - opticalOffsetY - multiLineOffsetY
 
   const clickHandler = {
     onClick: (e: React.MouseEvent<SVGGElement>) => {
@@ -350,9 +364,15 @@ export function KeycapNode({
           x={textX} y={textYDraw}
           fontSize={fontSize} fill={labelColor}
           textAnchor="middle" dominantBaseline="central"
-          style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily }}
+          style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, letterSpacing }}
         >
-          {labelText}
+          {labelLines.length > 1
+            ? labelLines.map((line, i) => (
+                <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                  {line || "\u00A0"}
+                </tspan>
+              ))
+            : labelText}
         </text>
         {/* 选中蓝框覆盖层 */}
         {isSelected && (
@@ -442,9 +462,15 @@ export function KeycapNode({
         fill={labelColor}
         textAnchor="middle"
         dominantBaseline="central"
-        style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily }}
+        style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, letterSpacing }}
       >
-        {labelText}
+        {labelLines.length > 1
+          ? labelLines.map((line, i) => (
+              <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                {line || "\u00A0"}
+              </tspan>
+            ))
+          : labelText}
       </text>
       {/* 透明交互层：选中时覆盖整颗键帽，响应双击进入编辑与标签拖拽 */}
       {isSelected && (

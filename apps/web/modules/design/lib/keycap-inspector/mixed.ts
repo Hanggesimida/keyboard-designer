@@ -59,3 +59,34 @@ export function getMixedFontFamily(
     isMixed: unique.length > 1,
   }
 }
+
+export const DEFAULT_LETTER_SPACING = 0
+export const DEFAULT_LINE_HEIGHT_RATIO = 1.2
+
+export function getMixedLetterSpacing(
+  selectedIds: string[],
+  layerOverrides: Record<string, KeycapOverride>,
+): MixedScalarField<number> {
+  const values = selectedIds.map(
+    (id) => layerOverrides[id]?.letterSpacing ?? DEFAULT_LETTER_SPACING,
+  )
+  const unique = [...new Set(values)]
+  return {
+    value: unique[0] ?? DEFAULT_LETTER_SPACING,
+    isMixed: unique.length > 1,
+  }
+}
+
+export function getMixedLineHeightRatio(
+  selectedIds: string[],
+  layerOverrides: Record<string, KeycapOverride>,
+): MixedScalarField<number> {
+  const values = selectedIds.map(
+    (id) => layerOverrides[id]?.lineHeightRatio ?? DEFAULT_LINE_HEIGHT_RATIO,
+  )
+  const unique = [...new Set(values)]
+  return {
+    value: unique[0] ?? DEFAULT_LINE_HEIGHT_RATIO,
+    isMixed: unique.length > 1,
+  }
+}
