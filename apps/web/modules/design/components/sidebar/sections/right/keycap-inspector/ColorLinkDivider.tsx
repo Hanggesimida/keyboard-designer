@@ -15,6 +15,7 @@ export function ColorLinkDivider({ linked, onToggle }: ColorLinkDividerProps) {
       <button
         type="button"
         className={cn(
+          "cursor-pointer",
           "flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground",
           linked && "text-primary/70 hover:text-primary",
         )}

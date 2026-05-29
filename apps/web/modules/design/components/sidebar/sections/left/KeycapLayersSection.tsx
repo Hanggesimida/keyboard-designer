@@ -112,7 +112,7 @@ function KeycapLayerRow({
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="shrink-0 text-muted-foreground hover:text-foreground"
+        className="shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
         title={isExpanded ? "折叠子键帽" : "展开子键帽"}
         onClick={onToggleExpand}
       >

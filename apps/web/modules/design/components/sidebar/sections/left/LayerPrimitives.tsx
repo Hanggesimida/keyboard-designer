@@ -50,7 +50,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         disabled={!canMoveUp}
-        className="text-muted-foreground hover:text-foreground disabled:opacity-20"
+        className="text-muted-foreground hover:text-foreground disabled:opacity-20 cursor-pointer"
         title="上移一层"
         onClick={onMoveUp}
       >
@@ -61,7 +61,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         disabled={!canMoveDown}
-        className="text-muted-foreground hover:text-foreground disabled:opacity-20"
+        className="text-muted-foreground hover:text-foreground disabled:opacity-20 cursor-pointer"
         title="下移一层"
         onClick={onMoveDown}
       >
@@ -71,7 +71,7 @@ export function LayerControls({
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground cursor-pointer"
         title={isVisible ? "隐藏" : "显示"}
         onClick={onToggleVisible}
       >
@@ -82,7 +82,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         className={cn(
-          "hover:text-foreground",
+          "hover:text-foreground cursor-pointer",
           isLocked ? "text-amber-400" : "text-muted-foreground",
         )}
         title={isLocked ? "解锁" : "锁定"}
@@ -95,7 +95,7 @@ export function LayerControls({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="text-muted-foreground hover:text-destructive"
+          className="text-muted-foreground hover:text-destructive cursor-pointer"
           title="删除"
           onClick={onRemove}
         >

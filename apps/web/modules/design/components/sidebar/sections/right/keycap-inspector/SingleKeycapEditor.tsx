@@ -227,7 +227,7 @@ export function SingleKeycapEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
             disabled={disabled}
             title={borderEffectivelyHidden ? "显示边框" : "隐藏边框"}
             onClick={() => {
@@ -257,7 +257,7 @@ export function SingleKeycapEditor({
         size="xs"
         disabled={disabled || !e.hasOverride}
         onClick={e.resetKeycap}
-        className="self-end"
+        className="self-end cursor-pointer"
       >
         重置该键
       </Button>

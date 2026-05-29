@@ -40,7 +40,7 @@ export function BoldItalicToggle({
         }
         disabled={disabled || !fontCaps.bold}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded border text-xs font-bold transition-colors",
+          "flex cursor-pointer h-7 w-7 items-center justify-center rounded border text-xs font-bold transition-colors",
           "disabled:cursor-not-allowed disabled:opacity-30",
           boldMixed
             ? "border-orange-400/50 bg-transparent text-orange-400/70"
@@ -65,7 +65,7 @@ export function BoldItalicToggle({
         }
         disabled={disabled || !fontCaps.italic}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded border text-xs italic transition-colors",
+          "flex cursor-pointer h-7 w-7 items-center justify-center rounded border text-xs italic transition-colors",
           "disabled:cursor-not-allowed disabled:opacity-30",
           italicMixed
             ? "border-orange-400/50 bg-transparent text-orange-400/70"

@@ -57,7 +57,7 @@ export function FontFamilySelect({
             size="sm"
             disabled={disabled}
             aria-expanded={open}
-            className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none"
+            className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
             style={{
               fontFamily: isMixed ? undefined : effectiveFontFamily,
             }}
@@ -68,7 +68,7 @@ export function FontFamilySelect({
                 : (FONT_OPTIONS.find((f) => f.value === effectiveFontFamily)
                     ?.label ?? "自定义")}
             </span>
-            <ChevronDown className="size-3.5 shrink-0 opacity-60" />
+            <ChevronDown className="size-3.5 shrink-0 opacity-60 cursor-pointer" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -93,7 +93,7 @@ export function FontFamilySelect({
                         type="button"
                         className={cn(
                           "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
-                          "hover:bg-accent hover:text-accent-foreground",
+                          "hover:bg-accent hover:text-accent-foreground cursor-pointer",
                           selected && "bg-accent text-accent-foreground",
                         )}
                         style={{ fontFamily: f.value }}

@@ -154,7 +154,7 @@ export function GlobalKeycapSection() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
               title={globalKeycapStyle.borderHidden ? "显示边框" : "隐藏边框"}
               onClick={() =>
                 setGlobalKeycapStyle({
@@ -175,7 +175,7 @@ export function GlobalKeycapSection() {
           type="button"
           variant="outline"
           size="sm"
-          className="mt-1 h-8 w-full gap-1.5 font-normal shadow-none"
+          className="mt-1 h-8 w-full gap-1.5 font-normal shadow-none cursor-pointer"
           onClick={() => {
             resetGlobalKeycapStyleSettings()
             setKeycapColorLinked(false)

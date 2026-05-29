@@ -59,6 +59,7 @@ export function LabelAlignmentGrid({
             disabled={disabled}
             onClick={() => onAlign(alignH, alignV)}
             className={cn(
+              "cursor-pointer",
               "flex size-8 items-center justify-center rounded-md border border-border/50",
               "bg-background text-foreground/70 transition-colors",
               "hover:border-border hover:bg-accent hover:text-accent-foreground",

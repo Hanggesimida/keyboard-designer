@@ -38,7 +38,7 @@ export function TemplateSection() {
               variant="outline"
               size="sm"
               aria-expanded={open}
-              className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none"
+              className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
             >
               <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left text-xs">
                 <LayoutGrid className="size-3.5 shrink-0 text-muted-foreground" />
@@ -63,7 +63,7 @@ export function TemplateSection() {
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
                         t.enabled &&
-                          "hover:bg-accent hover:text-accent-foreground",
+                          "hover:bg-accent hover:text-accent-foreground cursor-pointer",
                         selected &&
                           t.enabled &&
                           "bg-accent text-accent-foreground font-medium",

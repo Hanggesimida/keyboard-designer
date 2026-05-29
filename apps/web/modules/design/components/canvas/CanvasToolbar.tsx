@@ -165,7 +165,7 @@ export function CanvasToolbar({
   }
 
   const btnBase =
-    "flex items-center justify-center gap-1 rounded px-1 py-0.5 transition-colors text-white/40 hover:bg-white/10 hover:text-white/70 disabled:opacity-40 disabled:cursor-not-allowed"
+    "flex cursor-pointer items-center justify-center gap-1 rounded px-1 py-0.5 transition-colors text-white/40 hover:bg-white/10 hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 select-none rounded bg-black/30 px-2 py-0.5 backdrop-blur-sm">
@@ -174,7 +174,7 @@ export function CanvasToolbar({
         title="撤销 (Ctrl+Z)"
         disabled={!canUndo}
         onClick={(e) => { e.stopPropagation(); onUndo() }}
-        className="flex items-center justify-center rounded p-0.5 transition-colors disabled:opacity-25 enabled:hover:bg-white/10 enabled:hover:text-white/70 text-white/40"
+        className="flex items-center justify-center rounded p-0.5 transition-colors text-white/40 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 enabled:hover:bg-white/10 enabled:hover:text-white/70"
       >
         <Undo2 className="size-3.5" />
       </button>
@@ -183,7 +183,7 @@ export function CanvasToolbar({
         title="重做 (Ctrl+Y)"
         disabled={!canRedo}
         onClick={(e) => { e.stopPropagation(); onRedo() }}
-        className="flex items-center justify-center rounded p-0.5 transition-colors disabled:opacity-25 enabled:hover:bg-white/10 enabled:hover:text-white/70 text-white/40"
+        className="flex items-center justify-center rounded p-0.5 transition-colors text-white/40 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 enabled:hover:bg-white/10 enabled:hover:text-white/70"
       >
         <Redo2 className="size-3.5" />
       </button>
@@ -196,7 +196,7 @@ export function CanvasToolbar({
             type="button"
             title="重置为原始布局"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center justify-center rounded p-0.5 transition-colors text-white/40 hover:bg-white/10 hover:text-orange-400/80"
+            className="flex cursor-pointer items-center justify-center rounded p-0.5 transition-colors text-white/40 hover:bg-white/10 hover:text-orange-400/80"
           >
             <RotateCcw className="size-3.5" />
           </button>

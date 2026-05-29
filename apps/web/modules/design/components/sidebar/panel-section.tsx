@@ -54,7 +54,7 @@ export function PanelSection({
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
                   {title}
                 </span>
-                <ChevronDown className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                <ChevronDown className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180 cursor-pointer" />
               </button>
             </CollapsibleTrigger>
             {action}

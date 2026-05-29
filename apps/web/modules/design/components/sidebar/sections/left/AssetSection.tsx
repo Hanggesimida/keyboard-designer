@@ -60,7 +60,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete }:
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+        className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
         title="删除图片"
         onClick={(e) => {
           e.stopPropagation()
@@ -166,7 +166,7 @@ export function AssetSection() {
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground cursor-pointer"
             title="上传矢量图形（SVG）"
             onClick={() => svgInputRef.current?.click()}
           >
@@ -176,7 +176,7 @@ export function AssetSection() {
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground cursor-pointer"
             title="上传图片（PNG / JPG 等）"
             onClick={() => fileInputRef.current?.click()}
           >
