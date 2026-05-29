@@ -1,23 +1,25 @@
 ﻿"use client"
 
 import { useRef, useCallback, useMemo } from "react"
-import { ImagePlus, Trash2 } from "lucide-react"
+import { ImagePlus, Trash2, Spline } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { PanelSection } from "../../panel-section"
+import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 
 // ─── 图片缩略图行 ──────────────────────────────────────
 interface AssetRowProps {
   element: CanvasImageElement
+  src: string
   isSelected: boolean
   keyLabelMap: Record<string, string>
   onSelect: () => void
   onDelete: () => void
 }
 
-function AssetRow({ element, isSelected, keyLabelMap, onSelect, onDelete }: AssetRowProps) {
+function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete }: AssetRowProps) {
   const keyLabel = element.clipToKeycapId
     ? (keyLabelMap[element.clipToKeycapId] ?? element.clipToKeycapId)
     : null
@@ -35,7 +37,7 @@ function AssetRow({ element, isSelected, keyLabelMap, onSelect, onDelete }: Asse
       {/* 缩略图 */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={element.src}
+        src={src}
         alt=""
         className="size-8 shrink-0 rounded-sm object-cover"
         style={{ imageRendering: "auto" }}
@@ -74,6 +76,7 @@ function AssetRow({ element, isSelected, keyLabelMap, onSelect, onDelete }: Asse
 // ─── 素材区主组件 ──────────────────────────────────────
 export function AssetSection() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const svgInputRef = useRef<HTMLInputElement>(null)
   const { allKeys } = useLayoutKeys()
   const keyLabelMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -81,7 +84,9 @@ export function AssetSection() {
     return map
   }, [allKeys])
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
+  const assetMap = useDesignUIStore((s) => s.assetMap)
   const selectedElementId = useDesignUIStore((s) => s.selectedElementId)
+  const addAsset = useDesignUIStore((s) => s.addAsset)
   const addCanvasElement = useDesignUIStore((s) => s.addCanvasElement)
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
   const setSelectedElementId = useDesignUIStore((s) => s.setSelectedElementId)
@@ -90,63 +95,108 @@ export function AssetSection() {
     (el): el is CanvasImageElement => el.type === "image",
   )
 
+  const addImageFile = useCallback(
+    (file: File) => {
+      if (isSvgFile(file)) {
+        readSvgFile(file).then((result) => {
+          if (!result) return
+          const assetId = addAsset(result.src)
+          const defaultW = Math.min(result.w, 400)
+          const defaultH = Math.round((defaultW / result.w) * result.h)
+          addCanvasElement({
+            id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            type: "image",
+            assetId,
+            x: 40,
+            y: 40,
+            width: defaultW,
+            height: defaultH,
+            opacity: 1,
+            locked: false,
+            isSvg: true,
+          })
+        })
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const src = ev.target?.result as string
+        if (!src) return
+        const img = new Image()
+        img.onload = () => {
+          const assetId = addAsset(src)
+          const defaultW = Math.min(img.width, 400)
+          const defaultH = Math.round((defaultW / img.width) * img.height)
+          addCanvasElement({
+            id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            type: "image",
+            assetId,
+            x: 40,
+            y: 40,
+            width: defaultW,
+            height: defaultH,
+            opacity: 1,
+            locked: false,
+          })
+        }
+        img.src = src
+      }
+      reader.readAsDataURL(file)
+    },
+    [addAsset, addCanvasElement],
+  )
+
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files ?? []).filter((f) =>
-        f.type.startsWith("image/"),
+      const files = Array.from(e.target.files ?? []).filter(
+        (f) => f.type.startsWith("image/") || isSvgFile(f),
       )
-      files.forEach((file) => {
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          const src = ev.target?.result as string
-          if (!src) return
-          const img = new Image()
-          img.onload = () => {
-            const defaultW = Math.min(img.width, 400)
-            const defaultH = Math.round((defaultW / img.width) * img.height)
-            const element: CanvasImageElement = {
-              id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-              type: "image",
-              src,
-              x: 40,
-              y: 40,
-              width: defaultW,
-              height: defaultH,
-              opacity: 1,
-              locked: false,
-            }
-            addCanvasElement(element)
-          }
-          img.src = src
-        }
-        reader.readAsDataURL(file)
-      })
-      // 清空 input，允许重复选同一文件
+      files.forEach(addImageFile)
       e.target.value = ""
     },
-    [addCanvasElement],
+    [addImageFile],
   )
 
   return (
     <PanelSection
       title="素材"
       action={
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className="text-muted-foreground hover:text-foreground"
-          title="上传图片"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <ImagePlus className="size-3.5" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="text-muted-foreground hover:text-foreground"
+            title="上传矢量图形（SVG）"
+            onClick={() => svgInputRef.current?.click()}
+          >
+            <Spline className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="text-muted-foreground hover:text-foreground"
+            title="上传图片（PNG / JPG 等）"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ImagePlus className="size-3.5" />
+          </Button>
+        </div>
       }
     >
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={svgInputRef}
+        type="file"
+        accept=".svg,image/svg+xml"
         multiple
         className="hidden"
         onChange={handleFileChange}
@@ -167,6 +217,7 @@ export function AssetSection() {
             <AssetRow
               key={el.id}
               element={el}
+              src={assetMap[el.assetId] ?? ""}
               isSelected={selectedElementId === el.id}
               keyLabelMap={keyLabelMap}
               onSelect={() => setSelectedElementId(el.id)}

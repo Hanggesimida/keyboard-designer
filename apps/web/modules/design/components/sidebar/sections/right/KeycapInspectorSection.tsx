@@ -97,6 +97,7 @@ export function KeycapInspectorSection() {
         <InfoRow label="标签" value={key.label} />
         <InfoRow label="Key ID" value={key.keyId} />
         <InfoRow label="所属行" value={key.rowLabel} />
+        {key.rowLevel && <InfoRow label="行级别" value={key.rowLevel} />}
         <div className="my-0.5 border-t border-border/40" />
         <InfoRow label="位置 X" value={`${key.x}u`} />
         <InfoRow label="位置 Y" value={`${key.y}u`} />

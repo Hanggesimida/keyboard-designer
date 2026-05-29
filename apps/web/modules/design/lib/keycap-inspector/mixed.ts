@@ -60,8 +60,40 @@ export function getMixedFontFamily(
   }
 }
 
+export const DEFAULT_FONT_WEIGHT = 400
+export const DEFAULT_FONT_STYLE = "normal"
 export const DEFAULT_LETTER_SPACING = 0
 export const DEFAULT_LINE_HEIGHT_RATIO = 1.2
+
+export function getMixedFontWeight(
+  selectedIds: string[],
+  layerOverrides: Record<string, KeycapOverride>,
+  globalFontWeight: number,
+): MixedScalarField<number> {
+  const values = selectedIds.map(
+    (id) => layerOverrides[id]?.fontWeight ?? globalFontWeight,
+  )
+  const unique = [...new Set(values)]
+  return {
+    value: unique[0] ?? globalFontWeight,
+    isMixed: unique.length > 1,
+  }
+}
+
+export function getMixedFontStyle(
+  selectedIds: string[],
+  layerOverrides: Record<string, KeycapOverride>,
+  globalFontStyle: string,
+): MixedScalarField<string> {
+  const values = selectedIds.map(
+    (id) => layerOverrides[id]?.fontStyle ?? globalFontStyle,
+  )
+  const unique = [...new Set(values)]
+  return {
+    value: unique[0] ?? globalFontStyle,
+    isMixed: unique.length > 1,
+  }
+}
 
 export function getMixedLetterSpacing(
   selectedIds: string[],

@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
-import { Eye, EyeOff, Link2, Link2Off } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Label } from "@workspace/ui/components/label"
@@ -11,8 +11,11 @@ import { useSingleKeycapEditor } from "@/modules/design/hooks/useSingleKeycapEdi
 import { resolveEffectiveBorderHidden } from "@/modules/design/lib/keycap-inspector/border"
 import { DEFAULT_LETTER_SPACING, DEFAULT_LINE_HEIGHT_RATIO } from "@/modules/design/lib/keycap-inspector/mixed"
 import type { RowedKeyDef } from "@/modules/design/lib/keycap-inspector/layout104Keys"
-import type { KeycapOverride } from "@/modules/design/store/designUiStore"
+import { useDesignUIStore, type KeycapOverride } from "@/modules/design/store/designUiStore"
+import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
 import { LabelAlignmentGrid } from "./AlignmentGrid"
+import { BoldItalicToggle } from "./BoldItalicToggle"
+import { ColorLinkDivider } from "./ColorLinkDivider"
 import { ColorRow } from "./ColorRow"
 import { FontFamilySelect } from "./FontFamilySelect"
 
@@ -36,7 +39,28 @@ export function SingleKeycapEditor({
     disabled,
   })
 
+  const globalFontWeight = useDesignUIStore((s) => s.fontWeight)
+  const globalFontStyle = useDesignUIStore((s) => s.fontStyle)
+
+  const effectiveFontWeight = override?.fontWeight ?? globalFontWeight
+  const effectiveFontStyle = override?.fontStyle ?? globalFontStyle
+  const isBold = effectiveFontWeight === 700
+  const isItalic = effectiveFontStyle === "italic"
+  const fontCaps = getFontCapabilities(e.effectiveFontFamily)
+
+  const toggleBold = () => {
+    if (disabled || !fontCaps.bold) return
+    const next = isBold ? 400 : 700
+    e.patchOverride({ fontWeight: next === globalFontWeight ? undefined : next })
+  }
+  const toggleItalic = () => {
+    if (disabled || !fontCaps.italic) return
+    const next = isItalic ? "normal" : "italic"
+    e.patchOverride({ fontStyle: next === globalFontStyle ? undefined : next })
+  }
+
   const [keycapColorLinked, setKeycapColorLinked] = useState(false)
+
 
   const borderEffectivelyHidden = resolveEffectiveBorderHidden(
     override,
@@ -82,6 +106,15 @@ export function SingleKeycapEditor({
         open={e.fontPopoverOpen}
         onOpenChange={e.setFontPopoverOpen}
         onPick={e.handleFontFamilyPick}
+      />
+
+      <BoldItalicToggle
+        isBold={isBold}
+        isItalic={isItalic}
+        fontCaps={fontCaps}
+        onToggleBold={toggleBold}
+        onToggleItalic={toggleItalic}
+        disabled={disabled}
       />
 
       <div className="flex flex-col gap-1.5">
@@ -169,25 +202,10 @@ export function SingleKeycapEditor({
           if (keycapColorLinked) e.patchOverride({ topColor: next })
         }}
       />
-      <div className="flex items-center gap-1.5 -my-0.5">
-        <div className="h-px flex-1 bg-border/30" />
-        <button
-          type="button"
-          className={cn(
-            "flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground",
-            keycapColorLinked && "text-primary/70 hover:text-primary",
-          )}
-          title={keycapColorLinked ? "解除顶面与底色联动" : "联动顶面与底色"}
-          onClick={() => setKeycapColorLinked((v) => !v)}
-        >
-          {keycapColorLinked ? (
-            <Link2 className="size-3" />
-          ) : (
-            <Link2Off className="size-3" />
-          )}
-        </button>
-        <div className="h-px flex-1 bg-border/30" />
-      </div>
+      <ColorLinkDivider
+        linked={keycapColorLinked}
+        onToggle={() => setKeycapColorLinked((v) => !v)}
+      />
       <ColorRow
         label="键帽顶面"
         value={override?.topColor ?? ""}

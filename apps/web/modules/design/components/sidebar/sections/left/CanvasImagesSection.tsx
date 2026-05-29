@@ -16,6 +16,7 @@ import { ZIndexBadge, LayerControls, SectionHeader, SectionFooter } from "./Laye
 // ─── 单行图片行 ────────────────────────────────────────
 interface CanvasImageRowProps {
   element: CanvasElement
+  src: string
   zIndex: number
   total: number
   isSelected: boolean
@@ -30,6 +31,7 @@ interface CanvasImageRowProps {
 
 function CanvasImageRow({
   element,
+  src,
   zIndex,
   total,
   isSelected,
@@ -57,9 +59,9 @@ function CanvasImageRow({
     >
       <ZIndexBadge index={zIndex} />
 
-      {element.type === "image" && element.src ? (
+      {element.type === "image" && src ? (
         <img
-          src={element.src}
+          src={src}
           alt=""
           className={cn(
             "h-5 w-5 shrink-0 rounded-sm object-cover ring-1 ring-border/50",
@@ -127,6 +129,7 @@ function CanvasImageRow({
 export function CanvasImagesSection() {
   const { keysById } = useLayoutKeys()
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
+  const assetMap = useDesignUIStore((s) => s.assetMap)
   const selectedElementId = useDesignUIStore((s) => s.selectedElementId)
   const setSelectedElementId = useDesignUIStore((s) => s.setSelectedElementId)
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
@@ -152,6 +155,7 @@ export function CanvasImagesSection() {
             <CanvasImageRow
               key={el.id}
               element={el}
+              src={el.type === "image" ? (assetMap[el.assetId] ?? "") : ""}
               zIndex={zIndex}
               total={total}
               isSelected={selectedElementId === el.id}

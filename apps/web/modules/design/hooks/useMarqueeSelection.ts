@@ -35,6 +35,8 @@ export interface UseMarqueeSelectionParams {
   setSelectedKeycapIds: (ids: string[]) => void
   clearSelection: () => void
   panHandlers: MarqueePanHandlers
+  /** 禁用框选和所有鼠标交互，模态框打开时传 true */
+  disabled?: boolean
 }
 
 export interface MarqueeOverlayRect {
@@ -85,6 +87,7 @@ export function useMarqueeSelection({
   setSelectedKeycapIds,
   clearSelection,
   panHandlers,
+  disabled = false,
 }: UseMarqueeSelectionParams) {
   const [marquee, setMarquee] = useState<MarqueeState | null>(null)
   const marqueeRef = useRef<MarqueeState | null>(null)
@@ -93,6 +96,7 @@ export function useMarqueeSelection({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (disabled) return
       panHandlers.onMouseDown(e)
 
       if (e.button !== 0 || isSpacePressed) return
@@ -110,11 +114,12 @@ export function useMarqueeSelection({
       wasDraggedRef.current = false
       setMarquee({ startX: sx, startY: sy, endX: sx, endY: sy, additive: e.shiftKey })
     },
-    [containerRef, isSpacePressed, panHandlers],
+    [containerRef, disabled, isSpacePressed, panHandlers],
   )
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (disabled) return
       panHandlers.onMouseMove(e)
 
       if (!marqueeRef.current) return
@@ -129,12 +134,13 @@ export function useMarqueeSelection({
       }
       setMarquee((prev) => (prev ? { ...prev, endX: ex, endY: ey } : null))
     },
-    [containerRef, panHandlers],
+    [containerRef, disabled, panHandlers],
   )
 
   const handleMouseUp = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       void e
+      if (disabled) return
       panHandlers.onMouseUp()
 
       const current = marqueeRef.current
@@ -160,6 +166,7 @@ export function useMarqueeSelection({
     },
     [
       artPad,
+      disabled,
       keys,
       panHandlers,
       selectedKeycapIds,
@@ -170,18 +177,20 @@ export function useMarqueeSelection({
   )
 
   const handleMouseLeave = useCallback(() => {
+    if (disabled) return
     panHandlers.onMouseLeave()
     setMarquee(null)
-  }, [panHandlers])
+  }, [disabled, panHandlers])
 
   const handleClick = useCallback(() => {
+    if (disabled) return
     if (isPanning || isSpacePressed) return
     if (wasDraggedRef.current) {
       wasDraggedRef.current = false
       return
     }
     clearSelection()
-  }, [clearSelection, isPanning, isSpacePressed])
+  }, [clearSelection, disabled, isPanning, isSpacePressed])
 
   const marqueeW = marquee ? Math.abs(marquee.endX - marquee.startX) : 0
   const marqueeH = marquee ? Math.abs(marquee.endY - marquee.startY) : 0

@@ -14,6 +14,8 @@ interface UseViewportParams {
   artH: number
   minZoom?: number
   maxZoom?: number
+  /** 禁用所有交互（滚轮缩放、键盘快捷键），模态框打开时传 true */
+  disabled?: boolean
 }
 
 function calcFitViewport(containerW: number, containerH: number, artW: number, artH: number): Viewport {
@@ -29,6 +31,7 @@ export function useViewport({
   artH,
   minZoom = 0.05,
   maxZoom = 8,
+  disabled = false,
 }: UseViewportParams) {
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 })
   const fittedRef = useRef(false)
@@ -93,7 +96,7 @@ export function useViewport({
 
   useEffect(() => {
     const el = containerRef.current
-    if (!el) return
+    if (!el || disabled) return
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -108,9 +111,11 @@ export function useViewport({
 
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)
-  }, [containerRef, zoomAt])
+  }, [containerRef, zoomAt, disabled])
 
   useEffect(() => {
+    if (disabled) return
+
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "0") {
         e.preventDefault()
@@ -129,7 +134,7 @@ export function useViewport({
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [containerRef, fitToScreen, setZoom])
+  }, [containerRef, fitToScreen, setZoom, disabled])
 
   return {
     viewport,

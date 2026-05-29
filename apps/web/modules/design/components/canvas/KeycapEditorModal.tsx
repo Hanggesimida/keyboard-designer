@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useId } from "react"
-import { X, ImagePlus, Trash2, Move } from "lucide-react"
+import { X, ImagePlus, Trash2, Move, Crosshair } from "lucide-react"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import type { KeyDef } from "./KeycapNode"
 import {
@@ -16,9 +16,19 @@ import {
   KEY_LABEL_OPTICAL_CENTER_RATIO,
   clamp,
 } from "@/modules/design/lib/design/keycapGeometry"
-import { SvgImageElement, MODAL_VIEW_INSET, type KeycapEditorImage } from "./SvgImageElement"
+import { KeycapEditorImageElement, MODAL_VIEW_INSET, type KeycapEditorImage } from "./KeycapEditorImageElement"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
+import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
+import {
+  computeLabelAlignPatch,
+  resolveTextHalfDimensionsSingle,
+  type AlignH,
+  type AlignV,
+} from "@/modules/design/lib/keycap-inspector/align"
+import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
+import { LabelAlignmentGrid } from "@/modules/design/components/sidebar/sections/right/keycap-inspector/AlignmentGrid"
+import { ColorRow } from "@/modules/design/components/sidebar/sections/right/keycap-inspector/ColorRow"
 
 // 1. 组件属性接口定义
 interface Props {
@@ -37,10 +47,24 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const globalDefaults = useDesignUIStore((s) => s.globalKeycapStyle)
   const fontFamily = useDesignUIStore((s) => s.fontFamily)
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
+  const assetMap = useDesignUIStore((s) => s.assetMap)
+  const addAsset = useDesignUIStore((s) => s.addAsset)
   const addCanvasElement = useDesignUIStore((s) => s.addCanvasElement)
   const updateCanvasElement = useDesignUIStore((s) => s.updateCanvasElement)
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
   const setKeycapOverride = useDesignUIStore((s) => s.setKeycapOverride)
+
+  const handleAlign = useCallback(
+    (alignH: AlignH, alignV: AlignV) => {
+      const currentFontSize = override?.fontSize ?? globalDefaults.fontSize ?? KEY_LABEL_SIZE
+      const currentLabel = override?.labelText ?? keyDef.label
+      const metrics = getTextMetrics(keyId)
+      const { halfW, halfH } = resolveTextHalfDimensionsSingle(metrics, currentFontSize, currentLabel)
+      const patch = computeLabelAlignPatch(keyDef, unit, alignH, alignV, halfW, halfH)
+      setKeycapOverride(layerId, keyId, patch)
+    },
+    [override, globalDefaults.fontSize, keyDef, keyId, unit, layerId, setKeycapOverride],
+  )
 
   const rawId = useId()
   const clipId = rawId.replace(/[^a-zA-Z0-9_-]/g, "-")
@@ -53,6 +77,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const [selectedLabel, setSelectedLabel] = useState(false)
   const [isLabelHovered, setIsLabelHovered] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [showCrosshair, setShowCrosshair] = useState(true)
 
   // 3. 动态计算文本 BBox 用于绘制选中边框
   const textRef = useRef<SVGTextElement>(null)
@@ -61,7 +86,19 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   useLayoutEffect(() => {
     if (textRef.current) {
       try {
-        setTextBBox(textRef.current.getBBox())
+        const next = textRef.current.getBBox()
+        setTextBBox((prev) => {
+          if (
+            prev &&
+            prev.x === next.x &&
+            prev.y === next.y &&
+            prev.width === next.width &&
+            prev.height === next.height
+          ) {
+            return prev
+          }
+          return next
+        })
       } catch {
         // 当元素未完全挂载到 DOM 时 getBBox 可能会报错，在此捕获
       }
@@ -90,6 +127,12 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const letterSpacing = override?.letterSpacing ?? 0
   const lineHeightRatio = override?.lineHeightRatio ?? 1.2
 
+  // 逐字符渲染，避免 CSS letter-spacing 在最后字符后附加多余尾部间距
+  const renderChars = (text: string) =>
+    Array.from(text).map((ch, i) => (
+      <tspan key={i} dx={i === 0 ? 0 : letterSpacing}>{ch}</tspan>
+    ))
+
   // 6. 将当前键帽的绝对坐标转换为内部相对坐标
   // 轴心公式 = artPad + keyDef.x * unit + GAP/2
   const keycapArtX = artPad + keyDef.x * unit + GAP / 2
@@ -100,7 +143,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
     .filter((el): el is CanvasImageElement => el.type === "image" && el.clipToKeycapId === keyId)
     .map((el) => ({
       id: el.id,
-      src: el.src,
+      src: assetMap[el.assetId] ?? "",
       x: el.x - keycapArtX,
       y: el.y - keycapArtY,
       width: el.width,
@@ -108,6 +151,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
       opacity: el.opacity,
       rotation: el.rotation,
       clipToKeycap: el.clipToKeycaps ?? true,
+      clipToTopFace: el.clipToTopFace ?? false,
     }))
 
   // 8. 弹窗缩放与响应式 viewBox 适配
@@ -149,7 +193,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const modalScaleRef = useRef(modalScale)
   modalScaleRef.current = modalScale
 
-  // 10. 全局快捷键监听（Esc 关闭，Delete/Backspace 删除图片）
+  // 10. 全局快捷键监听（Esc 关闭，Delete/Backspace 删除图片，方向键微调位置）
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
@@ -164,11 +208,44 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
         e.preventDefault()
         removeCanvasElement(selectedImageId)
         setSelectedImageId(null)
+        return
+      }
+
+      const arrowDelta: Record<string, readonly [number, number]> = {
+        ArrowLeft:  [-1, 0],
+        ArrowRight: [1,  0],
+        ArrowUp:    [0, -1],
+        ArrowDown:  [0,  1],
+      }
+      if (e.key in arrowDelta && selectedImageId) {
+        const img = useDesignUIStore.getState().canvasElements.find((c) => c.id === selectedImageId)
+        if (!img) return
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const [dx, dy] = arrowDelta[e.key] as [number, number]
+        updateCanvasElement(selectedImageId, {
+          x: Math.round(img.x + dx * step),
+          y: Math.round(img.y + dy * step),
+        })
+        return
+      }
+      if (e.key in arrowDelta && selectedLabel) {
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 0.5
+        const [dx, dy] = arrowDelta[e.key] as [number, number]
+        const state = useDesignUIStore.getState()
+        const cur = state.layerKeycapOverrides[layerId]?.[keyId]
+        const curX = cur?.labelOffsetX ?? 0
+        const curY = cur?.labelOffsetY ?? 0
+        setKeycapOverride(layerId, keyId, {
+          labelOffsetX: clamp(curX + dx * step, -maxOffX, maxOffX),
+          labelOffsetY: clamp(curY + dy * step, -maxOffY, maxOffY),
+        })
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [onClose, selectedImageId, removeCanvasElement])
+  }, [onClose, selectedImageId, selectedLabel, layerId, keyId, maxOffX, maxOffY, removeCanvasElement, updateCanvasElement, setKeycapOverride])
 
   // 11. 屏幕坐标系向键帽局部坐标系的转换
   const clientToKeycapLocal = useCallback(
@@ -199,9 +276,16 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
     [updateCanvasElement, keycapArtX, keycapArtY],
   )
 
-  const handleToggleImageClip = useCallback(
-    (imgId: string, clipToKeycap: boolean) => {
-      updateCanvasElement(imgId, { clipToKeycaps: !clipToKeycap })
+  // 三态循环：none → base → top → none
+  const handleCycleImageClipMode = useCallback(
+    (imgId: string, currentClip: boolean, currentTopFace: boolean) => {
+      if (!currentClip) {
+        updateCanvasElement(imgId, { clipToKeycaps: true, clipToTopFace: false })
+      } else if (!currentTopFace) {
+        updateCanvasElement(imgId, { clipToTopFace: true })
+      } else {
+        updateCanvasElement(imgId, { clipToKeycaps: false, clipToTopFace: false })
+      }
     },
     [updateCanvasElement],
   )
@@ -273,48 +357,79 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   // 14. 拖拽及选择文件上传，并绑定当前键帽的 z-index 层级
   const processImageFiles = useCallback(
     (files: File[], dropX?: number, dropY?: number) => {
-      files
-        .filter((f) => f.type.startsWith("image/"))
-        .forEach((file) => {
-          const reader = new FileReader()
-          reader.onload = (ev) => {
-            const src = ev.target?.result as string
-            if (!src) return
-            const domImg = new Image()
-            domImg.onload = () => {
-              // 图像等比例自适应缩放
-              const scale = Math.min(pw / domImg.width, ph / domImg.height)
-              const imgW = domImg.width * scale
-              const imgH = domImg.height * scale
-              // 计算基于键帽中心的落点坐标
-              const localX = dropX !== undefined ? dropX - imgW / 2 : (pw - imgW) / 2
-              const localY = dropY !== undefined ? dropY - imgH / 2 : (ph - imgH) / 2
-              // 向全局 Store 中添加关联当前键帽 ID 的图片元素
-              addCanvasElement({
-                id: `ki-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                type: "image",
-                src,
-                x: keycapArtX + localX,
-                y: keycapArtY + localY,
-                width: imgW,
-                height: imgH,
-                opacity: 1,
-                locked: false,
-                clipToKeycapId: keyId,
-              })
-            }
-            domImg.src = src
+      const validFiles = files.filter(
+        (f) => f.type.startsWith("image/") || isSvgFile(f),
+      )
+
+      validFiles.forEach((file) => {
+        if (isSvgFile(file)) {
+          readSvgFile(file).then((result) => {
+            if (!result) return
+            const assetId = addAsset(result.src)
+            const scale = Math.min(pw / result.w, ph / result.h)
+            const imgW = result.w * scale
+            const imgH = result.h * scale
+            const localX = dropX !== undefined ? dropX - imgW / 2 : (pw - imgW) / 2
+            const localY = dropY !== undefined ? dropY - imgH / 2 : (ph - imgH) / 2
+            addCanvasElement({
+              id: `ki-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              type: "image",
+              assetId,
+              x: keycapArtX + localX,
+              y: keycapArtY + localY,
+              width: imgW,
+              height: imgH,
+              opacity: 1,
+              locked: false,
+              clipToKeycapId: keyId,
+              isSvg: true,
+            })
+          })
+          return
+        }
+
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          const src = ev.target?.result as string
+          if (!src) return
+          const domImg = new Image()
+          domImg.onload = () => {
+            const assetId = addAsset(src)
+            // 图像等比例自适应缩放
+            const scale = Math.min(pw / domImg.width, ph / domImg.height)
+            const imgW = domImg.width * scale
+            const imgH = domImg.height * scale
+            // 计算基于键帽中心的落点坐标
+            const localX = dropX !== undefined ? dropX - imgW / 2 : (pw - imgW) / 2
+            const localY = dropY !== undefined ? dropY - imgH / 2 : (ph - imgH) / 2
+            // 向全局 Store 中添加关联当前键帽 ID 的图片元素
+            addCanvasElement({
+              id: `ki-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              type: "image",
+              assetId,
+              x: keycapArtX + localX,
+              y: keycapArtY + localY,
+              width: imgW,
+              height: imgH,
+              opacity: 1,
+              locked: false,
+              clipToKeycapId: keyId,
+            })
           }
-          reader.readAsDataURL(file)
-        })
+          domImg.src = src
+        }
+        reader.readAsDataURL(file)
+      })
     },
-    [addCanvasElement, keyId, pw, ph, keycapArtX, keycapArtY],
+    [addAsset, addCanvasElement, keyId, pw, ph, keycapArtX, keycapArtY],
   )
 
   // 15. 外部元素拖拽进入 SVG 画布事件
   const handleSvgDragOver = useCallback((e: React.DragEvent<SVGSVGElement>) => {
     const hasImage = Array.from(e.dataTransfer.items).some(
-      (item) => item.kind === "file" && item.type.startsWith("image/"),
+      (item) =>
+        item.kind === "file" &&
+        (item.type.startsWith("image/") || item.type === "image/svg+xml"),
     )
     if (!hasImage) return
     e.preventDefault()
@@ -364,7 +479,6 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
         style={{
           backgroundColor: "#141414",
           border: "1px solid rgba(255,255,255,0.08)",
-          minWidth: Math.max(viewW + 128, 300),
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -386,187 +500,237 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
           </button>
         </div>
 
-        {/* 核心键盘组件 SVG 预览与编辑区 */}
-        <div
-          className="relative flex items-center justify-center"
-          style={{ padding: "52px 64px" }}
-          onClick={() => { setSelectedImageId(null); setSelectedLabel(false) }}
-        >
+        {/* 主体区：SVG 预览（左）+ 右侧控制栏 */}
+        <div className="flex flex-1 min-h-0">
+          {/* SVG 预览区 */}
           <div
-            ref={overlayContainerRef}
-            className="relative"
-            style={{ width: viewW, height: viewH }}
+            className="relative flex items-center justify-center"
+            style={{ padding: "48px 56px" }}
+            onClick={() => { setSelectedImageId(null); setSelectedLabel(false) }}
           >
-            <svg
-              ref={svgRef}
-              width={viewW}
-              height={viewH}
-              viewBox={`0 0 ${vbW} ${vbH}`}
-              style={{ display: "block", overflow: "visible" }}
-              onDragOver={handleSvgDragOver}
-              onDragLeave={handleSvgDragLeave}
-              onDrop={handleSvgDrop}
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedLabel(false)
-                setSelectedImageId(null)
-              }}
+            <div
+              ref={overlayContainerRef}
+              className="relative"
+              style={{ width: viewW, height: viewH }}
             >
-              <defs>
-                <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
-                  <rect x={0} y={0} width={pw} height={ph} rx={KEY_RADIUS_BASE} />
-                </clipPath>
-                <filter id={`${clipId}-shadow`} x="-10%" y="-10%" width="120%" height="120%">
-                  <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.5" />
-                </filter>
-              </defs>
+              <svg
+                ref={svgRef}
+                width={viewW}
+                height={viewH}
+                viewBox={`0 0 ${vbW} ${vbH}`}
+                style={{ display: "block", overflow: "visible" }}
+                onDragOver={handleSvgDragOver}
+                onDragLeave={handleSvgDragLeave}
+                onDrop={handleSvgDrop}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedLabel(false)
+                  setSelectedImageId(null)
+                }}
+              >
+                <defs>
+                  {/* 键帽底座轮廓裁切区域 */}
+                  <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+                    <rect x={0} y={0} width={pw} height={ph} rx={KEY_RADIUS_BASE} />
+                  </clipPath>
+                  {/* 键帽顶面（top face）裁切区域 */}
+                  <clipPath id={`${clipId}-top`} clipPathUnits="userSpaceOnUse">
+                    <rect x={topX} y={topY} width={topW} height={topH} rx={KEY_RADIUS_TOP} />
+                  </clipPath>
+                  <filter id={`${clipId}-shadow`} x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.5" />
+                  </filter>
+                </defs>
 
-              <g transform={`translate(${MODAL_VIEW_INSET}, ${MODAL_VIEW_INSET})`}>
-                {/* 键帽底座 */}
-                <rect
-                  x={0} y={0} width={pw} height={ph}
-                  rx={KEY_RADIUS_BASE}
-                  fill={baseFill}
-                  stroke={borderColor}
-                  strokeWidth={0.8 / modalScale}
-                />
-
-                {/* 键帽顶面 */}
-                <rect
-                  x={topX} y={topY} width={topW} height={topH}
-                  rx={KEY_RADIUS_TOP}
-                  fill={topFill}
-                  style={{ pointerEvents: "none" }}
-                />
-
-                {/* 动态渲染子组件 SvgImageElement 图层组 */}
-                {keycapImages.map((img) => (
-                  <SvgImageElement
-                    key={img.id}
-                    img={img}
-                    clipToKeycap={img.clipToKeycap}
-                    isSelected={selectedImageId === img.id}
-                    scale={modalScale}
-                    clipId={clipId}
-                    svgRef={svgRef}
-                    overlayContainerRef={overlayContainerRef}
-                    onSelect={() => {
-                      setSelectedImageId(img.id)
-                      setSelectedLabel(false)
-                    }}
-                    onToggleClipToKeycap={() => handleToggleImageClip(img.id, img.clipToKeycap)}
-                    onCommit={handleImageCommit}
-                  />
-                ))}
-
-                {/* 模拟内凹高光，提升 3D 质感 */}
-                <rect
-                  x={topX} y={topY} width={topW} height={topH}
-                  rx={KEY_RADIUS_TOP}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.12)"
-                  strokeWidth={0.6 / modalScale}
-                  style={{ pointerEvents: "none" }}
-                />
-
-                {/* 刻字文本节点 */}
-                <text
-                  ref={textRef}
-                  x={textX}
-                  y={textYDraw}
-                  fontSize={fontSize}
-                  fill={labelColor}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, letterSpacing }}
-                >
-                  {labelLines.length > 1
-                    ? labelLines.map((line, i) => (
-                      <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                        {line || "\u00A0"}
-                      </tspan>
-                    ))
-                    : labelText}
-                </text>
-
-                {/* 刻字交互热区及选中态虚线框 */}
-                {textBBox && (
+                <g transform={`translate(${MODAL_VIEW_INSET}, ${MODAL_VIEW_INSET})`}>
+                  {/* 键帽底座 */}
                   <rect
-                    x={textBBox.x - 6}
-                    y={textBBox.y - 4}
-                    width={textBBox.width + 12}
-                    height={textBBox.height + 8}
-                    rx={3 / modalScale}
-                    fill="transparent"
-                    stroke={
-                      selectedLabel
-                        ? "rgba(99,179,237,0.65)"
-                        : isLabelHovered
-                          ? "rgba(255,255,255,0.18)"
-                          : "transparent"
-                    }
-                    strokeWidth={1.5 / modalScale}
-                    strokeDasharray={
-                      selectedLabel
-                        ? `${4 / modalScale} ${3 / modalScale}`
-                        : undefined
-                    }
-                    style={{ cursor: selectedLabel ? "move" : "pointer" }}
-                    onMouseEnter={() => setIsLabelHovered(true)}
-                    onMouseLeave={() => setIsLabelHovered(false)}
-                    onMouseDown={(e) => {
-                      if (!selectedLabel) {
-                        e.stopPropagation()
-                        setSelectedLabel(true)
-                        setSelectedImageId(null)
-                      } else {
-                        handleLabelAreaMouseDown(e)
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
+                    x={0} y={0} width={pw} height={ph}
+                    rx={KEY_RADIUS_BASE}
+                    fill={baseFill}
+                    stroke={borderColor}
+                    strokeWidth={0.8 / modalScale}
                   />
-                )}
-              </g>
-            </svg>
+
+                  {/* 键帽顶面 */}
+                  <rect
+                    x={topX} y={topY} width={topW} height={topH}
+                    rx={KEY_RADIUS_TOP}
+                    fill={topFill}
+                    style={{ pointerEvents: "none" }}
+                  />
+
+                  {/* 动态渲染子组件 KeycapEditorImageElement 图层组 */}
+                  {keycapImages.map((img) => (
+                    <KeycapEditorImageElement
+                      key={img.id}
+                      img={img}
+                      clipMode={img.clipToTopFace ? "top" : img.clipToKeycap ? "base" : "none"}
+                      isSelected={selectedImageId === img.id}
+                      scale={modalScale}
+                      clipId={clipId}
+                      topFaceClipId={`${clipId}-top`}
+                      svgRef={svgRef}
+                      overlayContainerRef={overlayContainerRef}
+                      onSelect={() => {
+                        setSelectedImageId(img.id)
+                        setSelectedLabel(false)
+                      }}
+                      onCycleClipMode={() => handleCycleImageClipMode(img.id, img.clipToKeycap, img.clipToTopFace)}
+                      onCenterToTopFace={() => {
+                        const centerX = topX + topW / 2 - img.width / 2
+                        const centerY = topY + topH / 2 - img.height / 2
+                        handleImageCommit(img.id, { x: centerX, y: centerY })
+                      }}
+                      onCommit={handleImageCommit}
+                    />
+                  ))}
+
+                  {/* 模拟内凹高光，提升 3D 质感 */}
+                  <rect
+                    x={topX} y={topY} width={topW} height={topH}
+                    rx={KEY_RADIUS_TOP}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.12)"
+                    strokeWidth={0.6 / modalScale}
+                    style={{ pointerEvents: "none" }}
+                  />
+
+                  {/* 刻字文本节点 */}
+                  <text
+                    ref={textRef}
+                    x={textX}
+                    y={textYDraw}
+                    fontSize={fontSize}
+                    fill={labelColor}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily }}
+                  >
+                    {letterSpacing !== 0
+                      ? labelLines.length > 1
+                        ? labelLines.map((line, i) => (
+                            <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                              {renderChars(line || "\u00A0")}
+                            </tspan>
+                          ))
+                        : renderChars(labelText)
+                      : labelLines.length > 1
+                        ? labelLines.map((line, i) => (
+                            <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                              {line || "\u00A0"}
+                            </tspan>
+                          ))
+                        : labelText}
+                  </text>
+
+                  {/* 十字辅助线（以 top face 中心为原点，限定在 top face 范围内） */}
+                  {showCrosshair && (
+                    <g style={{ pointerEvents: "none" }}>
+                      <line
+                        x1={topX} y1={topY + topH / 2}
+                        x2={topX + topW} y2={topY + topH / 2}
+                        stroke="rgba(255,255,255,0.25)"
+                        strokeWidth={0.8 / modalScale}
+                        strokeDasharray={`${3 / modalScale} ${3 / modalScale}`}
+                      />
+                      <line
+                        x1={topX + topW / 2} y1={topY}
+                        x2={topX + topW / 2} y2={topY + topH}
+                        stroke="rgba(255,255,255,0.25)"
+                        strokeWidth={0.8 / modalScale}
+                        strokeDasharray={`${3 / modalScale} ${3 / modalScale}`}
+                      />
+                      <circle
+                        cx={topX + topW / 2}
+                        cy={topY + topH / 2}
+                        r={1.5 / modalScale}
+                        fill="rgba(255,255,255,0.4)"
+                      />
+                    </g>
+                  )}
+
+                  {/* 刻字交互热区及选中态虚线框 */}
+                  {textBBox && (
+                    <rect
+                      x={textBBox.x - 6}
+                      y={textBBox.y - 4}
+                      width={textBBox.width + 12}
+                      height={textBBox.height + 8}
+                      rx={3 / modalScale}
+                      fill="transparent"
+                      stroke={
+                        selectedLabel
+                          ? "rgba(99,179,237,0.65)"
+                          : isLabelHovered
+                            ? "rgba(255,255,255,0.18)"
+                            : "transparent"
+                      }
+                      strokeWidth={1.5 / modalScale}
+                      strokeDasharray={
+                        selectedLabel
+                          ? `${4 / modalScale} ${3 / modalScale}`
+                          : undefined
+                      }
+                      style={{ cursor: selectedLabel ? "move" : "pointer" }}
+                      onMouseEnter={() => setIsLabelHovered(true)}
+                      onMouseLeave={() => setIsLabelHovered(false)}
+                      onMouseDown={(e) => {
+                        if (!selectedLabel) {
+                          e.stopPropagation()
+                          setSelectedLabel(true)
+                          setSelectedImageId(null)
+                        } else {
+                          handleLabelAreaMouseDown(e)
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                </g>
+              </svg>
+            </div>
+
+            {/* 拖拽上传蒙层 */}
+            {isDragOver && (
+              <div
+                className="pointer-events-none absolute inset-0 flex items-center justify-center rounded"
+                style={{
+                  border: "2px dashed rgba(59,130,246,0.7)",
+                  backgroundColor: "rgba(59,130,246,0.08)",
+                }}
+              >
+                <span className="text-xs text-blue-300 rounded px-2 py-1 select-none"
+                  style={{ background: "rgba(0,0,0,0.6)" }}>
+                  释放文件以上传
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* 拖拽上传蒙层 */}
-          {isDragOver && (
-            <div
-              className="pointer-events-none absolute inset-0 flex items-center justify-center rounded"
-              style={{
-                border: "2px dashed rgba(59,130,246,0.7)",
-                backgroundColor: "rgba(59,130,246,0.08)",
-              }}
-            >
-              <span className="text-xs text-blue-300 rounded px-2 py-1 select-none"
-                style={{ background: "rgba(0,0,0,0.6)" }}>
-                释放文件以上传
-              </span>
+          {/* 右侧文字控制栏 */}
+          <div
+            className="flex flex-col gap-4 border-l border-white/8 px-4 py-5 overflow-y-auto"
+            style={{ width: 180 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 刻字内容 */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-white/40 select-none">刻字</span>
+              <Textarea
+                value={labelText}
+                onChange={(e) =>
+                  setKeycapOverride(layerId, keyId, { labelText: e.target.value })
+                }
+                placeholder="输入刻字，支持换行"
+                style={{ fontFamily: labelFontFamily, lineHeight: "1.5" }}
+                className="text-xs"
+              />
             </div>
-          )}
-        </div>
 
-        {/* 刻字编辑栏 */}
-        <div className="flex gap-3 px-4 py-3 border-t border-white/8 items-start">
-          <span className="text-[11px] text-white/40 shrink-0 select-none mt-1.5">刻字</span>
-
-          {/* 文本输入框 */}
-          <Textarea
-            className="flex-1"
-            value={labelText}
-            onChange={(e) =>
-              setKeycapOverride(layerId, keyId, { labelText: e.target.value })
-            }
-            placeholder="输入刻字，支持换行"
-            style={{ fontFamily: labelFontFamily, lineHeight: "1.5" }}
-          />
-
-          {/* 字间距 + 行距 数字输入区，上下排列 */}
-          <div className="flex flex-col gap-2 shrink-0">
             {/* 字间距 */}
-            <div className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-              <span className="shrink-0 w-[3em] text-right">字间距</span>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-white/40 select-none">字间距</span>
               <Input
                 type="number"
                 min={-3}
@@ -576,12 +740,13 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                 onChange={(e) =>
                   setKeycapOverride(layerId, keyId, { letterSpacing: Number(e.target.value) })
                 }
+                className="h-7 text-xs tabular-nums"
               />
             </div>
 
             {/* 行距 */}
-            <div className="flex items-center gap-1.5 text-[11px] text-white/40 select-none">
-              <span className="shrink-0 w-[3em] text-right">行距</span>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-white/40 select-none">行距</span>
               <Input
                 type="number"
                 min={0.8}
@@ -591,6 +756,25 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                 onChange={(e) =>
                   setKeycapOverride(layerId, keyId, { lineHeightRatio: Number(e.target.value) })
                 }
+                className="h-7 text-xs tabular-nums"
+              />
+            </div>
+
+            {/* 文字位置九宫格 */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-white/40 select-none">文字位置</span>
+              <LabelAlignmentGrid hideLabel onAlign={handleAlign} />
+            </div>
+
+            {/* 文字颜色 */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] text-white/40 select-none">文字颜色</span>
+              <ColorRow
+                label="文字颜色"
+                hideLabel
+                value={override?.labelColor ?? ""}
+                fallback={globalDefaults.labelColor ?? "#d0d0d0"}
+                onChange={(next) => setKeycapOverride(layerId, keyId, { labelColor: next })}
               />
             </div>
           </div>
@@ -605,6 +789,19 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
           >
             <ImagePlus className="size-3.5" />
             上传图片
+          </button>
+
+          <button
+            onClick={() => setShowCrosshair((v) => !v)}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] transition-colors select-none ${
+              showCrosshair
+                ? "text-white/70 bg-white/10"
+                : "text-white/30 hover:text-white/60 hover:bg-white/6"
+            }`}
+            title="切换十字辅助线"
+          >
+            <Crosshair className="size-3.5" />
+            辅助线
           </button>
 
           {selectedImageId && (
@@ -625,20 +822,15 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
           <div className="flex items-center gap-1 text-[11px] text-white/20 select-none">
             <Move className="size-3" />
-            <span>支持拖拽图片、刻字调整位置</span>
+            <span>拖拽调整位置，选中后方向键微调</span>
           </div>
-        </div>
-
-        {/* 底部功能提示栏 */}
-        <div className="px-4 pb-3 pt-0 text-[10px] text-white/18 select-none">
-          提示：拖动文件到键帽可以直接上传。按 Esc 退出编辑，按 Del 或 Backspace 键删除选中图片。
         </div>
 
         {/* 隐藏的文件上传探针 */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.svg"
           multiple
           className="hidden"
           onChange={handleFileInputChange}

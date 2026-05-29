@@ -1,6 +1,16 @@
-﻿import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
+﻿import {
+  useDesignUIStore,
+  type CanvasImageElement,
+  type CanvasElement,
+  type GlobalKeycapStyle,
+  type Layer,
+  type LayerKeycapOverrides,
+  TEMPLATES,
+} from "@/modules/design/store/designUiStore"
+import type { TemplateId } from "@/modules/design/store/designUiStore"
 import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "@/modules/design/components/canvas/KeycapNode"
-import { FONT_OPTIONS } from "@/modules/design/components/sidebar/sections/right/font-options"
+import { FONT_ASSETS } from "@/lib/fontAssets"
+import type { TextDescriptor } from "@/lib/jig/fontToPath"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -13,37 +23,174 @@ export interface ExportArtboardParams {
   keys: KeyDef[]
 }
 
-/**
- * 收集当前页面中所有 @font-face 规则以及 next/font 注入的 CSS 变量，
- * 拼合为一段 CSS 字符串内嵌到导出 SVG 中，确保独立 SVG / PNG 也能加载字体。
- */
-function collectFontCSS(): string {
-  const fontFaceRules: string[] = []
+// ─── 转曲辅助工具 ──────────────────────────────────────────────────────────
 
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      for (const rule of Array.from(sheet.cssRules)) {
-        if (rule instanceof CSSFontFaceRule) {
-          fontFaceRules.push(rule.cssText)
-        }
+/**
+ * 解析 style 属性字符串中某个属性的值。
+ * 例如 parseStyleProp("font-family: Inter; letter-spacing: 2px", "font-family") → "Inter"
+ */
+function parseStyleProp(styleAttr: string, prop: string): string | null {
+  const re = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, "i")
+  const m = styleAttr.match(re)
+  return m && m[1] ? m[1].trim() : null
+}
+
+/**
+ * 将 fill 值从 CSS var 解析为实际颜色字符串。
+ * var(--xxx) 通过 document root 的 getComputedStyle 解析。
+ * 无法解析时返回 "#000000"。
+ */
+function resolveFillColor(fill: string): string {
+  if (!fill || fill === "currentColor" || fill === "none") return fill || "currentColor"
+  if (fill.startsWith("var(")) {
+    const varName = fill.slice(4).replace(/\)$/, "").trim()
+    const resolved = getComputedStyle(document.documentElement)
+      .getPropertyValue(varName)
+      .trim()
+    return resolved || "#000000"
+  }
+  return fill
+}
+
+/**
+ * 解析序列化 SVG 字符串中的所有 <text> 元素，构建 TextDescriptor 数组。
+ * 返回 descriptors 数组以及对应位置的元素数组（顺序一致）。
+ */
+function extractTextDescriptors(doc: Document): {
+  descriptors: TextDescriptor[]
+  elements: Element[]
+  resolvedFills: string[]
+} {
+  const allTexts = Array.from(doc.querySelectorAll("text"))
+  const descriptors: TextDescriptor[] = []
+  const elements: Element[] = []
+  const resolvedFills: string[] = []
+
+  for (let i = 0; i < allTexts.length; i++) {
+    const textEl = allTexts[i]
+    if (!textEl) continue
+
+    const x = parseFloat(textEl.getAttribute("x") ?? "0")
+    const y = parseFloat(textEl.getAttribute("y") ?? "0")
+    const fontSize = parseFloat(textEl.getAttribute("font-size") ?? "12")
+
+    const styleAttr = textEl.getAttribute("style") ?? ""
+    const fontFamily = parseStyleProp(styleAttr, "font-family") ?? "var(--font-ibm-plex-mono)"
+    const fontWeightRaw = parseStyleProp(styleAttr, "font-weight") ?? "400"
+    const fontWeight = parseInt(fontWeightRaw, 10) || 400
+    const fontStyle = parseStyleProp(styleAttr, "font-style") ?? "normal"
+    const lsRaw = parseStyleProp(styleAttr, "letter-spacing") ?? "0"
+    const letterSpacing = parseFloat(lsRaw) || 0
+
+    const rawFill = textEl.getAttribute("fill") ?? "currentColor"
+    const fill = resolveFillColor(rawFill)
+
+    // 提取文字行：优先从 <tspan> 子元素提取，再从 textContent 分行
+    const tspans = Array.from(textEl.querySelectorAll("tspan"))
+    let lines: string[]
+    let lineHeightRatio = 1.2
+
+    if (tspans.length > 0) {
+      lines = tspans.map((ts) => ts.textContent ?? "")
+      const secondTspan = tspans[1]
+      if (secondTspan && fontSize > 0) {
+        const dy = parseFloat(secondTspan.getAttribute("dy") ?? "0")
+        if (dy > 0) lineHeightRatio = dy / fontSize
       }
-    } catch {
-      // 跨域样式表无法访问，跳过
+    } else {
+      lines = (textEl.textContent ?? "").split("\n").filter((l) => l !== "")
+      if (lines.length === 0) lines = [textEl.textContent ?? ""]
     }
+
+    descriptors.push({
+      id: `t${i}`,
+      x, y, fontSize, fontFamily, fontWeight, fontStyle, lines, lineHeightRatio, letterSpacing, fill,
+    })
+    elements.push(textEl)
+    resolvedFills.push(fill)
   }
 
-  const computed = getComputedStyle(document.documentElement)
-  const fontVars = FONT_OPTIONS
-    .filter((f) => f.value.startsWith("var(--"))
-    .map((f) => {
-      const varName = f.value.slice(4, -1) // "var(--font-inter)" -> "--font-inter"
-      const val = computed.getPropertyValue(varName).trim()
-      return val ? `${varName}: ${val}` : ""
-    })
-    .filter(Boolean)
+  return { descriptors, elements, resolvedFills }
+}
 
-  const rootVars = fontVars.length ? `:root { ${fontVars.join("; ")} }` : ""
-  return [rootVars, ...fontFaceRules].join("\n")
+/**
+ * 将 SVG 字符串中的所有 <text> 元素转曲为 <path>。
+ *
+ * 流程：
+ *  1. DOMParser 解析 SVG 字符串
+ *  2. 提取 <text> 元素 → 构建 TextDescriptor[]
+ *  3. POST /api/texts-to-paths → 获取 path data
+ *  4. 非 CJK：替换为 <path>
+ *  5. CJK（pathD=null）：将 font-family 从 CSS var 更新为 fallback 族名
+ *  6. 移除 <style> 字体嵌入块（字体已转曲，不再需要）
+ *  7. XMLSerializer 序列化返回
+ *
+ * 失败时（网络错误等）返回原始 SVG 字符串。
+ */
+async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(svgStr, "image/svg+xml")
+
+  const { descriptors, elements, resolvedFills } = extractTextDescriptors(doc)
+  if (descriptors.length === 0) return svgStr
+
+  let results: Array<{ id: string; pathD: string | null }>
+  try {
+    const res = await fetch("/api/texts-to-paths", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts: descriptors }),
+    })
+    if (!res.ok) {
+      console.error("[exportArtboard] /api/texts-to-paths 返回错误:", res.status)
+      return svgStr
+    }
+    ;({ results } = (await res.json()) as {
+      results: Array<{ id: string; pathD: string | null }>
+    })
+  } catch (err) {
+    console.error("[exportArtboard] 调用 /api/texts-to-paths 失败:", err)
+    return svgStr
+  }
+
+  // 替换 <text> 为 <path>，CJK 更新 font-family 为 fallback
+  for (let i = 0; i < elements.length; i++) {
+    const r = results[i]
+    const textEl = elements[i]
+    if (!r || !textEl) continue
+
+    if (r.pathD === null) {
+      // CJK 降级：将 font-family CSS var 替换为 fallback 族名
+      const styleAttr = textEl.getAttribute("style") ?? ""
+      const fontFamilyVal = parseStyleProp(styleAttr, "font-family") ?? ""
+      if (fontFamilyVal.startsWith("var(")) {
+        const varName = fontFamilyVal.slice(4).replace(/\)$/, "").trim()
+        const asset = FONT_ASSETS[varName]
+        if (asset) {
+          const newStyle = styleAttr.replace(
+            /font-family\s*:[^;]+/,
+            `font-family: ${asset.fallback}`,
+          )
+          textEl.setAttribute("style", newStyle)
+        }
+      }
+      continue
+    }
+
+    // 非 CJK：替换为 <path>
+    const pathEl = doc.createElementNS(SVG_NS, "path")
+    pathEl.setAttribute("d", r.pathD)
+    const fill = resolvedFills[i] ?? "currentColor"
+    pathEl.setAttribute("fill", fill)
+    const dataKey = textEl.getAttribute("data-key")
+    if (dataKey) pathEl.setAttribute("data-key", dataKey)
+    textEl.parentNode?.replaceChild(pathEl, textEl)
+  }
+
+  // 移除 <style> 字体 CSS（字体已转曲为路径，不再需要 @font-face）
+  doc.querySelectorAll("style").forEach((s) => s.remove())
+
+  return new XMLSerializer().serializeToString(doc.documentElement)
 }
 
 function buildExportFilename(
@@ -77,9 +224,9 @@ function triggerDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function createSvgImageEl(ns: string, el: CanvasImageElement): SVGImageElement {
+function createSvgImageEl(ns: string, el: CanvasImageElement, src: string): SVGImageElement {
   const img = document.createElementNS(ns, "image") as SVGImageElement
-  img.setAttribute("href", el.src)
+  img.setAttribute("href", src)
   img.setAttribute("x", String(el.x))
   img.setAttribute("y", String(el.y))
   img.setAttribute("width", String(el.width))
@@ -98,6 +245,8 @@ function createSvgImageEl(ns: string, el: CanvasImageElement): SVGImageElement {
  * 1. 背景色矩形
  * 2. 克隆已渲染的键盘 SVG（已含 clipToKeycaps 图片）
  * 3. HTML 层自由图片（含 clipToKeycapId 按键裁剪）
+ *
+ * 注：<text> 元素仍保留在输出中，由后续 replaceSvgTextsWithPaths 转曲。
  */
 export function buildExportSvgString({
   artboardEl,
@@ -118,15 +267,7 @@ export function buildExportSvgString({
   exportSvg.setAttribute("height", String(artH))
   exportSvg.setAttribute("viewBox", `0 0 ${artW} ${artH}`)
 
-  // 注入字体 CSS，确保导出的 SVG / PNG 中字体可以正常渲染
-  const fontCSS = collectFontCSS()
-  if (fontCSS) {
-    const styleEl = document.createElementNS(SVG_NS, "style")
-    styleEl.textContent = fontCSS
-    exportSvg.appendChild(styleEl)
-  }
-
-  const { artboardBackground, canvasElements: elements } =
+  const { artboardBackground, canvasElements: elements, assetMap } =
     useDesignUIStore.getState()
 
   const bg = document.createElementNS(SVG_NS, "rect")
@@ -169,20 +310,21 @@ export function buildExportSvgString({
       defs.appendChild(clipPath)
       exportSvg.appendChild(defs)
 
-      const imgEl = createSvgImageEl(SVG_NS, el)
+      const imgEl = createSvgImageEl(SVG_NS, el, assetMap[el.assetId] ?? "")
       imgEl.setAttribute("clip-path", `url(#${clipId})`)
       exportSvg.appendChild(imgEl)
     } else {
-      exportSvg.appendChild(createSvgImageEl(SVG_NS, el))
+      exportSvg.appendChild(createSvgImageEl(SVG_NS, el, assetMap[el.assetId] ?? ""))
     }
   }
 
   return new XMLSerializer().serializeToString(exportSvg)
 }
 
-export function exportArtboardSvg(params: ExportArtboardParams) {
-  const svgStr = buildExportSvgString(params)
-  if (!svgStr) return
+export async function exportArtboardSvg(params: ExportArtboardParams) {
+  const rawSvgStr = buildExportSvgString(params)
+  if (!rawSvgStr) return
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
   const { templateId } = useDesignUIStore.getState()
   triggerDownload(
     new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" }),
@@ -190,12 +332,14 @@ export function exportArtboardSvg(params: ExportArtboardParams) {
   )
 }
 
-export function exportArtboardPng(
+export async function exportArtboardPng(
   params: ExportArtboardParams,
   scale = 2,
 ) {
-  const svgStr = buildExportSvgString(params)
-  if (!svgStr) return
+  const rawSvgStr = buildExportSvgString(params)
+  if (!rawSvgStr) return
+  // PNG 导出也先转曲，保证字形一致（字体可能不在目标机器上）
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
   const { templateId } = useDesignUIStore.getState()
   const filename = buildExportFilename("png", templateId)
   const { artW, artH } = params
@@ -222,6 +366,114 @@ export function exportArtboardPng(
   img.src = url
 }
 
+// ─── 导入 JSON ─────────────────────────────────────────
+
+/**
+ * 导出 JSON 中单个画布元素的格式。
+ * 为保持 JSON 文件自包含，导出时将 assetId 对应的 src 内联到元素中；
+ * 旧版本的文件可能直接含有 src 字段（无 assetId），导入时做向后兼容处理。
+ */
+export type ExportCanvasElement = Omit<CanvasElement, "assetId"> & {
+  src: string
+  assetId?: string
+}
+
+export interface ImportPayload {
+  version: number
+  templateId: TemplateId
+  artboardBackground: string
+  fontFamily: string
+  globalKeycapStyle: GlobalKeycapStyle
+  layers: Layer[]
+  layerKeycapOverrides: LayerKeycapOverrides
+  canvasElements: ExportCanvasElement[]
+}
+
+/** 读取并校验上传的 JSON 文件，返回解析结果或错误原因 */
+export async function parseImportJson(
+  file: File,
+): Promise<{ ok: true; data: ImportPayload } | { ok: false; error: string }> {
+  let raw: unknown
+  try {
+    const text = await file.text()
+    raw = JSON.parse(text)
+  } catch {
+    return { ok: false, error: "文件解析失败，请确认选择的是有效的 JSON 文件。" }
+  }
+
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return {
+      ok: false,
+      error: "该文件不是本网站导出的设计文件，请使用【导出 JSON】功能导出后再导入。",
+    }
+  }
+
+  const obj = raw as Record<string, unknown>
+
+  if (obj["version"] !== 1) {
+    return {
+      ok: false,
+      error: "该文件不是本网站导出的设计文件，或版本不兼容。\n请使用本网站【导出 JSON】功能导出的文件再导入。",
+    }
+  }
+
+  const validTemplateIds = TEMPLATES.map((t) => t.id) as string[]
+  if (typeof obj["templateId"] !== "string" || !validTemplateIds.includes(obj["templateId"])) {
+    return {
+      ok: false,
+      error: "该文件不是本网站导出的设计文件，请使用【导出 JSON】功能导出后再导入。",
+    }
+  }
+
+  if (
+    typeof obj["artboardBackground"] !== "string" ||
+    typeof obj["globalKeycapStyle"] !== "object" ||
+    obj["globalKeycapStyle"] === null ||
+    !Array.isArray(obj["layers"]) ||
+    typeof obj["layerKeycapOverrides"] !== "object" ||
+    obj["layerKeycapOverrides"] === null ||
+    !Array.isArray(obj["canvasElements"])
+  ) {
+    return {
+      ok: false,
+      error: "该文件格式不正确，请使用本网站【导出 JSON】功能导出的文件再导入。",
+    }
+  }
+
+  return { ok: true, data: raw as ImportPayload }
+}
+
+/** 将解析后的设计数据应用到 store，覆盖当前全部设计状态 */
+export function applyImportData(data: ImportPayload) {
+  // 将导出格式（内联 src）转换为运行时格式（assetId + assetMap）
+  const assetMap: Record<string, string> = {}
+  const canvasElements: CanvasElement[] = data.canvasElements.map((el) => {
+    const src = el.src ?? ""
+    // 若 JSON 已含 assetId（未来格式），直接复用；否则为每个元素生成新 assetId
+    const assetId = el.assetId ?? `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    if (src) assetMap[assetId] = src
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { src: _src, ...rest } = el
+    return { ...rest, assetId } as CanvasElement
+  })
+
+  useDesignUIStore.setState({
+    templateId: data.templateId,
+    artboardBackground: data.artboardBackground,
+    fontFamily: data.fontFamily ?? "var(--font-ibm-plex-mono)",
+    globalKeycapStyle: data.globalKeycapStyle,
+    layers: data.layers,
+    layerKeycapOverrides: data.layerKeycapOverrides,
+    canvasElements,
+    assetMap,
+    selectedKeycapIds: [],
+    selectedElementId: null,
+    activeLayerId: null,
+    keycapEditTarget: null,
+    liveDragOverrides: {},
+  })
+}
+
 export function exportArtboardJson() {
   const {
     templateId,
@@ -231,7 +483,16 @@ export function exportArtboardJson() {
     layers,
     layerKeycapOverrides,
     canvasElements: elements,
+    assetMap,
   } = useDesignUIStore.getState()
+
+  // 将运行时格式（assetId 引用）转为 JSON 自包含格式（内联 src），方便离线存储与跨设备使用
+  const exportElements: ExportCanvasElement[] = elements.map((el) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { assetId, ...rest } = el
+    return { ...rest, src: assetMap[assetId] ?? "" }
+  })
+
   const payload = {
     version: 1,
     templateId,
@@ -240,7 +501,7 @@ export function exportArtboardJson() {
     globalKeycapStyle,
     layers,
     layerKeycapOverrides,
-    canvasElements: elements,
+    canvasElements: exportElements,
   }
   triggerDownload(
     new Blob([JSON.stringify(payload, null, 2)], {

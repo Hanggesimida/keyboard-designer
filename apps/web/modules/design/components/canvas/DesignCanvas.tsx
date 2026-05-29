@@ -6,12 +6,14 @@ import { Home } from "lucide-react"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
+import { KEY_PAD_LEFT, KEY_PAD_TOP, KEY_PAD_RIGHT, KEY_PAD_BOTTOM, KEY_RADIUS_TOP } from "@/modules/design/lib/design/keycapGeometry"
 import { CanvasElementLayer } from "./CanvasElementLayer"
 import { KeycapEditorModal } from "./KeycapEditorModal"
 import { CanvasToolbar } from "./CanvasToolbar"
 import { useViewport } from "@/modules/design/hooks/useViewport"
 import { usePanInteraction } from "@/modules/design/hooks/usePanInteraction"
 import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
+import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 
 // ─── 常量 ──────────────────────────────────────────────
 const ART_PAD = 28                    // 画板内边距
@@ -51,6 +53,7 @@ function ClippedImagesLayer({
   const GAP = KEYCAP_GAP
   // 订阅实时拖拽偏移：只有 ClippedImagesLayer 重渲染，KeycapNode 等不受影响
   const liveDragOverrides = useDesignUIStore((s) => s.liveDragOverrides)
+  const assetMap = useDesignUIStore((s) => s.assetMap)
 
   // useMemo 缓存重叠检测：仅在 canvasElements/keys/unit/artPad 变化时重算
   const clippedImageData = useMemo(() => {
@@ -109,6 +112,18 @@ function ClippedImagesLayer({
                   const py = key.y * unit + GAP / 2
                   const pw = key.w * unit - GAP
                   const ph = key.h * unit - GAP
+                  if (img.clipToTopFace) {
+                    return (
+                      <rect
+                        key={key.keyId}
+                        x={px + KEY_PAD_LEFT}
+                        y={py + KEY_PAD_TOP}
+                        width={pw - KEY_PAD_LEFT - KEY_PAD_RIGHT}
+                        height={ph - KEY_PAD_TOP - KEY_PAD_BOTTOM}
+                        rx={KEY_RADIUS_TOP}
+                      />
+                    )
+                  }
                   return (
                     <rect
                       key={key.keyId}
@@ -131,7 +146,7 @@ function ClippedImagesLayer({
                 }
               >
                 <image
-                  href={img.src}
+                  href={assetMap[img.assetId] ?? ""}
                   x={liveX}
                   y={liveY}
                   width={img.width}
@@ -185,6 +200,8 @@ function KeyboardTemplate({
   const layerKeycapOverrides = useDesignUIStore((s) => s.layerKeycapOverrides)
   const globalKeycapStyle = useDesignUIStore((s) => s.globalKeycapStyle)
   const fontFamily = useDesignUIStore((s) => s.fontFamily)
+  const fontWeight = useDesignUIStore((s) => s.fontWeight)
+  const fontStyle = useDesignUIStore((s) => s.fontStyle)
 
   // 按图层数组逆序渲染：layers[0] 为最顶层，在 SVG 中最后绘制（覆盖下方层）
   const reversedLayers = [...layers].reverse()
@@ -218,6 +235,8 @@ function KeyboardTemplate({
               override={layerOverrides[key.keyId]}
               globalDefaults={globalKeycapStyle}
               fontFamily={fontFamily}
+              fontWeight={fontWeight}
+              fontStyle={fontStyle}
               isLabelEditing={
                 labelEditTarget?.layerId === layer.id &&
                 labelEditTarget?.keyId === key.keyId
@@ -280,8 +299,10 @@ export function DesignCanvas() {
   const deselectAll = useDesignUIStore((s) => s.deselectAll)
   const setKeycapOverride = useDesignUIStore((s) => s.setKeycapOverride)
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
+  const addAsset = useDesignUIStore((s) => s.addAsset)
   const addCanvasElement = useDesignUIStore((s) => s.addCanvasElement)
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
+  const updateCanvasElement = useDesignUIStore((s) => s.updateCanvasElement)
   const undo = useTemporalDesignStore((s) => s.undo)
   const redo = useTemporalDesignStore((s) => s.redo)
   const pastStates = useTemporalDesignStore((s) => s.pastStates)
@@ -312,7 +333,7 @@ export function DesignCanvas() {
   const canUndo = pastStates.length > 0
   const canRedo = futureStates.length > 0
 
-  // Delete/Backspace 键删除选中画布元素（单键帽编辑模式打开时由模态框处理）
+  // Delete/Backspace 键删除、方向键微调选中画布元素（单键帽编辑模式打开时由模态框处理）
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
@@ -325,16 +346,36 @@ export function DesignCanvas() {
           e.preventDefault()
           removeCanvasElement(eid)
         }
+        return
+      }
+
+      const arrowMap = {
+        ArrowLeft:  [-1, 0],
+        ArrowRight: [1, 0],
+        ArrowUp:    [0, -1],
+        ArrowDown:  [0, 1],
+      } as const
+      if (e.key in arrowMap) {
+        const { selectedElementId: eid, canvasElements: els } = useDesignUIStore.getState()
+        if (!eid) return
+        const el = els.find((c) => c.id === eid)
+        if (!el) return
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const [dx, dy] = arrowMap[e.key as keyof typeof arrowMap]
+        updateCanvasElement(eid, { x: Math.round(el.x + dx * step), y: Math.round(el.y + dy * step) })
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [keycapEditTarget, removeCanvasElement])
+  }, [keycapEditTarget, removeCanvasElement, updateCanvasElement])
 
-  // ─── 从文件系统拖入图片 ──────────────────────────────
+  // ─── 从文件系统拖入图片 / SVG ────────────────────────
   const handleDragOver = useCallback((e: React.DragEvent) => {
     const hasImage = Array.from(e.dataTransfer.items).some(
-      (item) => item.kind === "file" && item.type.startsWith("image/"),
+      (item) =>
+        item.kind === "file" &&
+        (item.type.startsWith("image/") || item.type === "image/svg+xml"),
     )
     if (!hasImage) return
     e.preventDefault()
@@ -353,8 +394,8 @@ export function DesignCanvas() {
       const container = containerRef.current
       if (!container) return
 
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        f.type.startsWith("image/"),
+      const files = Array.from(e.dataTransfer.files).filter(
+        (f) => f.type.startsWith("image/") || isSvgFile(f),
       )
       if (files.length === 0) return
 
@@ -364,39 +405,61 @@ export function DesignCanvas() {
       const clientY = e.clientY - rect.top
 
       files.forEach((file) => {
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          const src = ev.target?.result as string
-          if (!src) return
-          const img = new Image()
-          img.onload = () => {
-            // 使用 viewport hook 里的当前 viewport
+        if (isSvgFile(file)) {
+          readSvgFile(file).then((result) => {
+            if (!result) return
+            const assetId = addAsset(result.src)
             const vp = viewportRef.current
-            // 将屏幕坐标转换为画板坐标（减去 viewport 偏移后除以 zoom）
-            const artX = Math.round((clientX - vp.x) / vp.zoom - img.width / 2)
-            const artY = Math.round((clientY - vp.y) / vp.zoom - img.height / 2)
-            const defaultW = Math.min(img.width, artW - ART_PAD * 2)
-            const defaultH = Math.round((defaultW / img.width) * img.height)
-
-            const element: CanvasImageElement = {
+            const defaultW = Math.min(result.w, artW - ART_PAD * 2)
+            const defaultH = Math.round((defaultW / result.w) * result.h)
+            const artX = Math.round((clientX - vp.x) / vp.zoom - defaultW / 2)
+            const artY = Math.round((clientY - vp.y) / vp.zoom - defaultH / 2)
+            addCanvasElement({
               id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
               type: "image",
-              src,
+              assetId,
               x: Math.max(0, artX),
               y: Math.max(0, artY),
               width: defaultW,
               height: defaultH,
               opacity: 1,
               locked: false,
-            }
-            addCanvasElement(element)
+              isSvg: true,
+            })
+          })
+          return
+        }
+
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          const src = ev.target?.result as string
+          if (!src) return
+          const img = new Image()
+          img.onload = () => {
+            const assetId = addAsset(src)
+            const vp = viewportRef.current
+            const artX = Math.round((clientX - vp.x) / vp.zoom - img.width / 2)
+            const artY = Math.round((clientY - vp.y) / vp.zoom - img.height / 2)
+            const defaultW = Math.min(img.width, artW - ART_PAD * 2)
+            const defaultH = Math.round((defaultW / img.width) * img.height)
+            addCanvasElement({
+              id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              type: "image",
+              assetId,
+              x: Math.max(0, artX),
+              y: Math.max(0, artY),
+              width: defaultW,
+              height: defaultH,
+              opacity: 1,
+              locked: false,
+            })
           }
           img.src = src
         }
         reader.readAsDataURL(file)
       })
     },
-    [addCanvasElement, artW],
+    [addAsset, addCanvasElement, artW],
   )
 
   // ─── 视口与交互 ──────────────────────────────────────
@@ -404,14 +467,18 @@ export function DesignCanvas() {
     containerRef,
     artW,
     artH,
+    disabled: !!keycapEditTarget,
   })
   // 用 ref 存储最新 viewport，使 onDrop 等回调能读到最新值而不产生闭包旧值
   const viewportRef = useRef(viewport)
   useEffect(() => {
     viewportRef.current = viewport
   }, [viewport])
+  const isModalOpen = !!keycapEditTarget
+
   const panHandlers = usePanInteraction({
     onPanBy: panBy,
+    disabled: isModalOpen,
   })
   const { isSpacePressed, isPanning, ...panEvents } = panHandlers
 
@@ -434,6 +501,7 @@ export function DesignCanvas() {
     setSelectedKeycapIds,
     clearSelection: deselectAll,
     panHandlers: panEvents,
+    disabled: isModalOpen,
   })
 
   // ─── 预过滤 image 类型（避免每次渲染重新 filter） ──────
@@ -539,6 +607,8 @@ export function DesignCanvas() {
           viewport={viewport}
           artW={artW}
           artH={artH}
+          isSpacePressed={isSpacePressed}
+          isPanning={isPanning}
         />
 
         {/* 拖入图片时的高亮遮罩 */}
@@ -600,7 +670,7 @@ export function DesignCanvas() {
         <Home className="size-3.5" />
       </Link>
 
-      {/* 顶部工具栏：撤销/重做 + 重置 + 导出 */}
+      {/* 顶部工具栏：撤销/重做 + 重置 + 导出 + 导入 */}
       <CanvasToolbar
         canUndo={canUndo}
         canRedo={canRedo}
@@ -608,6 +678,7 @@ export function DesignCanvas() {
         onRedo={redo}
         onReset={() => { resetAll(); clearTemporalHistory() }}
         getExportParams={getExportParams}
+        onAfterImport={clearTemporalHistory}
       />
 
       {/* 单键帽编辑模态框（portal 到容器 div 内，已有 fixed inset-0 覆盖） */}

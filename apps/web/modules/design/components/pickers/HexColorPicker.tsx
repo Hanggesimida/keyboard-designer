@@ -661,6 +661,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
         align="start"
         side="left"
         sideOffset={16}
+        avoidCollisions={false}
       >
         {/* Mode tabs */}
         <div className="mb-3 flex rounded-md bg-muted p-0.5 text-[11px]">

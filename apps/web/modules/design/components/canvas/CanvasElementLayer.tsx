@@ -3,7 +3,7 @@
 import { useCallback } from "react"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import type { Viewport } from "@/modules/design/hooks/useViewport"
-import { ImageElement } from "./ImageElement"
+import { CanvasImageElement } from "./CanvasImageElement"
 
 interface Props {
   /** 当前视口变换（用于根据 zoom 缩放交互控件尺寸） */
@@ -11,9 +11,13 @@ interface Props {
   /** 画板原始宽高（世界坐标） */
   artW: number
   artH: number
+  /** 空格键是否按下（按下时左键拖拽应移动画布而非图片） */
+  isSpacePressed?: boolean
+  /** 是否正在平移画布（决定光标样式） */
+  isPanning?: boolean
 }
 
-export function CanvasElementLayer({ viewport, artW, artH }: Props) {
+export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = false, isPanning = false }: Props) {
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
   const selectedElementId = useDesignUIStore((s) => s.selectedElementId)
   const setSelectedElementId = useDesignUIStore((s) => s.setSelectedElementId)
@@ -85,10 +89,12 @@ export function CanvasElementLayer({ viewport, artW, artH }: Props) {
         if (el.clipToKeycapId && (el.clipToKeycaps ?? true)) return null
         return (
           <div key={el.id} style={{ pointerEvents: "auto" }}>
-            <ImageElement
+            <CanvasImageElement
               element={el}
               isSelected={selectedElementId === el.id}
               zoom={viewport.zoom}
+              isSpacePressed={isSpacePressed}
+              isPanning={isPanning}
               onSelect={() => setSelectedElementId(el.id)}
               onDragMove={handleDragMove}
               onResizeCommit={handleResizeCommit}

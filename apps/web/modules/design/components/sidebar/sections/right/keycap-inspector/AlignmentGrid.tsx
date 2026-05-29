@@ -32,17 +32,21 @@ function AlignmentIcon({ alignH, alignV }: { alignH: AlignH; alignV: AlignV }) {
 interface LabelAlignmentGridProps {
   disabled?: boolean
   onAlign: (alignH: AlignH, alignV: AlignV) => void
+  hideLabel?: boolean
 }
 
 export function LabelAlignmentGrid({
   disabled,
   onAlign,
+  hideLabel,
 }: LabelAlignmentGridProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-[11px] font-normal text-muted-foreground">
-        文字位置
-      </Label>
+      {!hideLabel && (
+        <Label className="text-[11px] font-normal text-muted-foreground">
+          文字位置
+        </Label>
+      )}
       <div
         className="grid grid-cols-3 gap-0.5"
         style={{ width: "fit-content" }}

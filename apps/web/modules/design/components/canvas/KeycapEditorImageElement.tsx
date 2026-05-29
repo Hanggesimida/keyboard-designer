@@ -2,7 +2,8 @@
 
 import { useRef, useState, useEffect, useCallback } from "react"
 import { createPortal } from "react-dom"
-import { clamp } from "@/modules/design/lib/design/keycapGeometry"
+import { type ResizeHandle, computeResizePatch, normalizeAngleDeg } from "./imageElementUtils"
+import { ResetRotationIcon, RestoreAspectIcon, LockAspectIcon } from "./ImageControlIcons"
 
 /** 键帽编辑器内图片视图（坐标相对键帽底座左上角，SVG 单位） */
 export interface KeycapEditorImage {
@@ -19,9 +20,6 @@ export interface KeycapEditorImage {
 // ─── 单键帽模态 viewBox 内边距（与 KeycapEditorModal 保持一致） ──
 export const MODAL_VIEW_INSET = 16
 
-// ─── 缩放句柄类型 ──────────────────────────────────────
-export type ResizeHandle = "se" | "sw" | "ne" | "nw" | "n" | "s" | "e" | "w"
-
 // ─── 每张图片的实时变换预览 ────────────────────────────
 interface LivePatch {
   x?: number
@@ -32,10 +30,12 @@ interface LivePatch {
 }
 
 // ─── 图片控件 HTML 浮层（与 canvas-element-layer 一致，避免 SVG 缩放导致图标发糊） ──
-const CTRL_BTN = 24
-const CTRL_ICON = 14
+const CTRL_BTN = 20
+const CTRL_ICON = 12
 const CTRL_HANDLE = 7
 const CTRL_GAP = 4
+
+export type ClipMode = "none" | "base" | "top"
 
 interface KeycapImageControlOverlayProps {
   left: number
@@ -43,23 +43,39 @@ interface KeycapImageControlOverlayProps {
   width: number
   height: number
   rotation: number
-  clipToKeycap: boolean
+  clipMode: ClipMode
   lockAspect: boolean
   naturalSize: { w: number; h: number } | null
-  onToggleClipToKeycap: () => void
+  onCycleClipMode: () => void
   onToggleLockAspect: () => void
   onRestoreAspect: () => void
   onResetRotation: () => void
+  onCenterToTopFace: () => void
 }
 
 function KeycapImageControlOverlay({
   left, top, width, height, rotation,
-  clipToKeycap,
+  clipMode,
   lockAspect, naturalSize,
-  onToggleClipToKeycap,
+  onCycleClipMode,
   onToggleLockAspect, onRestoreAspect, onResetRotation,
+  onCenterToTopFace,
 }: KeycapImageControlOverlayProps) {
-  const btnTop = -(26 + CTRL_HANDLE / 2)
+  const btnBase: React.CSSProperties = {
+    width: CTRL_BTN,
+    height: CTRL_BTN,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "white",
+    border: "1px solid #3b82f6",
+    borderRadius: 4,
+    cursor: "pointer",
+    padding: 0,
+    color: "#3b82f6",
+    pointerEvents: "auto",
+    flexShrink: 0,
+  }
 
   return (
     <div
@@ -75,198 +91,138 @@ function KeycapImageControlOverlay({
         zIndex: 10,
       }}
     >
-      {rotation !== 0 && (
+      {/* 所有按钮统一放入 flex 横排，居中悬浮于图片上方，不依赖图片宽度 */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "100%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          marginBottom: CTRL_HANDLE / 2 + 2,
+          display: "flex",
+          alignItems: "center",
+          gap: CTRL_GAP,
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {/* 居中到 Top Face */}
         <button
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); onResetRotation() }}
-          title="恢复水平（重置旋转）"
-          style={{
-            position: "absolute",
-            top: btnTop,
-            right: 2 * (CTRL_BTN + CTRL_GAP) - CTRL_HANDLE / 2,
-            width: CTRL_BTN,
-            height: CTRL_BTN,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "white",
-            border: "1px solid #3b82f6",
-            borderRadius: 4,
-            cursor: "pointer",
-            padding: 0,
-            color: "#3b82f6",
-            pointerEvents: "auto",
-          }}
+          onClick={(e) => { e.stopPropagation(); onCenterToTopFace() }}
+          title="居中到 Top Face"
+          style={btnBase}
         >
-          <svg
-            viewBox="0 0 12 12"
-            width={CTRL_ICON}
-            height={CTRL_ICON}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M2 6a4 4 0 1 0 .8-2.4" />
-            <path d="M2 2v2.5h2.5" />
+          <svg viewBox="0 0 12 12" width={CTRL_ICON} height={CTRL_ICON} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6" cy="6" r="1.2" fill="currentColor" stroke="none" />
+            <path d="M6 1.5v2M6 8.5v2M1.5 6h2M8.5 6h2" />
+            <path d="M6 1.5l-.7.7M6 1.5l.7.7M6 10.5l-.7-.7M6 10.5l.7-.7M1.5 6l.7-.7M1.5 6l.7.7M10.5 6l-.7-.7M10.5 6l-.7.7" strokeWidth={0.9} />
           </svg>
         </button>
-      )}
 
-      <button
-        type="button"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onToggleClipToKeycap() }}
-        title={clipToKeycap ? "已裁切到键帽（点击切换为自由显示）" : "自由显示（点击裁切到键帽）"}
-        style={{
-          position: "absolute",
-          top: btnTop,
-          right: (rotation !== 0 ? 3 : 2) * (CTRL_BTN + CTRL_GAP) - CTRL_HANDLE / 2,
-          width: CTRL_BTN,
-          height: CTRL_BTN,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: clipToKeycap ? "#3b82f6" : "white",
-          border: "1px solid #3b82f6",
-          borderRadius: 4,
-          cursor: "pointer",
-          padding: 0,
-          color: clipToKeycap ? "white" : "#3b82f6",
-          pointerEvents: "auto",
-        }}
-      >
-        <svg
-          viewBox="0 0 12 12"
-          width={CTRL_ICON}
-          height={CTRL_ICON}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="1" y="1" width="4.2" height="4.2" rx="0.8" fill={clipToKeycap ? "currentColor" : "none"} opacity={clipToKeycap ? 0.3 : 1} />
-          <rect x="6.8" y="1" width="4.2" height="4.2" rx="0.8" fill={clipToKeycap ? "currentColor" : "none"} opacity={clipToKeycap ? 0.3 : 1} />
-          <rect x="1" y="6.8" width="4.2" height="4.2" rx="0.8" fill={clipToKeycap ? "currentColor" : "none"} opacity={clipToKeycap ? 0.3 : 1} />
-          <rect x="6.8" y="6.8" width="4.2" height="4.2" rx="0.8" fill={clipToKeycap ? "currentColor" : "none"} opacity={clipToKeycap ? 0.3 : 1} />
-        </svg>
-      </button>
+        {/* 分隔线 */}
+        <div style={{ width: 1, height: 14, background: "#3b82f6", opacity: 0.3, flexShrink: 0 }} />
 
-      {naturalSize && (
+        {/* 裁切模式循环 */}
         <button
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); onRestoreAspect() }}
-          title="恢复原始比例"
+          onClick={(e) => { e.stopPropagation(); onCycleClipMode() }}
+          title={
+            clipMode === "none" ? "自由显示（点击裁切到键帽底座）" :
+            clipMode === "base" ? "已裁切到键帽底座（点击裁切到顶面）" :
+            "已裁切到键帽顶面（点击切换为自由显示）"
+          }
           style={{
-            position: "absolute",
-            top: btnTop,
-            right: CTRL_BTN + CTRL_GAP - CTRL_HANDLE / 2,
-            width: CTRL_BTN,
-            height: CTRL_BTN,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "white",
-            border: "1px solid #3b82f6",
-            borderRadius: 4,
-            cursor: "pointer",
-            padding: 0,
-            color: "#3b82f6",
-            pointerEvents: "auto",
+            ...btnBase,
+            background: clipMode !== "none" ? "#3b82f6" : "white",
+            color: clipMode !== "none" ? "white" : "#3b82f6",
           }}
         >
-          <svg
-            viewBox="0 0 12 12"
-            width={CTRL_ICON}
-            height={CTRL_ICON}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M1 4.5V1h3.5" />
-            <path d="M1 1l3 3" />
-            <path d="M11 7.5V11H7.5" />
-            <path d="M11 11l-3-3" />
-          </svg>
-        </button>
-      )}
-
-      <button
-        type="button"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onToggleLockAspect() }}
-        title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
-        style={{
-          position: "absolute",
-          top: btnTop,
-          right: -CTRL_HANDLE / 2,
-          width: CTRL_BTN,
-          height: CTRL_BTN,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: lockAspect ? "#3b82f6" : "white",
-          border: "1px solid #3b82f6",
-          borderRadius: 4,
-          cursor: "pointer",
-          padding: 0,
-          color: lockAspect ? "white" : "#3b82f6",
-          pointerEvents: "auto",
-        }}
-      >
-        <svg
-          viewBox="0 0 12 12"
-          width={CTRL_ICON}
-          height={CTRL_ICON}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {lockAspect ? (
-            <>
-              <rect x="2" y="5.5" width="8" height="5.5" rx="1" fill="currentColor" stroke="none" opacity={0.25} />
-              <rect x="2" y="5.5" width="8" height="5.5" rx="1" />
-              <path d="M4 5.5V3.5a2 2 0 0 1 4 0v2" />
-            </>
+          {clipMode === "top" ? (
+            <svg viewBox="0 0 12 12" width={CTRL_ICON} height={CTRL_ICON} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1" y="1" width="10" height="10" rx="1.2" opacity={0.25} fill="currentColor" />
+              <rect x="1" y="1" width="10" height="10" rx="1.2" />
+              <rect x="3" y="3" width="6" height="6" rx="0.8" fill="currentColor" opacity={0.9} />
+            </svg>
           ) : (
-            <>
-              <rect x="2" y="5.5" width="8" height="5.5" rx="1" fill="currentColor" stroke="none" opacity={0.15} />
-              <rect x="2" y="5.5" width="8" height="5.5" rx="1" />
-              <path d="M4 5.5V3.5a2 2 0 0 1 4 0" />
-            </>
+            <svg viewBox="0 0 12 12" width={CTRL_ICON} height={CTRL_ICON} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1"   y="1"   width="4.2" height="4.2" rx="0.8" fill={clipMode === "base" ? "currentColor" : "none"} opacity={clipMode === "base" ? 0.3 : 1} />
+              <rect x="6.8" y="1"   width="4.2" height="4.2" rx="0.8" fill={clipMode === "base" ? "currentColor" : "none"} opacity={clipMode === "base" ? 0.3 : 1} />
+              <rect x="1"   y="6.8" width="4.2" height="4.2" rx="0.8" fill={clipMode === "base" ? "currentColor" : "none"} opacity={clipMode === "base" ? 0.3 : 1} />
+              <rect x="6.8" y="6.8" width="4.2" height="4.2" rx="0.8" fill={clipMode === "base" ? "currentColor" : "none"} opacity={clipMode === "base" ? 0.3 : 1} />
+            </svg>
           )}
-        </svg>
-      </button>
+        </button>
+
+        {/* 重置旋转（仅旋转不为 0 时显示） */}
+        {rotation !== 0 && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onResetRotation() }}
+            title="恢复水平（重置旋转）"
+            style={btnBase}
+          >
+            <ResetRotationIcon size={CTRL_ICON} />
+          </button>
+        )}
+
+        {/* 恢复原始比例（有 naturalSize 时显示） */}
+        {naturalSize && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onRestoreAspect() }}
+            title="恢复原始比例"
+            style={btnBase}
+          >
+            <RestoreAspectIcon size={CTRL_ICON} />
+          </button>
+        )}
+
+        {/* 锁定宽高比 */}
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onToggleLockAspect() }}
+          title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
+          style={{
+            ...btnBase,
+            background: lockAspect ? "#3b82f6" : "white",
+            color: lockAspect ? "white" : "#3b82f6",
+          }}
+        >
+          <LockAspectIcon size={CTRL_ICON} locked={lockAspect} />
+        </button>
+      </div>
     </div>
   )
 }
 
 // ─── 单张图片的变换控件（SVG + HTML 浮层） ─────────────
-export interface SvgImageElementProps {
+export interface KeycapEditorImageElementProps {
   img: KeycapEditorImage
-  clipToKeycap: boolean
+  clipMode: ClipMode
   isSelected: boolean
   /** modalScale：SVG 显示比例，用于换算鼠标偏移 */
   scale: number
+  /** 底座轮廓的 clipPath id */
   clipId: string
+  /** 顶面轮廓的 clipPath id */
+  topFaceClipId: string
   svgRef: React.RefObject<SVGSVGElement | null>
   overlayContainerRef: React.RefObject<HTMLDivElement | null>
   onSelect: () => void
-  onToggleClipToKeycap: () => void
+  onCycleClipMode: () => void
+  onCenterToTopFace: () => void
   onCommit: (id: string, patch: Partial<Omit<KeycapEditorImage, "id">>) => void
 }
 
-export function SvgImageElement({
-  img, clipToKeycap, isSelected, scale, clipId, svgRef, overlayContainerRef, onSelect, onToggleClipToKeycap, onCommit,
-}: SvgImageElementProps) {
+export function KeycapEditorImageElement({
+  img, clipMode, isSelected, scale, clipId, topFaceClipId, svgRef, overlayContainerRef, onSelect, onCycleClipMode, onCenterToTopFace, onCommit,
+}: KeycapEditorImageElementProps) {
   const [lockAspect, setLockAspect] = useState(true)
   const lockAspectRef = useRef(lockAspect)
   lockAspectRef.current = lockAspect
@@ -274,9 +230,40 @@ export function SvgImageElement({
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
 
   useEffect(() => {
+    const src = img.src
+    // SVG data URL：从 base64 解码后解析 viewBox/width/height，避免 naturalWidth=0 的问题
+    if (src.startsWith("data:image/svg+xml")) {
+      try {
+        const base64 = src.split(",")[1]
+        const svgText = base64
+          ? decodeURIComponent(escape(atob(base64)))
+          : decodeURIComponent(src.split(",")[1] ?? "")
+        const viewBoxMatch = svgText.match(
+          /viewBox\s*=\s*["'][\s,]*[\d.+-]+[\s,]+[\d.+-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/,
+        )
+        if (viewBoxMatch?.[1] && viewBoxMatch?.[2]) {
+          const w = parseFloat(viewBoxMatch[1])
+          const h = parseFloat(viewBoxMatch[2])
+          if (w > 0 && h > 0) { setNaturalSize({ w, h }); return }
+        }
+        const wMatch = svgText.match(/<svg[^>]*\s+width\s*=\s*["']([\d.]+)/)
+        const hMatch = svgText.match(/<svg[^>]*\s+height\s*=\s*["']([\d.]+)/)
+        if (wMatch?.[1] && hMatch?.[1]) {
+          const w = parseFloat(wMatch[1])
+          const h = parseFloat(hMatch[1])
+          if (w > 0 && h > 0) { setNaturalSize({ w, h }); return }
+        }
+      } catch {
+        // 解析失败则 fallback 到 Image 方式
+      }
+    }
     const domImg = new window.Image()
-    domImg.onload = () => setNaturalSize({ w: domImg.naturalWidth, h: domImg.naturalHeight })
-    domImg.src = img.src
+    domImg.onload = () => {
+      if (domImg.naturalWidth > 0 && domImg.naturalHeight > 0) {
+        setNaturalSize({ w: domImg.naturalWidth, h: domImg.naturalHeight })
+      }
+    }
+    domImg.src = src
   }, [img.src])
 
   // 实时预览（null = 无交互进行中）
@@ -346,33 +333,10 @@ export function SvgImageElement({
       const la = lockAspectRef
 
       function compute(ev: MouseEvent): LivePatch {
-        let dx = (ev.clientX - startMx) / sc
-        let dy = (ev.clientY - startMy) / sc
-        const isCorner = ["se", "sw", "ne", "nw"].includes(handle)
-        if (isCorner && la.current) {
-          const aspect = startW / startH
-          const dw = handle === "sw" || handle === "nw" ? -dx : dx
-          const dh = handle === "ne" || handle === "nw" ? -dy : dy
-          let nDw: number, nDh: number
-          if (Math.abs(dw) >= Math.abs(dh * aspect)) {
-            nDw = dw; nDh = dw / aspect
-          } else {
-            nDh = dh; nDw = dh * aspect
-          }
-          dx = handle === "sw" || handle === "nw" ? -nDw : nDw
-          dy = handle === "ne" || handle === "nw" ? -nDh : nDh
-        }
-        const MIN = 8
-        let nx = startX, ny = startY, nw = startW, nh = startH
-        if (handle === "se") { nw = Math.max(MIN, startW + dx); nh = Math.max(MIN, startH + dy) }
-        else if (handle === "sw") { nw = Math.max(MIN, startW - dx); nx = startX + startW - nw; nh = Math.max(MIN, startH + dy) }
-        else if (handle === "ne") { nw = Math.max(MIN, startW + dx); nh = Math.max(MIN, startH - dy); ny = startY + startH - nh }
-        else if (handle === "nw") { nw = Math.max(MIN, startW - dx); nx = startX + startW - nw; nh = Math.max(MIN, startH - dy); ny = startY + startH - nh }
-        else if (handle === "s") { nh = Math.max(MIN, startH + dy) }
-        else if (handle === "n") { nh = Math.max(MIN, startH - dy); ny = startY + startH - nh }
-        else if (handle === "e") { nw = Math.max(MIN, startW + dx) }
-        else if (handle === "w") { nw = Math.max(MIN, startW - dx); nx = startX + startW - nw }
-        return { x: nx, y: ny, width: nw, height: nh }
+        const dx = (ev.clientX - startMx) / sc
+        const dy = (ev.clientY - startMy) / sc
+        const { x, y, w, h } = computeResizePatch(handle, dx, dy, startX, startY, startW, startH, la.current, 8)
+        return { x, y, width: w, height: h }
       }
 
       function onMove(ev: MouseEvent) { setLive(compute(ev)) }
@@ -407,7 +371,7 @@ export function SvgImageElement({
       function computeRot(ev: MouseEvent) {
         const angle = Math.atan2(ev.clientY - screenCy, ev.clientX - screenCx)
         const delta = (angle - startAngle) * (180 / Math.PI)
-        return Math.round(((startRot + delta) % 360 + 360) % 360)
+        return normalizeAngleDeg(startRot, delta)
       }
 
       function onMove(ev: MouseEvent) { setLive({ rotation: computeRot(ev) }) }
@@ -432,10 +396,10 @@ export function SvgImageElement({
             width={dispW * scale}
             height={dispH * scale}
             rotation={dispRot}
-            clipToKeycap={clipToKeycap}
+            clipMode={clipMode}
             lockAspect={lockAspect}
             naturalSize={naturalSize}
-            onToggleClipToKeycap={onToggleClipToKeycap}
+            onCycleClipMode={onCycleClipMode}
             onToggleLockAspect={() => setLockAspect((v) => !v)}
             onRestoreAspect={() => {
               if (!naturalSize) return
@@ -443,6 +407,7 @@ export function SvgImageElement({
               onCommit(img.id, { width: dispW, height: newH })
             }}
             onResetRotation={() => onCommit(img.id, { rotation: 0 })}
+            onCenterToTopFace={onCenterToTopFace}
           />,
           overlayContainerRef.current,
         )
@@ -467,9 +432,9 @@ export function SvgImageElement({
   return (
     <>
       <g>
-      {/* 图片层：可切换是否裁切到键帽 */}
-      {clipToKeycap ? (
-      <g clipPath={`url(#${clipId})`}>
+      {/* 图片层：none=自由 / base=底座裁切 / top=顶面裁切 */}
+      {clipMode !== "none" ? (
+      <g clipPath={`url(#${clipMode === "top" ? topFaceClipId : clipId})`}>
       <g transform={`rotate(${dispRot}, ${imgCx}, ${imgCy})`}>
         <image
           href={img.src}
@@ -511,17 +476,15 @@ export function SvgImageElement({
 
         {isSelected && (
           <>
-            {/* ── 旋转手柄（顶边中心上方） ── */}
-            {/* 连接线 */}
+            {/* ── 旋转手柄（底边中心下方） ── */}
             <line
-              x1={imgCx} y1={absY - HS / 2}
-              x2={imgCx} y2={absY - HS / 2 - RL}
+              x1={imgCx} y1={absY + dispH + HS / 2}
+              x2={imgCx} y2={absY + dispH + HS / 2 + RL}
               stroke="#3b82f6" strokeWidth={SW}
               style={{ pointerEvents: "none" }}
             />
-            {/* 旋转圆圈 */}
             <circle
-              cx={imgCx} cy={absY - HS / 2 - RL - RR}
+              cx={imgCx} cy={absY + dispH + HS / 2 + RL + RR}
               r={RR}
               fill="white"
               stroke="#3b82f6" strokeWidth={SW}

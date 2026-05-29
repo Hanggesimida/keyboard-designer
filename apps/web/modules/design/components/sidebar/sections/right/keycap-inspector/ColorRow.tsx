@@ -11,23 +11,26 @@ import { isGradientValue } from "@/modules/design/lib/design/gradientUtils"
 interface ColorRowProps {
   label: string
   value: string
-  fallback: string
+  fallback?: string
   onChange: (next: string) => void
   disabled?: boolean
   /** 值存在混合情况（多选时部分键帽颜色不同） */
   isMixed?: boolean
   /** 渲染在颜色输入框右侧的额外操作节点 */
   action?: React.ReactNode
+  /** 隐藏组件内部的 label，由外部自行渲染 */
+  hideLabel?: boolean
 }
 
 export function ColorRow({
   label,
   value,
-  fallback,
+  fallback = "",
   onChange,
   disabled,
   isMixed,
   action,
+  hideLabel,
 }: ColorRowProps) {
   const display = value || fallback
   const [hexInput, setHexInput] = useState(display)
@@ -52,12 +55,14 @@ export function ColorRow({
 
   return (
     <div className={cn("flex flex-col gap-1.5", disabled && "opacity-50")}>
-      <Label className="text-[11px] font-normal text-muted-foreground">
-        {label}
-        {isMixed && (
-          <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
-        )}
-      </Label>
+      {!hideLabel && (
+        <Label className="text-[11px] font-normal text-muted-foreground">
+          {label}
+          {isMixed && (
+            <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+          )}
+        </Label>
+      )}
       <div className="flex items-center gap-2">
         <HexColorPicker value={display} onChange={handlePickerChange} />
         <Input

@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useMemo } from "react"
-import { Eye, EyeOff, Link2, Link2Off } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Button } from "@workspace/ui/components/button"
@@ -12,11 +12,16 @@ import { isGradientValue } from "@/modules/design/lib/design/gradientUtils"
 import {
   getMixedLetterSpacing,
   getMixedLineHeightRatio,
+  getMixedFontWeight,
+  getMixedFontStyle,
   DEFAULT_LETTER_SPACING,
   DEFAULT_LINE_HEIGHT_RATIO,
 } from "@/modules/design/lib/keycap-inspector/mixed"
-import type { KeycapOverride } from "@/modules/design/store/designUiStore"
+import { useDesignUIStore, type KeycapOverride } from "@/modules/design/store/designUiStore"
+import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
 import { LabelAlignmentGrid } from "./AlignmentGrid"
+import { BoldItalicToggle } from "./BoldItalicToggle"
+import { ColorLinkDivider } from "./ColorLinkDivider"
 import { ColorRow } from "./ColorRow"
 import { FontFamilySelect } from "./FontFamilySelect"
 
@@ -40,6 +45,9 @@ export function MultiKeycapEditor({
     disabled,
   })
 
+  const globalFontWeight = useDesignUIStore((s) => s.fontWeight)
+  const globalFontStyle = useDesignUIStore((s) => s.fontStyle)
+
   const [keycapColorLinked, setKeycapColorLinked] = useState(false)
 
   const letterSpacing = useMemo(
@@ -50,6 +58,29 @@ export function MultiKeycapEditor({
     () => getMixedLineHeightRatio(selectedIds, layerOverrides),
     [selectedIds, layerOverrides],
   )
+  const fontWeightMixed = useMemo(
+    () => getMixedFontWeight(selectedIds, layerOverrides, globalFontWeight),
+    [selectedIds, layerOverrides, globalFontWeight],
+  )
+  const fontStyleMixed = useMemo(
+    () => getMixedFontStyle(selectedIds, layerOverrides, globalFontStyle),
+    [selectedIds, layerOverrides, globalFontStyle],
+  )
+
+  const isBold = !fontWeightMixed.isMixed && fontWeightMixed.value === 700
+  const isItalic = !fontStyleMixed.isMixed && fontStyleMixed.value === "italic"
+  const fontCaps = getFontCapabilities(e.fontFamily.value)
+
+  const toggleBold = () => {
+    if (disabled || !fontCaps.bold) return
+    const next = isBold ? 400 : 700
+    e.applyPatch({ fontWeight: next === globalFontWeight ? undefined : next })
+  }
+  const toggleItalic = () => {
+    if (disabled || !fontCaps.italic) return
+    const next = isItalic ? "normal" : "italic"
+    e.applyPatch({ fontStyle: next === globalFontStyle ? undefined : next })
+  }
 
   const allBordersHidden =
     selectedIds.length > 0 &&
@@ -72,6 +103,17 @@ export function MultiKeycapEditor({
         open={e.fontPopoverOpen}
         onOpenChange={e.setFontPopoverOpen}
         onPick={e.handleFontFamilyPick}
+      />
+
+      <BoldItalicToggle
+        isBold={isBold}
+        isItalic={isItalic}
+        fontCaps={fontCaps}
+        onToggleBold={toggleBold}
+        onToggleItalic={toggleItalic}
+        disabled={disabled}
+        boldMixed={fontWeightMixed.isMixed}
+        italicMixed={fontStyleMixed.isMixed}
       />
 
       <div className="flex flex-col gap-1.5">
@@ -173,25 +215,10 @@ export function MultiKeycapEditor({
           }
         }}
       />
-      <div className="flex items-center gap-1.5 -my-0.5">
-        <div className="h-px flex-1 bg-border/30" />
-        <button
-          type="button"
-          className={cn(
-            "flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground",
-            keycapColorLinked && "text-primary/70 hover:text-primary",
-          )}
-          title={keycapColorLinked ? "解除顶面与底色联动" : "联动顶面与底色"}
-          onClick={() => setKeycapColorLinked((v) => !v)}
-        >
-          {keycapColorLinked ? (
-            <Link2 className="size-3" />
-          ) : (
-            <Link2Off className="size-3" />
-          )}
-        </button>
-        <div className="h-px flex-1 bg-border/30" />
-      </div>
+      <ColorLinkDivider
+        linked={keycapColorLinked}
+        onToggle={() => setKeycapColorLinked((v) => !v)}
+      />
       <ColorRow
         label="键帽顶面"
         value={e.topColor.value}

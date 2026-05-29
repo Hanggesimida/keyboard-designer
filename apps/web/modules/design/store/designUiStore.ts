@@ -16,8 +16,11 @@ export type CanvasElementType = "image"
 export interface CanvasImageElement {
   id: string
   type: "image"
-  /** data URL 或 object URL */
-  src: string
+  /**
+   * 素材库中的资源 ID，对应 assetMap 中的键。
+   * 将图片内容从元素元数据中解耦，使 assetMap 可独立于撤销历史存在。
+   */
+  assetId: string
   /** 相对画板左上角的 X 坐标（px） */
   x: number
   /** 相对画板左上角的 Y 坐标（px） */
@@ -42,6 +45,16 @@ export interface CanvasImageElement {
    * 可在图层面板中自由调整与其他画布图片的叠放顺序。
    */
   clipToKeycapId?: string
+  /**
+   * 是否将裁剪区域收窄到键帽顶面（top face）而非底座。
+   * 仅在 clipToKeycaps 或 clipToKeycapId 生效时有意义。
+   */
+  clipToTopFace?: boolean
+  /**
+   * 是否为矢量 SVG 图形。
+   * true 时 assetMap 中对应值为 SVG base64 data URL，渲染时不会光栅化。
+   */
+  isSvg?: boolean
 }
 
 export type CanvasElement = CanvasImageElement
@@ -59,6 +72,10 @@ export interface KeycapOverride {
    */
   borderHidden?: boolean
   fontFamily?: string
+  /** 字重：400 = 常规，700 = 加粗（默认跟随全局） */
+  fontWeight?: number
+  /** 字形：'normal' = 正常，'italic' = 斜体（默认跟随全局） */
+  fontStyle?: string
   /** 字间距（SVG letter-spacing，单位 px，默认 0） */
   letterSpacing?: number
   /** 行距倍率（相对字号，默认 1.2） */
@@ -100,6 +117,10 @@ interface DesignUIState {
   activeLayerId: string | null
   artboardBackground: string
   fontFamily: string
+  /** 全局字重：400 = 常规，700 = 加粗 */
+  fontWeight: number
+  /** 全局字形：'normal' = 正常，'italic' = 斜体 */
+  fontStyle: string
   globalKeycapStyle: GlobalKeycapStyle
   /** 当前多选的键帽 ID 列表（空数组表示未选中任何键帽） */
   selectedKeycapIds: string[]
@@ -116,6 +137,13 @@ interface DesignUIState {
    * key 为画布元素 id，value 为相对提交坐标的 dx/dy（画板坐标，px）。
    */
   liveDragOverrides: Record<string, { dx: number; dy: number }>
+  /**
+   * 素材库：assetId → base64 data URL。
+   * 图片内容存储在此处，CanvasImageElement 只持有 assetId 引用。
+   * 此字段不参与撤销历史（在 partialize 中排除），避免大型 base64 字符串
+   * 随每次状态快照复制，也支持相同图片的跨元素去重。
+   */
+  assetMap: Record<string, string>
 }
 
 interface DesignUIActions {
@@ -138,6 +166,8 @@ interface DesignUIActions {
   renameLayer: (id: string, name: string) => void
   setArtboardBackground: (color: string) => void
   setFontFamily: (font: string) => void
+  setFontWeight: (weight: number) => void
+  setFontStyle: (style: string) => void
   setGlobalKeycapStyle: (patch: Partial<GlobalKeycapStyle>) => void
   /** 将全局键帽样式与默认字体恢复为初始值（不影响单键覆盖与其它设计数据） */
   resetGlobalKeycapStyleSettings: () => void
@@ -151,6 +181,12 @@ interface DesignUIActions {
   clearKeycapOverride: (layerId: string, keycapId: string) => void
   /** 批量清除指定图层多个键帽的覆盖 */
   clearMultipleKeycapOverrides: (layerId: string, keycapIds: string[]) => void
+  /**
+   * 注册素材并返回 assetId。
+   * 若 assetMap 中已存在相同 src，则复用现有 assetId（去重）；否则新建条目。
+   * assetMap 本身不参与撤销历史，素材数据在会话期间保持稳定。
+   */
+  addAsset: (src: string) => string
   /** 添加画布元素 */
   addCanvasElement: (element: CanvasElement) => void
   /** 更新画布元素的部分属性 */
@@ -191,8 +227,11 @@ const initialLayers: Layer[] = [
   { id: "layer-default-keycap", name: "键帽层", visible: true, locked: false, opacity: 1 },
 ]
 
-/** 只追踪设计数据变更，排除纯 UI 选择态与实时预览态 */
-export type UndoableDesignState = Omit<DesignUIState, "selectedKeycapIds" | "activeLayerId" | "selectedElementId" | "keycapEditTarget" | "liveDragOverrides">
+/**
+ * 只追踪设计数据变更，排除纯 UI 选择态、实时预览态以及素材库（assetMap）。
+ * assetMap 含大型 base64 字符串，不应随状态快照复制；素材去重也依赖其跨历史持久化。
+ */
+export type UndoableDesignState = Omit<DesignUIState, "selectedKeycapIds" | "activeLayerId" | "selectedElementId" | "keycapEditTarget" | "liveDragOverrides" | "assetMap">
 
 function applyOverridePatch(
   prev: KeycapOverride,
@@ -218,12 +257,14 @@ function applyOverridePatch(
 
 export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   temporal(
-  (set) => ({
+  (set, get) => ({
     templateId: "ansi-104",
     layers: initialLayers,
     activeLayerId: null,
     artboardBackground: "#2c2c2c",
     fontFamily: "var(--font-ibm-plex-mono)",
+    fontWeight: 400,
+    fontStyle: "normal",
     globalKeycapStyle: initialGlobalKeycapStyle,
     selectedKeycapIds: [],
     layerKeycapOverrides: {},
@@ -231,6 +272,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     selectedElementId: null,
     keycapEditTarget: null,
     liveDragOverrides: {},
+    assetMap: {},
 
     resetAll: () =>
       set({
@@ -238,11 +280,14 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         layerKeycapOverrides: {},
         artboardBackground: "#2c2c2c",
         fontFamily: "var(--font-ibm-plex-mono)",
+        fontWeight: 400,
+        fontStyle: "normal",
         canvasElements: [],
         selectedKeycapIds: [],
         selectedElementId: null,
         activeLayerId: null,
         keycapEditTarget: null,
+        assetMap: {},
       }),
 
     setTemplateId: (id) => set({ templateId: id, selectedKeycapIds: [] }),
@@ -330,6 +375,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
 
     setArtboardBackground: (color) => set({ artboardBackground: color }),
     setFontFamily: (font) => set({ fontFamily: font }),
+    setFontWeight: (weight) => set({ fontWeight: weight }),
+    setFontStyle: (style) => set({ fontStyle: style }),
 
     setGlobalKeycapStyle: (patch) =>
       set((s) => ({
@@ -340,6 +387,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
       set({
         globalKeycapStyle: initialGlobalKeycapStyle,
         fontFamily: "var(--font-ibm-plex-mono)",
+        fontWeight: 400,
+        fontStyle: "normal",
       }),
 
     setKeycapOverride: (layerId, keycapId, patch) =>
@@ -433,6 +482,16 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         }
       }),
 
+    addAsset: (src) => {
+      const { assetMap } = get()
+      for (const [id, existingSrc] of Object.entries(assetMap)) {
+        if (existingSrc === src) return id
+      }
+      const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      set((s) => ({ assetMap: { ...s.assetMap, [assetId]: src } }))
+      return assetId
+    },
+
     addCanvasElement: (element) =>
       set((s) => ({
         canvasElements: [...s.canvasElements, element],
@@ -502,7 +561,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   {
     partialize: (state) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { selectedKeycapIds, activeLayerId, selectedElementId, keycapEditTarget, liveDragOverrides, ...undoable } = state
+      const { selectedKeycapIds, activeLayerId, selectedElementId, keycapEditTarget, liveDragOverrides, assetMap, ...undoable } = state
       return undoable as UndoableDesignState
     },
     /**

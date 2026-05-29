@@ -1,22 +1,23 @@
 "use client"
 
 import { useRef, useState, useCallback, useMemo } from "react"
-import type { CanvasImageElement } from "@/modules/design/store/designUiStore"
+import type { CanvasImageElement as CanvasImageElementData } from "@/modules/design/store/designUiStore"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
+import { type ResizeCorner, type ResizeEdge, type ResizeHandle, computeResizePatch, normalizeAngleDeg } from "./imageElementUtils"
+import { ResetRotationIcon, RestoreAspectIcon, LockAspectIcon } from "./ImageControlIcons"
 
 const _ART_PAD = 28
 
-// ─── 缩放句柄类型 ──────────────────────────────────────
-export type ResizeCorner = "se" | "sw" | "ne" | "nw"
-export type ResizeEdge = "n" | "s" | "e" | "w"
-export type ResizeHandle = ResizeCorner | ResizeEdge
-
-export interface ImageElementProps {
-  element: CanvasImageElement
+export interface CanvasImageElementProps {
+  element: CanvasImageElementData
   isSelected: boolean
   zoom: number
+  /** 空格键是否按下（按下时左键拖拽应移动画布而非图片） */
+  isSpacePressed?: boolean
+  /** 是否正在平移画布（决定光标样式） */
+  isPanning?: boolean
   onSelect: () => void
   onDragMove: (id: string, dx: number, dy: number) => void
   /** 缩放结束时提交绝对坐标和尺寸（替代逐帧 delta） */
@@ -26,18 +27,21 @@ export interface ImageElementProps {
   onToggleClipToKeycaps: (id: string) => void
 }
 
-export function ImageElement({
+export function CanvasImageElement({
   element,
   isSelected,
   zoom,
+  isSpacePressed = false,
+  isPanning = false,
   onSelect,
   onDragMove,
   onResizeCommit,
   onRestoreAspect,
   onRotate,
   onToggleClipToKeycaps,
-}: ImageElementProps) {
+}: CanvasImageElementProps) {
   const templateId = useDesignUIStore((s) => s.templateId)
+  const src = useDesignUIStore((s) => s.assetMap[element.assetId] ?? "")
   const keycapBoundsMap = useMemo(() => {
     const layout = getLayoutData(templateId)
     const unit = layout.baseUnit
@@ -111,9 +115,14 @@ export function ImageElement({
 
   // ─── 拖拽移动 ──────────────────────────────────────────
   const dragStart = useRef<{ mx: number; my: number } | null>(null)
+  // 用 ref 存储最新的 isSpacePressed，供 callback 读取而不产生 stale closure
+  const isSpacePressedRef = useRef(isSpacePressed)
+  isSpacePressedRef.current = isSpacePressed
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      // 中键或空格+左键：交给画布平移处理，不拦截
+      if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) return
       if (element.locked) return
       e.stopPropagation()
       onSelect()
@@ -129,7 +138,6 @@ export function ImageElement({
       if (!dragStart.current) return
       const dx = (e.clientX - dragStart.current.mx) / zoomRef.current
       const dy = (e.clientY - dragStart.current.my) / zoomRef.current
-      // 用本地 state 预览，不写 store
       liveOffsetRef.current = { dx, dy }
       setLiveOffset({ dx, dy })
       // clip-to-keycaps 模式：同步写入 store 的实时偏移，让 SVG 层跟手
@@ -137,7 +145,6 @@ export function ImageElement({
         useDesignUIStore.getState().setLiveDragOverride(elementIdRef.current, dx, dy)
       }
     },
-    // setLiveOffset 是 useState setter，React 保证引用稳定
     [setLiveOffset],
   )
 
@@ -179,36 +186,9 @@ export function ImageElement({
     (e: React.PointerEvent) => {
       if (!resizeDragStart.current) return
       const { mx, my, handle, startX, startY, startW, startH } = resizeDragStart.current
-      let dx = (e.clientX - mx) / zoomRef.current
-      let dy = (e.clientY - my) / zoomRef.current
-
-      const isCorner = handle === "se" || handle === "sw" || handle === "ne" || handle === "nw"
-      if (isCorner && lockAspectRef.current) {
-        const aspect = startW / startH
-        const dw = handle === "sw" || handle === "nw" ? -dx : dx
-        const dh = handle === "ne" || handle === "nw" ? -dy : dy
-        let newDw: number, newDh: number
-        if (Math.abs(dw) >= Math.abs(dh * aspect)) {
-          newDw = dw; newDh = dw / aspect
-        } else {
-          newDh = dh; newDw = dh * aspect
-        }
-        dx = handle === "sw" || handle === "nw" ? -newDw : newDw
-        dy = handle === "ne" || handle === "nw" ? -newDh : newDh
-      }
-
-      const MIN = 20
-      let nx = startX, ny = startY, nw = startW, nh = startH
-      if (handle === "se") { nw = Math.max(MIN, startW + dx); nh = Math.max(MIN, startH + dy) }
-      else if (handle === "sw") { nw = Math.max(MIN, startW - dx); nx = startX + startW - nw; nh = Math.max(MIN, startH + dy) }
-      else if (handle === "ne") { nw = Math.max(MIN, startW + dx); nh = Math.max(MIN, startH - dy); ny = startY + startH - nh }
-      else if (handle === "nw") { nw = Math.max(MIN, startW - dx); nx = startX + startW - nw; nh = Math.max(MIN, startH - dy); ny = startY + startH - nh }
-      else if (handle === "s") { nh = Math.max(MIN, startH + dy) }
-      else if (handle === "n") { nh = Math.max(MIN, startH - dy); ny = startY + startH - nh }
-      else if (handle === "e") { nw = Math.max(MIN, startW + dx) }
-      else if (handle === "w") { nw = Math.max(MIN, startW - dx); nx = startX + startW - nw }
-
-      const patch = { x: nx, y: ny, w: nw, h: nh }
+      const dx = (e.clientX - mx) / zoomRef.current
+      const dy = (e.clientY - my) / zoomRef.current
+      const patch = computeResizePatch(handle, dx, dy, startX, startY, startW, startH, lockAspectRef.current, 20)
       liveResizeRef.current = patch
       setLiveResize(patch)
     },
@@ -258,7 +238,7 @@ export function ImageElement({
       const { centerX, centerY, startAngle, startRotation } = rotateDragStart.current
       const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX)
       const deltaDeg = (currentAngle - startAngle) * (180 / Math.PI)
-      const newRotation = Math.round(((startRotation + deltaDeg) % 360 + 360) % 360)
+      const newRotation = normalizeAngleDeg(startRotation, deltaDeg)
       liveRotationRef.current = newRotation
       setLiveRotation(newRotation)
     },
@@ -280,6 +260,7 @@ export function ImageElement({
   const EDGE_LONG = HANDLE_SIZE * 2
   const ROTATE_LINE = 22 / zoom
   const ROTATE_R = 5 / zoom
+  const ICON_SIZE = 14 / zoom
 
   return (
     <div
@@ -292,7 +273,7 @@ export function ImageElement({
         width: dispW,
         height: dispH,
         opacity: isClippedToAllKeycaps ? 1 : element.opacity,
-        cursor: element.locked ? "default" : "move",
+        cursor: isPanning ? "grabbing" : isSpacePressed ? "grab" : element.locked ? "default" : "move",
         userSelect: "none",
         touchAction: "none",
         transform: hasKeycapClip ? undefined : `rotate(${dispRot}deg)`,
@@ -301,14 +282,18 @@ export function ImageElement({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onMouseDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => {
+        // 中键或空格+左键：不拦截，让画布平移处理
+        if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) return
+        e.stopPropagation()
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* 图片渲染 */}
       {!isClippedToAllKeycaps ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          src={element.src}
+          src={src}
           alt=""
           draggable={false}
           onLoad={(e) => {
@@ -350,155 +335,130 @@ export function ImageElement({
             }}
           />
 
-          {/* Clip to Keycaps 切换按钮 */}
-          {!hasKeycapClip && (
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onToggleClipToKeycaps(element.id) }}
-              title={isClippedToAllKeycaps ? "已裁剪到键帽（点击切换为自由浮层）" : "自由浮层（点击裁剪到键帽形状）"}
-              style={{
-                position: "absolute",
-                top: -(26 / zoom + HANDLE_SIZE / 2),
-                right: 3 * (24 / zoom + 4 / zoom) - HANDLE_SIZE / 2,
-                width: 24 / zoom,
-                height: 24 / zoom,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: isClippedToAllKeycaps ? "#3b82f6" : "white",
-                border: `${1 / zoom}px solid #3b82f6`,
-                borderRadius: 4 / zoom,
-                cursor: "pointer",
-                padding: 0,
-                color: isClippedToAllKeycaps ? "white" : "#3b82f6",
-              }}
-            >
-              <svg viewBox="0 0 12 12" width={14 / zoom} height={14 / zoom} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="1" width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
-                <rect x="6.8" y="1" width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
-                <rect x="1" y="6.8" width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
-                <rect x="6.8" y="6.8" width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
-              </svg>
-            </button>
-          )}
-
-          {/* 重置旋转按钮 */}
-          {!hasKeycapClip && dispRot !== 0 && (
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onRotate(element.id, 0) }}
-              title="恢复水平（重置旋转）"
-              style={{
-                position: "absolute",
-                top: -(26 / zoom + HANDLE_SIZE / 2),
-                right: 2 * (24 / zoom + 4 / zoom) - HANDLE_SIZE / 2,
-                width: 24 / zoom,
-                height: 24 / zoom,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "white",
-                border: `${1 / zoom}px solid #3b82f6`,
-                borderRadius: 4 / zoom,
-                cursor: "pointer",
-                padding: 0,
-                color: "#3b82f6",
-              }}
-            >
-              <svg viewBox="0 0 12 12" width={14 / zoom} height={14 / zoom} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 6a4 4 0 1 0 .8-2.4" />
-                <path d="M2 2v2.5h2.5" />
-              </svg>
-            </button>
-          )}
-
-          {/* 恢复原始比例按钮 */}
-          {naturalSize && (
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation()
-                const newH = Math.round(dispW * (naturalSize.h / naturalSize.w))
-                onRestoreAspect(element.id, dispW, newH)
-              }}
-              title="恢复原始比例"
-              style={{
-                position: "absolute",
-                top: -(26 / zoom + HANDLE_SIZE / 2),
-                right: 24 / zoom + 4 / zoom - HANDLE_SIZE / 2,
-                width: 24 / zoom,
-                height: 24 / zoom,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "white",
-                border: `${1 / zoom}px solid #3b82f6`,
-                borderRadius: 4 / zoom,
-                cursor: "pointer",
-                padding: 0,
-                color: "#3b82f6",
-              }}
-            >
-              <svg viewBox="0 0 12 12" width={14 / zoom} height={14 / zoom} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 4.5V1h3.5" />
-                <path d="M1 1l3 3" />
-                <path d="M11 7.5V11H7.5" />
-                <path d="M11 11l-3-3" />
-              </svg>
-            </button>
-          )}
-
-          {/* 等比缩放切换按钮 */}
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); setLockAspect((v) => !v) }}
-            title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
+          {/* 工具栏：flex 横排居中悬浮于图片上方 */}
+          <div
             style={{
               position: "absolute",
-              top: -(26 / zoom + HANDLE_SIZE / 2),
-              right: -HANDLE_SIZE / 2,
-              width: 24 / zoom,
-              height: 24 / zoom,
+              bottom: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              marginBottom: HANDLE_SIZE / 2 + 2 / zoom,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              background: lockAspect ? "#3b82f6" : "white",
-              border: `${1 / zoom}px solid #3b82f6`,
-              borderRadius: 4 / zoom,
-              cursor: "pointer",
-              padding: 0,
-              color: lockAspect ? "white" : "#3b82f6",
+              gap: 4 / zoom,
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
             }}
           >
-            <svg viewBox="0 0 12 12" width={14 / zoom} height={14 / zoom} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
-              {lockAspect ? (
-                <>
-                  <rect x="2" y="5.5" width="8" height="5.5" rx="1" fill="currentColor" stroke="none" opacity={0.25} />
-                  <rect x="2" y="5.5" width="8" height="5.5" rx="1" />
-                  <path d="M4 5.5V3.5a2 2 0 0 1 4 0v2" />
-                </>
-              ) : (
-                <>
-                  <rect x="2" y="5.5" width="8" height="5.5" rx="1" fill="currentColor" stroke="none" opacity={0.15} />
-                  <rect x="2" y="5.5" width="8" height="5.5" rx="1" />
-                  <path d="M4 5.5V3.5a2 2 0 0 1 4 0" />
-                </>
-              )}
-            </svg>
-          </button>
+            {/* 裁切到键帽 */}
+            {!hasKeycapClip && (
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onToggleClipToKeycaps(element.id) }}
+                title={isClippedToAllKeycaps ? "已裁剪到键帽（点击切换为自由浮层）" : "自由浮层（点击裁剪到键帽形状）"}
+                style={{
+                  width: 24 / zoom, height: 24 / zoom,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: isClippedToAllKeycaps ? "#3b82f6" : "white",
+                  border: `${1 / zoom}px solid #3b82f6`,
+                  borderRadius: 4 / zoom,
+                  cursor: "pointer", padding: 0,
+                  color: isClippedToAllKeycaps ? "white" : "#3b82f6",
+                  pointerEvents: "auto", flexShrink: 0,
+                }}
+              >
+                <svg viewBox="0 0 12 12" width={ICON_SIZE} height={ICON_SIZE} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1"   y="1"   width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
+                  <rect x="6.8" y="1"   width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
+                  <rect x="1"   y="6.8" width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
+                  <rect x="6.8" y="6.8" width="4.2" height="4.2" rx="0.8" fill={isClippedToAllKeycaps ? "currentColor" : "none"} opacity={isClippedToAllKeycaps ? 0.3 : 1} />
+                </svg>
+              </button>
+            )}
 
-          {/* 旋转手柄 */}
+            {/* 分隔线 */}
+            {!hasKeycapClip && (
+              <div style={{ width: 1 / zoom, height: 14 / zoom, background: "#3b82f6", opacity: 0.3, flexShrink: 0 }} />
+            )}
+
+            {/* 重置旋转（仅旋转不为 0 时显示） */}
+            {!hasKeycapClip && dispRot !== 0 && (
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onRotate(element.id, 0) }}
+                title="恢复水平（重置旋转）"
+                style={{
+                  width: 24 / zoom, height: 24 / zoom,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "white",
+                  border: `${1 / zoom}px solid #3b82f6`,
+                  borderRadius: 4 / zoom,
+                  cursor: "pointer", padding: 0,
+                  color: "#3b82f6",
+                  pointerEvents: "auto", flexShrink: 0,
+                }}
+              >
+                <ResetRotationIcon size={ICON_SIZE} />
+              </button>
+            )}
+
+            {/* 恢复原始比例 */}
+            {naturalSize && (
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const newH = Math.round(dispW * (naturalSize.h / naturalSize.w))
+                  onRestoreAspect(element.id, dispW, newH)
+                }}
+                title="恢复原始比例"
+                style={{
+                  width: 24 / zoom, height: 24 / zoom,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "white",
+                  border: `${1 / zoom}px solid #3b82f6`,
+                  borderRadius: 4 / zoom,
+                  cursor: "pointer", padding: 0,
+                  color: "#3b82f6",
+                  pointerEvents: "auto", flexShrink: 0,
+                }}
+              >
+                <RestoreAspectIcon size={ICON_SIZE} />
+              </button>
+            )}
+
+            {/* 锁定宽高比 */}
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); setLockAspect((v) => !v) }}
+              title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
+              style={{
+                width: 24 / zoom, height: 24 / zoom,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: lockAspect ? "#3b82f6" : "white",
+                border: `${1 / zoom}px solid #3b82f6`,
+                borderRadius: 4 / zoom,
+                cursor: "pointer", padding: 0,
+                color: lockAspect ? "white" : "#3b82f6",
+                pointerEvents: "auto", flexShrink: 0,
+              }}
+            >
+              <LockAspectIcon size={ICON_SIZE} locked={lockAspect} />
+            </button>
+          </div>
+
+          {/* 旋转手柄（底边中心下方） */}
           {!hasKeycapClip && (
             <>
               <div
                 style={{
                   position: "absolute",
                   left: "50%",
-                  top: -(HANDLE_SIZE / 2 + ROTATE_LINE),
+                  top: `calc(100% + ${HANDLE_SIZE / 2}px)`,
                   width: 1 / zoom,
                   height: ROTATE_LINE,
                   background: "#3b82f6",
@@ -514,7 +474,7 @@ export function ImageElement({
                 style={{
                   position: "absolute",
                   left: "50%",
-                  top: -(HANDLE_SIZE / 2 + ROTATE_LINE + ROTATE_R),
+                  top: `calc(100% + ${HANDLE_SIZE / 2 + ROTATE_LINE + ROTATE_R}px)`,
                   width: ROTATE_R * 2,
                   height: ROTATE_R * 2,
                   transform: "translate(-50%, -50%)",

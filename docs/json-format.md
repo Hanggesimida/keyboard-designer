@@ -266,19 +266,15 @@
 | 值 | 字体名称 | 分类 |
 |---|---|---|
 | `"var(--font-inter)"` | Inter | 无衬线 |
-| `"var(--font-roboto)"` | Roboto | 无衬线 |
 | `"var(--font-space-grotesk)"` | Space Grotesk | 无衬线 |
 | `"var(--font-oxanium)"` | Oxanium | 无衬线 |
 | `"var(--font-orbitron)"` | Orbitron | 无衬线 |
 | `"var(--font-ibm-plex-mono)"` | IBM Plex Mono | 等宽（默认） |
 | `"var(--font-jetbrains-mono)"` | JetBrains Mono | 等宽 |
-| `"var(--font-fira-code)"` | Fira Code | 等宽 |
 | `"var(--font-dm-mono)"` | DM Mono | 等宽 |
 | `"var(--font-playfair-display)"` | Playfair Display | 衬线 |
-| `"Georgia, serif"` | Georgia | 衬线 |
 | `"var(--font-noto-sans-sc)"` | Noto Sans SC | 中文 |
 | `"var(--font-noto-serif-sc)"` | Noto Serif SC | 中文 |
-| `"system-ui, sans-serif"` | 系统字体 | 系统 |
 
 ---
 
