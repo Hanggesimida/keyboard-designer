@@ -12,7 +12,7 @@ export const KEY_RADIUS_BASE = 6
 export const KEY_RADIUS_TOP = 4
 
 /** 默认标签字号 */
-export const KEY_LABEL_SIZE = 9
+export const KEY_LABEL_SIZE = 7
 
 /**
  * 标签相对几何中心的向上微调系数：

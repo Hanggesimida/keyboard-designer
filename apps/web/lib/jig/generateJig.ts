@@ -21,7 +21,7 @@ const KEY_PAD_LEFT = 11
 const KEY_PAD_TOP = 6
 const KEY_PAD_RIGHT = 11
 const KEY_PAD_BOTTOM = 10
-const KEY_LABEL_SIZE = 9
+const KEY_LABEL_SIZE = 7
 const KEY_LABEL_OPTICAL_CENTER_RATIO = 0.09
 const ART_PAD = 28
 

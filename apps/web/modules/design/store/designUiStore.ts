@@ -217,7 +217,7 @@ interface DesignUIActions {
 }
 
 const initialGlobalKeycapStyle: GlobalKeycapStyle = {
-  fontSize: 9,
+  fontSize: 7,
   labelColor: "#d0d0d0",
   topColor: "#4a4a4a",
   bgColor: "#3c3c3c",
