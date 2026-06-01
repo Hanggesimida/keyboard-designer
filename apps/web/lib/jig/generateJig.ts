@@ -107,6 +107,7 @@ interface JigPosition {
   key_id: string
   unit?: number
   row_level?: string
+  geometry_group?: string
   top_face_x?: number
   top_face_y?: number
   top_face_w?: number
@@ -284,6 +285,78 @@ interface DesignLayersIntermediate {
   fallbackTexts: string[]
 }
 
+/**
+ * 预选每个 key_id 对应的唯一治具位置集合，确保设计器里一个键只渲染一次。
+ *
+ * 策略：
+ *  - 普通键（无 geometry_group 或单槽 group）：每个 key_id 只保留 unit 最接近
+ *    布局宽度的那一条；unit 相同时先出现的优先。
+ *  - 多槽组合键（同一 geometry_group 下有多条记录，如 ISO 梯形回车）：
+ *    整组全部纳入，供一个物理键占多个治具槽的情形使用。
+ *  - 不在 templateKeys 中，或 rowLevel 不匹配的条目，均排除。
+ *    若 templateKeys 为空（无模板），仅做唯一性去重，不做布局过滤。
+ */
+function selectUniqueJigPositions(
+  positions: JigPosition[],
+  templateKeys: Record<string, LayoutKey>,
+  TOL: number = 0.05,
+): Set<JigPosition> {
+  const hasTemplate = Object.keys(templateKeys).length > 0
+
+  // 识别多槽 geometry_group（同 group 下 >= 2 条）
+  const groupMembersMap = new Map<string, JigPosition[]>()
+  for (const pos of positions) {
+    const gg = pos.geometry_group
+    if (gg) {
+      if (!groupMembersMap.has(gg)) groupMembersMap.set(gg, [])
+      groupMembersMap.get(gg)!.push(pos)
+    }
+  }
+  const multiGroups = new Set(
+    [...groupMembersMap.entries()].filter(([, v]) => v.length > 1).map(([k]) => k),
+  )
+
+  const bestByKey = new Map<string, JigPosition>()
+  const selectedGroupKeys = new Set<string>()
+
+  for (const pos of positions) {
+    const kid = pos.key_id
+    if (!kid) continue
+
+    // 布局过滤
+    if (hasTemplate) {
+      if (!templateKeys[kid]) continue
+      const layoutRowLevel = templateKeys[kid].rowLevel
+      if (layoutRowLevel && pos.row_level && layoutRowLevel !== pos.row_level) continue
+    }
+
+    const gg = pos.geometry_group
+    if (gg && multiGroups.has(gg)) {
+      // 多槽组合键：整组保留（单次标记即可）
+      selectedGroupKeys.add(gg)
+      continue
+    }
+
+    // 普通键：取 unit 最接近布局宽度的一条
+    if (!bestByKey.has(kid)) {
+      bestByKey.set(kid, pos)
+    } else {
+      const lw = hasTemplate ? (templateKeys[kid]?.w ?? 1) : 1
+      const existing = bestByKey.get(kid)!
+      if (Math.abs((pos.unit ?? 1) - lw) < Math.abs((existing.unit ?? 1) - lw)) {
+        bestByKey.set(kid, pos)
+      }
+    }
+  }
+
+  const selected = new Set<JigPosition>()
+  for (const pos of bestByKey.values()) selected.add(pos)
+  for (const gg of selectedGroupKeys) {
+    for (const pos of groupMembersMap.get(gg)!) selected.add(pos)
+  }
+  return selected
+}
+
 function buildDesignLayersIntermediate(
   positions: JigPosition[],
   design: ParsedDesign,
@@ -296,33 +369,16 @@ function buildDesignLayersIntermediate(
   const extraAttrs: Record<string, string> = {}
   const fallbackTexts: string[] = []
 
-  const jigUnitsPerKey = new Map<string, Set<number | undefined>>()
-  for (const pos of positions) {
-    if (!jigUnitsPerKey.has(pos.key_id)) jigUnitsPerKey.set(pos.key_id, new Set())
-    jigUnitsPerKey.get(pos.key_id)!.add(pos.unit)
-  }
-
   const TOL = 0.05
+  // 预计算：每个 key_id 唯一对应一条治具位置（含模板过滤 + 唯一性）
+  const selectedPositions = selectUniqueJigPositions(positions, templateKeys, TOL)
   let skipped = 0
 
   for (const pos of positions) {
     const keyId = pos.key_id
 
-    // 模板过滤
-    if (Object.keys(templateKeys).length > 0) {
-      if (!templateKeys[keyId]) { skipped++; continue }
-      const units = jigUnitsPerKey.get(keyId)!
-      if (units.size > 1) {
-        const lw = templateKeys[keyId].w
-        const ju = pos.unit
-        if (ju == null || Math.abs(ju - lw) > TOL) { skipped++; continue }
-      }
-      // rowLevel 过滤：治具位置的 row_level 与布局键的 rowLevel 都存在时必须匹配
-      const layoutRowLevel = templateKeys[keyId].rowLevel
-      if (layoutRowLevel && pos.row_level && layoutRowLevel !== pos.row_level) {
-        skipped++; continue
-      }
-    }
+    // 唯一性 + 模板过滤（由 selectUniqueJigPositions 统一处理）
+    if (!selectedPositions.has(pos)) { skipped++; continue }
 
     const defaultLabel = templateKeys[keyId]?.label ?? ""
     const st = getKeyStyle(keyId, design, defaultLabel)

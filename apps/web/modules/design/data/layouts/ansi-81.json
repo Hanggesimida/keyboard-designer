@@ -1,0 +1,128 @@
+{
+    "id": "ansi-81",
+    "name": "ANSI 81 (75%)",
+    "totalKeys": 81,
+    "baseUnit": 54,
+    "rows": [
+      {
+        "rowIndex": 0,
+        "label": "功能行",
+        "keys": [
+          {"keyId": "KC_ESC", "label": "Esc", "x": 0, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F1", "label": "F1", "x": 1, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F2", "label": "F2", "x": 2, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F3", "label": "F3", "x": 3, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F4", "label": "F4", "x": 4, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F5", "label": "F5", "x": 5, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F6", "label": "F6", "x": 6, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F7", "label": "F7", "x": 7, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F8", "label": "F8", "x": 8, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F9", "label": "F9", "x": 9, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F10", "label": "F10", "x": 10, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F11", "label": "F11", "x": 11, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_F12", "label": "F12", "x": 12, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_PSCR", "label": "PrtSc", "x": 13, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_DEL", "label": "Del", "x": 14, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_PAUS", "label": "Pause", "x": 15, "y": 0.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"}
+        ]
+      },
+      {
+        "rowIndex": 1,
+        "label": "数字行",
+        "keys": [
+          {"keyId": "KC_GRV", "label": "`", "x": 0, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_1", "label": "1", "x": 1, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_2", "label": "2", "x": 2, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_3", "label": "3", "x": 3, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_4", "label": "4", "x": 4, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_5", "label": "5", "x": 5, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_6", "label": "6", "x": 6, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_7", "label": "7", "x": 7, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_8", "label": "8", "x": 8, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_9", "label": "9", "x": 9, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_0", "label": "0", "x": 10, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_MINS", "label": "-", "x": 11, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_EQL", "label": "=", "x": 12, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_BSPC", "label": "Backspace", "x": 13, "y": 1.25, "w": 2, "h": 1, "shape": "rect", "rowLevel": "R4"},
+          {"keyId": "KC_HOME", "label": "Home", "x": 15, "y": 1.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R4"}
+        ]
+      },
+      {
+        "rowIndex": 2,
+        "label": "QWERTY行",
+        "keys": [
+          {"keyId": "KC_TAB", "label": "Tab", "x": 0, "y": 2.25, "w": 1.5, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_Q", "label": "Q", "x": 1.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_W", "label": "W", "x": 2.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_E", "label": "E", "x": 3.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_R", "label": "R", "x": 4.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_T", "label": "T", "x": 5.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_Y", "label": "Y", "x": 6.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_U", "label": "U", "x": 7.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_I", "label": "I", "x": 8.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_O", "label": "O", "x": 9.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_P", "label": "P", "x": 10.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_LBRC", "label": "[", "x": 11.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_RBRC", "label": "]", "x": 12.5, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_BSLS", "label": "\\", "x": 13.5, "y": 2.25, "w": 1.5, "h": 1, "shape": "rect", "rowLevel": "R3"},
+          {"keyId": "KC_PGUP", "label": "PgUp", "x": 15, "y": 2.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R3"}
+        ]
+      },
+      {
+        "rowIndex": 3,
+        "label": "ASDF行",
+        "keys": [
+          {"keyId": "KC_CAPS", "label": "Caps", "x": 0, "y": 3.25, "w": 1.75, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_A", "label": "A", "x": 1.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_S", "label": "S", "x": 2.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_D", "label": "D", "x": 3.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_F", "label": "F", "x": 4.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_G", "label": "G", "x": 5.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_H", "label": "H", "x": 6.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_J", "label": "J", "x": 7.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_K", "label": "K", "x": 8.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_L", "label": "L", "x": 9.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_SCLN", "label": ";", "x": 10.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_QUOT", "label": "'", "x": 11.75, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_ENT", "label": "Enter", "x": 12.75, "y": 3.25, "w": 2.25, "h": 1, "shape": "rect", "rowLevel": "R2"},
+          {"keyId": "KC_PGDN", "label": "PgDn", "x": 15, "y": 3.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R2"}
+        ]
+      },
+      {
+        "rowIndex": 4,
+        "label": "Shift行",
+        "keys": [
+          {"keyId": "KC_LSFT", "label": "Shift", "x": 0, "y": 4.25, "w": 2.25, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_Z", "label": "Z", "x": 2.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_X", "label": "X", "x": 3.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_C", "label": "C", "x": 4.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_V", "label": "V", "x": 5.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_B", "label": "B", "x": 6.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_N", "label": "N", "x": 7.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_M", "label": "M", "x": 8.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_COMM", "label": ",", "x": 9.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_DOT", "label": ".", "x": 10.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_SLSH", "label": "/", "x": 11.25, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_RSFT", "label": "Shift", "x": 12.25, "y": 4.25, "w": 1.75, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_UP", "label": "↑", "x": 14, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_END", "label": "End", "x": 15, "y": 4.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"}
+        ]
+      },
+      {
+        "rowIndex": 5,
+        "label": "底部行",
+        "keys": [
+          {"keyId": "KC_LCTL", "label": "Ctrl", "x": 0, "y": 5.25, "w": 1.25, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "Win", "label": "Win", "x": 1.25, "y": 5.25, "w": 1.25, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_LALT", "label": "Alt", "x": 2.5, "y": 5.25, "w": 1.25, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_SPC", "label": "Space", "x": 3.75, "y": 5.25, "w": 6.25, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_RALT", "label": "Alt", "x": 10, "y": 5.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_FN", "label": "FN", "x": 11, "y": 5.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_RCTL", "label": "Ctrl", "x": 12, "y": 5.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_LEFT", "label": "←", "x": 13, "y": 5.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_DOWN", "label": "↓", "x": 14, "y": 5.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"},
+          {"keyId": "KC_RGHT", "label": "→", "x": 15, "y": 5.25, "w": 1, "h": 1, "shape": "rect", "rowLevel": "R1"}
+        ]
+      }
+    ]
+  }

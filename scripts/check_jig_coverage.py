@@ -89,6 +89,21 @@ def build_layout_key_set(layout: dict) -> dict[str, float]:
     return {kid: info["w"] for kid, info in layout["keys"].items()}
 
 
+def build_composite_groups(positions: list[dict]) -> dict[str, list[dict]]:
+    """
+    返回 geometry_group -> [pos, ...] 映射，仅包含多槽组合键组。
+
+    多槽组合键：同一 geometry_group 下有多个治具条目，
+    代表一个物理键占用多个治具槽（典型例子：ISO 梯形回车键）。
+    """
+    groups: dict[str, list] = defaultdict(list)
+    for pos in positions:
+        gg = pos.get("geometry_group")
+        if gg:
+            groups[gg].append(pos)
+    return {gg: members for gg, members in groups.items() if len(members) > 1}
+
+
 def match_positions(positions: list[dict], layout_keys: dict[str, float]) -> tuple[list, list]:
     """
     将每个治具位置条目归类为"已匹配"或"未使用"。
@@ -98,42 +113,90 @@ def match_positions(positions: list[dict], layout_keys: dict[str, float]) -> tup
       2. 当同一 key_id 在治具中存在多种 unit 变体时，
          取与 layout_keys[key_id] 最接近（且差值 ≤ TOL）的那一条；
          其余变体视为未使用（用于其他布局的备用槽）。
+      3. 组合键（共享同一 geometry_group 的多个槽，如 ISO 梯形回车）
+         作为整体一起匹配或未使用，不单独拆分处理。
 
     返回：(matched, unused)
       matched: 被该布局使用的治具条目列表
       unused:  未被该布局使用的治具条目列表
     """
-    # 统计每个 key_id 在治具中出现了哪些 unit
-    jig_units: dict[str, list] = defaultdict(list)
-    for pos in positions:
-        kid = pos.get("key_id", "")
-        jig_units[kid].append(pos.get("unit"))
+    # 识别组合键组（如 ISO Enter 的两个槽）
+    composite_groups = build_composite_groups(positions)
+    # 建立 index -> geometry_group 的反查表
+    index_to_group: dict[int, str] = {}
+    for gg, members in composite_groups.items():
+        for pos in members:
+            index_to_group[pos.get("index")] = gg
 
-    matched = []
-    unused  = []
-
+    # 统计每个 key_id 在治具中出现了哪些有效 unit
+    # 组合键以"一个代表 unit"计入（避免同一 unit 因多槽被重复统计）
+    effective_units: dict[str, set] = defaultdict(set)
+    seen_groups: set[str] = set()
     for pos in positions:
         kid  = pos.get("key_id", "")
         unit = pos.get("unit")
+        gg   = pos.get("geometry_group")
+        if not kid or unit is None:
+            continue
+        if gg and gg in composite_groups:
+            if gg in seen_groups:
+                continue   # 组合键只记录一次 unit
+            seen_groups.add(gg)
+        effective_units[kid].add(unit)
 
-        # key_id 为空 → 纯预留槽
+    matched: list[dict] = []
+    unused:  list[dict] = []
+    processed_groups: set[str] = set()
+
+    for pos in positions:
+        idx = pos.get("index")
+        kid = pos.get("key_id", "")
+        unit = pos.get("unit")
+        gg  = index_to_group.get(idx)
+
+        # ── 组合键：整组一起处理 ──────────────────────────────────────
+        if gg:
+            if gg in processed_groups:
+                continue   # 已被组内首条记录处理过
+            processed_groups.add(gg)
+
+            members     = composite_groups[gg]
+            group_kid   = members[0].get("key_id", "")
+            group_unit  = members[0].get("unit")
+
+            if not group_kid:
+                unused.extend(members)
+                continue
+            if group_kid not in layout_keys:
+                unused.extend(members)
+                continue
+
+            layout_w       = layout_keys[group_kid]
+            units_for_key  = effective_units[group_kid]
+
+            if len(units_for_key) <= 1:
+                matched.extend(members)
+            elif group_unit is not None and abs(group_unit - layout_w) <= _TOL:
+                matched.extend(members)
+            else:
+                unused.extend(members)
+            continue
+
+        # ── 普通键：逐条处理 ──────────────────────────────────────────
         if not kid:
             unused.append(pos)
             continue
 
-        # key_id 不在布局中 → 该布局不需要
         if kid not in layout_keys:
             unused.append(pos)
             continue
 
-        layout_w = layout_keys[kid]
-        units_for_this_key = jig_units[kid]
+        layout_w          = layout_keys[kid]
+        units_for_this_key = effective_units[kid]
 
-        if len(set(units_for_this_key)) <= 1:
-            # 只有一种 unit → 直接匹配
+        if len(units_for_this_key) <= 1:
             matched.append(pos)
         else:
-            # 多种 unit → 只取与布局 w 最接近且在容差内的那个
             if unit is not None and abs(unit - layout_w) <= _TOL:
                 matched.append(pos)
             else:
@@ -149,6 +212,28 @@ def match_positions(positions: list[dict], layout_keys: dict[str, float]) -> tup
 def _row_label(pos: dict) -> str:
     rl = pos.get("row_level", "")
     return f"[{rl}]" if rl else ""
+
+
+def _group_composite_entries(slot_list: list[dict]) -> list[dict | list[dict]]:
+    """
+    将列表中共享同一 geometry_group 的条目合并为子列表，其余保持原样。
+
+    返回的列表每个元素要么是单个 dict（普通键），
+    要么是 list[dict]（同一组合键的多个槽）。
+    """
+    groups: dict[str, list] = defaultdict(list)
+    result: list = []
+    for pos in slot_list:
+        gg = pos.get("geometry_group")
+        if gg:
+            groups[gg].append(pos)
+        else:
+            result.append(pos)
+    # 按最小 index 排序后插回
+    for members in groups.values():
+        result.append(members)
+    result.sort(key=lambda x: (x[0].get("index", 0) if isinstance(x, list) else x.get("index", 0)))
+    return result
 
 
 def print_report(layout: dict, positions: list, matched: list, unused: list) -> None:
@@ -172,20 +257,34 @@ def print_report(layout: dict, positions: list, matched: list, unused: list) -> 
     no_match_slots = [p for p in unused if     p.get("key_id", "")]
 
     if no_match_slots:
-        print(f"\n── 治具有键位 ID、但布局不包含的槽位 ({len(no_match_slots)} 个) ──")
-        print(f"  {'#idx':<6} {'key_id':<16} {'unit':>6}  {'row_level':<8}  说明")
-        print(f"  {'-'*6} {'-'*16} {'-'*6}  {'-'*8}  {'-'*30}")
-        for pos in sorted(no_match_slots, key=lambda p: p.get("index", 0)):
-            idx  = pos.get("index", "?")
-            kid  = pos.get("key_id", "")
-            unit = pos.get("unit", "?")
-            rl   = pos.get("row_level", "")
-            # 判断原因
-            if kid in layout["keys"]:
-                reason = f"unit={unit:.2f} 与布局 w={layout['keys'][kid]['w']:.2f} 不匹配（备用变体）"
+        print(f"\n── 治具有键位 ID、但布局不包含的槽位 ({len(no_match_slots)} 个槽) ──")
+        print(f"  {'#idx':<10} {'key_id':<16} {'unit':>6}  {'row_level':<8}  说明")
+        print(f"  {'-'*10} {'-'*16} {'-'*6}  {'-'*8}  {'-'*36}")
+        for entry in _group_composite_entries(no_match_slots):
+            if isinstance(entry, list):
+                # 组合键：多槽合并显示
+                indices = "+".join(str(p.get("index", "?")) for p in entry)
+                kid     = entry[0].get("key_id", "")
+                unit    = entry[0].get("unit", "?")
+                rl      = entry[0].get("row_level", "")
+                gg      = entry[0].get("geometry_group", "")
+                if kid in layout["keys"]:
+                    reason = (f"unit={unit:.2f} 与布局 w={layout['keys'][kid]['w']:.2f} 不匹配"
+                              f"（组合键备用变体，{len(entry)} 槽，group={gg}）")
+                else:
+                    reason = f"该键位 ID 不在此布局中（组合键，{len(entry)} 槽，group={gg}）"
+                print(f"  {indices:<10} {kid:<16} {unit!s:>6}  {rl:<8}  {reason}")
             else:
-                reason = "该键位 ID 不在此布局中（仅其他键盘型号使用）"
-            print(f"  {idx!s:<6} {kid:<16} {unit!s:>6}  {rl:<8}  {reason}")
+                pos  = entry
+                idx  = pos.get("index", "?")
+                kid  = pos.get("key_id", "")
+                unit = pos.get("unit", "?")
+                rl   = pos.get("row_level", "")
+                if kid in layout["keys"]:
+                    reason = f"unit={unit:.2f} 与布局 w={layout['keys'][kid]['w']:.2f} 不匹配（备用变体）"
+                else:
+                    reason = "该键位 ID 不在此布局中（仅其他键盘型号使用）"
+                print(f"  {idx!s:<10} {kid:<16} {unit!s:>6}  {rl:<8}  {reason}")
 
     if empty_id_slots:
         print(f"\n── key_id 为空的预留槽位 ({len(empty_id_slots)} 个) ──")
