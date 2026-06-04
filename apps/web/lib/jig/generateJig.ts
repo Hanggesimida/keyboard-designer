@@ -14,6 +14,7 @@ import {
   textDescriptorsToPathResults,
   type TextDescriptor,
 } from "@/lib/jig/fontToPath"
+import { roundedPolygonPath, getIsoTopFaceRadii } from "@/modules/design/lib/design/keycapGeometry"
 
 // ─── 几何常量（与 keycapGeometry.ts / Python 脚本保持同步）─────────────────
 const KEYCAP_GAP = 2
@@ -24,6 +25,8 @@ const KEY_PAD_BOTTOM = 10
 const KEY_LABEL_SIZE = 7
 const KEY_LABEL_OPTICAL_CENTER_RATIO = 0.09
 const ART_PAD = 28
+const KEY_RADIUS_BASE_ISO = 1.5
+const KEY_RADIUS_TOP = 4
 
 // ─── 类型定义 ─────────────────────────────────────────────────────────────
 
@@ -103,25 +106,224 @@ interface Layout {
   baseUnit: number
 }
 
+interface JigPoint {
+  x: number
+  y: number
+}
+
 interface JigPosition {
   key_id: string
   unit?: number
   row_level?: string
+  shape?: string
   geometry_group?: string
+  /** 矩形顶面（普通键） */
   top_face_x?: number
   top_face_y?: number
   top_face_w?: number
   top_face_h?: number
   top_face_rx?: number
+  /** 多边形顶面（ISO Enter 等异形键） */
+  top_face_points?: JigPoint[]
+  /** 矩形底色框（普通键） */
   bottom_box_x?: number
   bottom_box_y?: number
   bottom_box_w?: number
   bottom_box_h?: number
+  /** 多边形底座（ISO Enter 等异形键） */
+  base_points?: JigPoint[]
   base_box_x?: number
   base_box_y?: number
   base_box_w?: number
   base_box_h?: number
   base_box_rx?: number
+  /** 标签中心（异形键显式提供，优先于计算值） */
+  label_cx?: number
+  label_cy?: number
+  centroid_cx?: number
+  centroid_cy?: number
+}
+
+// ─── 增补键 ID 解码 ────────────────────────────────────────────────────────
+
+/**
+ * 治具查找参数：由 resolveJigLookup 从布局 keyId 中解码。
+ */
+interface JigLookupParams {
+  /** 治具 positions 中对应的 key_id 值（匿名槽为空字符串） */
+  baseId: string
+  /** 精确 unit 约束（解码后的小数值） */
+  unit?: number
+  /** 行级约束（R1~R4） */
+  rowLevel?: string
+  /** 形状约束（如 "stepped"） */
+  shape?: string
+  /** geometry_group 精确匹配（ISO Enter 等多槽组合键） */
+  geometryGroup?: string
+  /** 是否为匿名自定义槽（KC_CUST_* 系列） */
+  isAnonymous?: boolean
+}
+
+/**
+ * 将布局中的 keyId 解码为治具查找参数。
+ *
+ * 增补键后缀约定：
+ *   _ISO       → geometry_group = "{keyId}_1"（KC_ENT_ISO → geometry_group=KC_ENT_ISO_1）
+ *   _STEP      → shape = "stepped"
+ *   KC_CUST_*  → isAnonymous，匹配 key_id="" 的匿名槽，按行按序消费
+ *   _nnn (3位) → unit = n/100（225→2.25, 175→1.75, 150→1.50, 125→1.25）
+ *   _nU        → unit = n 整数（7U→7, 2U→2）
+ *   _Rn        → rowLevel = "Rn", unit = 1（_R4 → rowLevel="R4"）
+ *   无后缀     → 标准键，直接按 key_id 精确查找
+ */
+function resolveJigLookup(keyId: string): JigLookupParams {
+  // ISO 多槽组合（KC_ENT_ISO → geometry_group="KC_ENT_ISO_1"）
+  const isoMatch = keyId.match(/^(.+)_ISO$/)
+  if (isoMatch?.[1]) return { baseId: isoMatch[1], geometryGroup: `${keyId}_1` }
+
+  // stepped 形状
+  if (keyId.endsWith("_STEP")) return { baseId: keyId.slice(0, -5), shape: "stepped" }
+
+  // 匿名自定义槽：KC_CUST_R2 / KC_CUST_R1_A / KC_CUST_R1_B
+  if (keyId.startsWith("KC_CUST_")) {
+    const rowMatch = keyId.match(/_R(\d)/)
+    return { baseId: "", rowLevel: rowMatch ? `R${rowMatch[1]}` : undefined, isAnonymous: true }
+  }
+
+  // 3 位数字后缀 → 小数 unit（225→2.25, 175→1.75, 150→1.50, 125→1.25）
+  const unitFrac = keyId.match(/_(\d{3})$/)
+  if (unitFrac?.[0] && unitFrac[1]) {
+    return {
+      baseId: keyId.slice(0, keyId.length - unitFrac[0].length),
+      unit: parseInt(unitFrac[1]) / 100,
+    }
+  }
+
+  // 整数 nU 后缀（7U→7, 2U→2）
+  const unitInt = keyId.match(/_(\d+)U$/)
+  if (unitInt?.[0] && unitInt[1]) {
+    return {
+      baseId: keyId.slice(0, keyId.length - unitInt[0].length),
+      unit: parseInt(unitInt[1]),
+    }
+  }
+
+  // _Rn 后缀 → rowLevel = "Rn", unit = 1
+  const rowSuffix = keyId.match(/_R(\d)$/)
+  if (rowSuffix) {
+    return {
+      baseId: keyId.slice(0, keyId.length - rowSuffix[0].length),
+      rowLevel: `R${rowSuffix[1]}`,
+      unit: 1,
+    }
+  }
+
+  // 标准键：直接按 key_id 精确查找
+  return { baseId: keyId }
+}
+
+/**
+ * 为每个模板键分配对应的治具位置，返回 position → 模板 keyId 的映射。
+ *
+ * 分配策略：
+ *  - geometry_group 多槽键（ISO Enter）：整组全部纳入，均映射到该模板 keyId。
+ *  - 匿名自定义槽（KC_CUST_*）：按 row_level、按模板中的出现顺序（游标）依次消费。
+ *  - 普通键 / 增补键：在候选条目中取 unit 最接近的未分配条目（已分配的跳过），
+ *    自然实现「先出现的优先 / 左先右后」原则，同时避免两个增补变体竞争同一槽位。
+ *  - rowLevel：优先使用解码得到的约束，降级到布局键自身的 rowLevel。
+ *  - 无模板时：按 key_id 唯一化保留首条（兼容旧逻辑）。
+ */
+function buildJigAssignment(
+  positions: JigPosition[],
+  templateKeys: Record<string, LayoutKey>,
+): Map<JigPosition, string> {
+  const assignment = new Map<JigPosition, string>()
+
+  if (Object.keys(templateKeys).length === 0) {
+    const seen = new Set<string>()
+    for (const pos of positions) {
+      if (!pos.key_id || seen.has(pos.key_id)) continue
+      seen.add(pos.key_id)
+      assignment.set(pos, pos.key_id)
+    }
+    return assignment
+  }
+
+  // geometry_group → positions[]
+  const groupMap = new Map<string, JigPosition[]>()
+  for (const pos of positions) {
+    const gg = pos.geometry_group
+    if (gg) {
+      if (!groupMap.has(gg)) groupMap.set(gg, [])
+      groupMap.get(gg)!.push(pos)
+    }
+  }
+
+  // 匿名槽（key_id=""）按 row_level 分组，保持 positions 原始顺序
+  const anonByRow = new Map<string, JigPosition[]>()
+  for (const pos of positions) {
+    if (pos.key_id === "") {
+      const row = pos.row_level ?? ""
+      if (!anonByRow.has(row)) anonByRow.set(row, [])
+      anonByRow.get(row)!.push(pos)
+    }
+  }
+  const anonCursors = new Map<string, number>()
+
+  const UNIT_TOL = 0.01
+
+  for (const [templateKeyId, km] of Object.entries(templateKeys)) {
+    const params = resolveJigLookup(templateKeyId)
+
+    // 1. geometry_group 多槽组合键（如 ISO Enter）
+    if (params.geometryGroup) {
+      const group = groupMap.get(params.geometryGroup)
+      if (group) {
+        for (const pos of group) assignment.set(pos, templateKeyId)
+      }
+      continue
+    }
+
+    // 2. 匿名自定义槽（KC_CUST_*）
+    if (params.isAnonymous) {
+      const row = params.rowLevel ?? ""
+      const cursor = anonCursors.get(row) ?? 0
+      const slots = anonByRow.get(row)
+      const slot = slots?.[cursor]
+      if (slot) {
+        assignment.set(slot, templateKeyId)
+        anonCursors.set(row, cursor + 1)
+      }
+      continue
+    }
+
+    // 3. 普通键 / 增补键：取 unit 最接近的未分配条目
+    //    跨行键（h>1，如小键盘 + / Enter）在 jig 中 unit 记录的是高度跨度而非宽度，
+    //    且 row_level 可能指向底部行，因此对此类键跳过 rowLevel 过滤并用 km.h 匹配 unit。
+    const isTallKey = !params.unit && km.h > 1
+    const effectiveRowLevel = params.rowLevel ?? (isTallKey ? undefined : km.rowLevel)
+    const hasExplicitUnit = params.unit != null
+    const targetUnit = params.unit ?? (isTallKey ? km.h : km.w)
+
+    let best: JigPosition | null = null
+    let bestDelta = Infinity
+
+    for (const pos of positions) {
+      if (pos.key_id !== params.baseId) continue
+      if (pos.geometry_group) continue          // 组合槽只走 geometry_group 路径
+      if (assignment.has(pos)) continue         // 已分配：跳过（先出现优先）
+      if (params.shape && pos.shape !== params.shape) continue
+      if (effectiveRowLevel && pos.row_level && effectiveRowLevel !== pos.row_level) continue
+
+      const delta = Math.abs((pos.unit ?? 1) - targetUnit)
+      if (hasExplicitUnit && delta > UNIT_TOL) continue
+      if (delta < bestDelta) { best = pos; bestDelta = delta }
+    }
+
+    if (best) assignment.set(best, templateKeyId)
+  }
+
+  return assignment
 }
 
 // ─── 设计数据解析 ─────────────────────────────────────────────────────────
@@ -173,7 +375,7 @@ function loadTemplateLayout(templateId: string): Layout {
     return { keys: {}, baseUnit: 54 }
   }
 
-  const layout = JSON.parse(fs.readFileSync(layoutPath, "utf-8"))
+  const layout = JSON.parse(fs.readFileSync(layoutPath, "utf-8").replace(/^\uFEFF/, ""))
   const keys: Record<string, LayoutKey> = {}
   for (const row of layout.rows ?? []) {
     for (const key of row.keys ?? []) {
@@ -267,6 +469,69 @@ function pushClipPathDef(
   defsLines.push(`    </clipPath>`)
 }
 
+/** 将点列序列化为 SVG polygon points 属性字符串 */
+function jigPointsToStr(pts: JigPoint[]): string {
+  return pts.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(" ")
+}
+
+/**
+ * 计算点列的包围盒（bounding box）
+ */
+function pointsBBox(pts: JigPoint[]): { x: number; y: number; w: number; h: number } {
+  const xs = pts.map(p => p.x)
+  const ys = pts.map(p => p.y)
+  const x = Math.min(...xs)
+  const y = Math.min(...ys)
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y }
+}
+
+/**
+ * 渲染 SVG 多边形色块
+ */
+function svgPolygon(pts: JigPoint[], fill: string, extra = ""): string {
+  let attrs = `points="${jigPointsToStr(pts)}" fill="${fill}"`
+  if (extra) attrs += ` ${extra}`
+  return `  <polygon ${attrs}/>`
+}
+
+/**
+ * 向 defsLines 写入多边形 clipPath 定义
+ */
+function pushPolygonClipPathDef(
+  defsLines: string[],
+  clipId: string,
+  pts: JigPoint[],
+): void {
+  defsLines.push(`    <clipPath id="${clipId}">`)
+  defsLines.push(`      <polygon points="${jigPointsToStr(pts)}"/>`)
+  defsLines.push(`    </clipPath>`)
+}
+
+/**
+ * 渲染带圆角的 SVG 多边形色块（用 <path> 替代 <polygon>）
+ */
+function svgRoundedPolygon(pts: JigPoint[], r: number | number[], fill: string, extra = ""): string {
+  const d = roundedPolygonPath(pts, r)
+  let attrs = `d="${d}" fill="${fill}"`
+  if (extra) attrs += ` ${extra}`
+  return `  <path ${attrs}/>`
+}
+
+/**
+ * 向 defsLines 写入带圆角的多边形 clipPath 定义
+ */
+function pushRoundedPolygonClipPathDef(
+  defsLines: string[],
+  clipId: string,
+  pts: JigPoint[],
+  r: number | number[],
+): void {
+  const d = roundedPolygonPath(pts, r)
+  defsLines.push(`    <clipPath id="${clipId}">`)
+  defsLines.push(`      <path d="${d}"/>`)
+  defsLines.push(`    </clipPath>`)
+}
+
 function makeOpDkAttrs(opacity: number, kidAttr: string): [string, string] {
   return [
     opacity < 1 ? ` opacity="${opacity.toFixed(2)}"` : "",
@@ -285,78 +550,6 @@ interface DesignLayersIntermediate {
   fallbackTexts: string[]
 }
 
-/**
- * 预选每个 key_id 对应的唯一治具位置集合，确保设计器里一个键只渲染一次。
- *
- * 策略：
- *  - 普通键（无 geometry_group 或单槽 group）：每个 key_id 只保留 unit 最接近
- *    布局宽度的那一条；unit 相同时先出现的优先。
- *  - 多槽组合键（同一 geometry_group 下有多条记录，如 ISO 梯形回车）：
- *    整组全部纳入，供一个物理键占多个治具槽的情形使用。
- *  - 不在 templateKeys 中，或 rowLevel 不匹配的条目，均排除。
- *    若 templateKeys 为空（无模板），仅做唯一性去重，不做布局过滤。
- */
-function selectUniqueJigPositions(
-  positions: JigPosition[],
-  templateKeys: Record<string, LayoutKey>,
-  TOL: number = 0.05,
-): Set<JigPosition> {
-  const hasTemplate = Object.keys(templateKeys).length > 0
-
-  // 识别多槽 geometry_group（同 group 下 >= 2 条）
-  const groupMembersMap = new Map<string, JigPosition[]>()
-  for (const pos of positions) {
-    const gg = pos.geometry_group
-    if (gg) {
-      if (!groupMembersMap.has(gg)) groupMembersMap.set(gg, [])
-      groupMembersMap.get(gg)!.push(pos)
-    }
-  }
-  const multiGroups = new Set(
-    [...groupMembersMap.entries()].filter(([, v]) => v.length > 1).map(([k]) => k),
-  )
-
-  const bestByKey = new Map<string, JigPosition>()
-  const selectedGroupKeys = new Set<string>()
-
-  for (const pos of positions) {
-    const kid = pos.key_id
-    if (!kid) continue
-
-    // 布局过滤
-    if (hasTemplate) {
-      if (!templateKeys[kid]) continue
-      const layoutRowLevel = templateKeys[kid].rowLevel
-      if (layoutRowLevel && pos.row_level && layoutRowLevel !== pos.row_level) continue
-    }
-
-    const gg = pos.geometry_group
-    if (gg && multiGroups.has(gg)) {
-      // 多槽组合键：整组保留（单次标记即可）
-      selectedGroupKeys.add(gg)
-      continue
-    }
-
-    // 普通键：取 unit 最接近布局宽度的一条
-    if (!bestByKey.has(kid)) {
-      bestByKey.set(kid, pos)
-    } else {
-      const lw = hasTemplate ? (templateKeys[kid]?.w ?? 1) : 1
-      const existing = bestByKey.get(kid)!
-      if (Math.abs((pos.unit ?? 1) - lw) < Math.abs((existing.unit ?? 1) - lw)) {
-        bestByKey.set(kid, pos)
-      }
-    }
-  }
-
-  const selected = new Set<JigPosition>()
-  for (const pos of bestByKey.values()) selected.add(pos)
-  for (const gg of selectedGroupKeys) {
-    for (const pos of groupMembersMap.get(gg)!) selected.add(pos)
-  }
-  return selected
-}
-
 function buildDesignLayersIntermediate(
   positions: JigPosition[],
   design: ParsedDesign,
@@ -369,36 +562,50 @@ function buildDesignLayersIntermediate(
   const extraAttrs: Record<string, string> = {}
   const fallbackTexts: string[] = []
 
-  const TOL = 0.05
-  // 预计算：每个 key_id 唯一对应一条治具位置（含模板过滤 + 唯一性）
-  const selectedPositions = selectUniqueJigPositions(positions, templateKeys, TOL)
-  let skipped = 0
+  // 为每个模板键分配治具位置（含增补键解码、匿名槽游标、先出现优先逻辑）
+  const assignment = buildJigAssignment(positions, templateKeys)
+  const skipped = positions.length - assignment.size
 
-  for (const pos of positions) {
-    const keyId = pos.key_id
+  // 跟踪已渲染过文字的 keyId，避免 geometry_group 键（如 ISO Enter）在多个 top_face 上重复印字
+  const labelRenderedKeys = new Set<string>()
 
-    // 唯一性 + 模板过滤（由 selectUniqueJigPositions 统一处理）
-    if (!selectedPositions.has(pos)) { skipped++; continue }
-
+  for (const [pos, keyId] of assignment) {
     const defaultLabel = templateKeys[keyId]?.label ?? ""
     const st = getKeyStyle(keyId, design, defaultLabel)
 
+    // ── 底色层（矩形 or 多边形）──────────────────────────────────────────
     const bx = pos.bottom_box_x, by = pos.bottom_box_y
     const bw = pos.bottom_box_w, bh = pos.bottom_box_h
     if (bx != null && by != null && bw != null && bh != null) {
       colorLines.push(svgRect(bx, by, bw, bh, st.bgColor,
         0, `data-key="${keyId}" data-layer="bottom"`))
+    } else if (pos.base_points && pos.base_points.length > 0) {
+      colorLines.push(svgRoundedPolygon(pos.base_points,
+        KEY_RADIUS_BASE_ISO * topScale, st.bgColor,
+        `data-key="${keyId}" data-layer="bottom"`))
     }
 
+    // ── 顶面层（矩形 or 多边形）+ 文字 ────────────────────────────────────
     const tx = pos.top_face_x, ty = pos.top_face_y
     const tw = pos.top_face_w, th = pos.top_face_h
     const trx = pos.top_face_rx ?? 0
-    if (tx != null && ty != null && tw != null && th != null) {
-      colorLines.push(svgRect(tx, ty, tw, th, st.topColor,
-        trx, `data-key="${keyId}" data-layer="top"`))
+    const hasTopRect = tx != null && ty != null && tw != null && th != null
+    const hasTopPoly = !hasTopRect && Array.isArray(pos.top_face_points) && pos.top_face_points.length > 0
 
-      // 文字
-      if (st.labelText) {
+    if (hasTopRect) {
+      colorLines.push(svgRect(tx!, ty!, tw!, th!, st.topColor,
+        trx, `data-key="${keyId}" data-layer="top"`))
+    } else if (hasTopPoly) {
+      colorLines.push(svgRoundedPolygon(pos.top_face_points!, getIsoTopFaceRadii(KEY_RADIUS_TOP * topScale), st.topColor,
+        `data-key="${keyId}" data-layer="top"`))
+    }
+
+    // ── 文字（矩形或多边形顶面均可）──────────────────────────────────────
+    if (hasTopRect || hasTopPoly) {
+      // 同一 keyId 仅在首个 top_face（主印字区）渲染一次
+      const alreadyLabeled = labelRenderedKeys.has(keyId)
+      if (st.labelText && !alreadyLabeled) {
+        labelRenderedKeys.add(keyId)
         const fs_ = st.fontSize * topScale
         const offx = st.labelOffsetX * topScale
         const offy = st.labelOffsetY * topScale
@@ -411,9 +618,18 @@ function buildDesignLayersIntermediate(
         const opticalY = fs_ * KEY_LABEL_OPTICAL_CENTER_RATIO
         const multiY = ((n - 1) * lh) / 2
 
-        const cx = tx + tw / 2 + offx
-        // blockCenterY：整块多行文字的视觉中心（fontToPath 期望的 y）
-        const blockCenterY = ty + th / 2 + offy - opticalY
+        // 标签中心：矩形顶面取几何中心；多边形顶面优先使用 label_cx/cy，
+        // 其次使用包围盒中心（仅当无矩形顶面时才走多边形路径）。
+        let cx: number, blockCenterY: number
+        if (hasTopRect) {
+          cx = tx! + tw! / 2 + offx
+          blockCenterY = ty! + th! / 2 + offy - opticalY
+        } else {
+          // 多边形：使用显式 label_cx/cy（最准确），否则取包围盒中心
+          const bbox = pointsBBox(pos.top_face_points!)
+          cx = (pos.label_cx ?? (bbox.x + bbox.w / 2)) + offx
+          blockCenterY = (pos.label_cy ?? (bbox.y + bbox.h / 2)) + offy - opticalY
+        }
         // firstLineCenterY：第一行的视觉中心（CJK <text> tspan 用）
         const cy = blockCenterY - multiY
 
@@ -460,7 +676,7 @@ function buildDesignLayersIntermediate(
   }
 
   if (skipped > 0) {
-    colorLines.splice(1, 0, `  <!-- ${skipped} jig position(s) skipped (not in template / wrong unit) -->`)
+    colorLines.splice(1, 0, `  <!-- ${skipped} jig position(s) skipped (not in template / unmatched params) -->`)
   }
   colorLines.push("</g>")
 
@@ -503,21 +719,11 @@ function buildPosByKey(
   positions: JigPosition[],
   templateKeys: Record<string, LayoutKey>,
 ): Map<string, JigPosition> {
+  const assignment = buildJigAssignment(positions, templateKeys)
   const map = new Map<string, JigPosition>()
-  for (const pos of positions) {
-    const kid = pos.key_id
-    // rowLevel 过滤：治具位置的 row_level 与布局键的 rowLevel 都存在时必须匹配
-    const layoutRowLevel = templateKeys[kid]?.rowLevel
-    if (layoutRowLevel && pos.row_level && layoutRowLevel !== pos.row_level) continue
-    if (!map.has(kid)) {
-      map.set(kid, pos)
-    } else {
-      const lw = templateKeys[kid]?.w ?? 1
-      const existing = map.get(kid)!
-      if (Math.abs((pos.unit ?? 1) - lw) < Math.abs((existing.unit ?? 1) - lw)) {
-        map.set(kid, pos)
-      }
-    }
+  for (const [pos, kid] of assignment) {
+    // geometry_group 键有多个 position 共享同一 kid，只保留首条（用于图片裁剪）
+    if (!map.has(kid)) map.set(kid, pos)
   }
   return map
 }
@@ -579,6 +785,74 @@ function emitImage(
   )
 }
 
+/**
+ * 使用已外部写入 defs 的 clipPath 渲染图片（不再写入 clipPath 定义）。
+ * 适用于多边形 clipPath 等自定义裁剪形状。
+ */
+function emitImageWithCustomClip(
+  defsLines: string[],
+  lines: string[],
+  clipId: string,
+  imgRect: [number, number, number, number],
+  rotation: number,
+  opacity: number,
+  src: string,
+  kidAttr = "",
+  imageCache: Map<string, string>,
+  svgCache: Map<string, string>,
+): void {
+  if (isSvgDataUrl(src)) {
+    const svgText = decodeSvgSrc(src)
+    if (svgText) {
+      // emitInlineSvg 会再次写入 clipPath，这里需要跳过它——
+      // 直接使用已有 clipId 渲染 symbol，手动复制其核心逻辑
+      const [ix, iy, iw, ih] = imgRect
+      const [opAttr, dkAttr] = makeOpDkAttrs(opacity, kidAttr)
+      let symbolId = svgCache.get(svgText)
+      if (!symbolId) {
+        // 让 emitInlineSvg 负责写入 symbol（需要传一个临时 clipId 占位，后不使用其 clipPath 输出）
+        const tempDefsLines: string[] = []
+        const tempLines: string[] = []
+        emitInlineSvg(tempDefsLines, tempLines, `__tmp_${clipId}`, [0,0,1,1,0], imgRect, rotation, opacity, svgText, kidAttr, svgCache)
+        // 提取 symbol 定义（跳过 clipPath 部分）
+        for (const line of tempDefsLines) {
+          if (!line.includes(`id="__tmp_${clipId}"`)) defsLines.push(line)
+        }
+        symbolId = svgCache.get(svgText)!
+      }
+      const cssClass = `svgsc-${symbolId}`
+      const useEl = `<use xlink:href="#${symbolId}" href="#${symbolId}" ` +
+        `x="${ix.toFixed(4)}" y="${iy.toFixed(4)}" ` +
+        `width="${iw.toFixed(4)}" height="${ih.toFixed(4)}"/>`
+      if (rotation) {
+        const cx_ = ix + iw / 2; const cy_ = iy + ih / 2
+        lines.push(`  <g clip-path="url(#${clipId})"${opAttr}${dkAttr} class="${cssClass}">` +
+          `<g transform="rotate(${rotation},${cx_.toFixed(4)},${cy_.toFixed(4)})">${useEl}</g></g>`)
+      } else {
+        lines.push(`  <g clip-path="url(#${clipId})"${opAttr}${dkAttr} class="${cssClass}">${useEl}</g>`)
+      }
+      return
+    }
+  }
+  // 非 SVG：复用 emitImage 逻辑，但 clipPath 已在外部写入
+  const [ix, iy, iw, ih] = imgRect
+  const [opAttr, dkAttr] = makeOpDkAttrs(opacity, kidAttr)
+  let resourceId = imageCache.get(src)
+  if (!resourceId) {
+    resourceId = `jig-img-res-${imageCache.size}`
+    imageCache.set(src, resourceId)
+    defsLines.push(
+      `    <image id="${resourceId}" xlink:href="${src}" href="${src}" ` +
+      `width="1" height="1" preserveAspectRatio="none"/>`,
+    )
+  }
+  const cx_ = ix + iw / 2; const cy_ = iy + ih / 2
+  const rotatePart = rotation ? `rotate(${rotation},${cx_.toFixed(4)},${cy_.toFixed(4)}) ` : ""
+  const transformAttr = `transform="${rotatePart}translate(${ix.toFixed(4)},${iy.toFixed(4)}) scale(${iw.toFixed(4)},${ih.toFixed(4)})"`
+  lines.push(`  <g clip-path="url(#${clipId})"${opAttr}${dkAttr}>` +
+    `<use ${transformAttr} xlink:href="#${resourceId}" href="#${resourceId}"/></g>`)
+}
+
 interface ImageLayerResult {
   layerSvg: string
   defsContent: string
@@ -609,10 +883,20 @@ function buildCanvasImageLayer(
     const km = templateKeys[kid]
     if (!pos || !km) continue
 
-    const tx = pos.top_face_x, ty = pos.top_face_y
-    const tw = pos.top_face_w, th = pos.top_face_h
+    // 解析顶面区域：优先矩形，降级到多边形包围盒
+    let tx: number, ty: number, tw: number, th: number
     const trx = pos.top_face_rx ?? 0
-    if (tx == null || ty == null || tw == null || th == null) continue
+    const topPts = pos.top_face_points
+    if (pos.top_face_x != null && pos.top_face_y != null &&
+        pos.top_face_w != null && pos.top_face_h != null) {
+      tx = pos.top_face_x; ty = pos.top_face_y
+      tw = pos.top_face_w; th = pos.top_face_h
+    } else if (topPts && topPts.length > 0) {
+      const bb = pointsBBox(topPts)
+      tx = bb.x; ty = bb.y; tw = bb.w; th = bb.h
+    } else {
+      continue
+    }
 
     const dTopW = km.w * baseUnit - KEYCAP_GAP - KEY_PAD_LEFT - KEY_PAD_RIGHT
     const dTopH = km.h * baseUnit - KEYCAP_GAP - KEY_PAD_TOP - KEY_PAD_BOTTOM
@@ -632,26 +916,45 @@ function buildCanvasImageLayer(
     const jigImgW = img.width * sx
     const jigImgH = img.height * sy
 
-    let clipRect: [number, number, number, number, number]
+    const clipId = `clip-jig-img-${clipIdx++}`
+
+    // 剪切区域：多边形键用圆角 path clipPath，矩形键用 rect clipPath
     if (img.clipToTopFace) {
-      clipRect = [tx, ty, tw, th, trx]
+      if (topPts && topPts.length > 0) {
+        pushRoundedPolygonClipPathDef(defsLines, clipId, topPts, KEY_RADIUS_TOP * topScale)
+        emitImageWithCustomClip(defsLines, lines, clipId,
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
+      } else {
+        emitImageElement(defsLines, lines, clipId, [tx, ty, tw, th, trx],
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
+      }
     } else {
       const bx = pos.bottom_box_x, by = pos.bottom_box_y
       const bw = pos.bottom_box_w, bh = pos.bottom_box_h
       if (bx != null && by != null && bw != null && bh != null) {
-        clipRect = [bx, by, bw, bh, 0]
+        emitImageElement(defsLines, lines, clipId, [bx, by, bw, bh, 0],
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
+      } else if (pos.base_points && pos.base_points.length > 0) {
+        // 多边形底座：使用圆角 path clipPath
+        pushRoundedPolygonClipPathDef(defsLines, clipId, pos.base_points,
+          KEY_RADIUS_BASE_ISO * topScale)
+        emitImageWithCustomClip(defsLines, lines, clipId,
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
       } else {
-        clipRect = [tx, ty, tw, th, trx]
+        emitImageElement(defsLines, lines, clipId, [tx, ty, tw, th, trx],
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
       }
     }
-
-    const clipId = `clip-jig-img-${clipIdx++}`
-    emitImageElement(
-      defsLines, lines, clipId, clipRect,
-      [jigImgX, jigImgY, jigImgW, jigImgH],
-      img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
-      kid, imageCache, svgCache,
-    )
   }
 
   lines.push("</g>")
@@ -700,9 +1003,19 @@ function buildCanvasGlobalImageLayer(
         imgSvgY + imgH <= dKeyY || imgSvgY >= dKeyY + dKeyH
       ) continue
 
-      const bbx = pos.base_box_x, bby = pos.base_box_y
-      const bbw = pos.base_box_w, bbh = pos.base_box_h
-      if (bbx == null || bby == null || bbw == null || bbh == null) continue
+      // 底座参考框：优先矩形 base_box，降级到 base_points 包围盒
+      let bbx: number, bby: number, bbw: number, bbh: number
+      const bpts = pos.base_points
+      if (pos.base_box_x != null && pos.base_box_y != null &&
+          pos.base_box_w != null && pos.base_box_h != null) {
+        bbx = pos.base_box_x; bby = pos.base_box_y
+        bbw = pos.base_box_w; bbh = pos.base_box_h
+      } else if (bpts && bpts.length > 0) {
+        const bb = pointsBBox(bpts)
+        bbx = bb.x; bby = bb.y; bbw = bb.w; bbh = bb.h
+      } else {
+        continue
+      }
 
       // 坐标映射仍基于底座框（base_box）比例，保持与底座框内图案位置一致
       const sx = dKeyW ? bbw / dKeyW : topScale
@@ -715,22 +1028,29 @@ function buildCanvasGlobalImageLayer(
       const jigImgW = imgW * sx
       const jigImgH = imgH * sy
 
-      // 剪切范围扩展到底色框（bottom_box），回退到底座框
+      const clipId = `clip-jig-gimg-${clipIdx++}`
+
+      // 剪切范围：多边形键用 polygon clip；矩形键扩展到 bottom_box，回退到 base_box
       const btx = pos.bottom_box_x, bty = pos.bottom_box_y
       const btw = pos.bottom_box_w, bth = pos.bottom_box_h
-      const clipRect: [number, number, number, number, number] =
-        btx != null && bty != null && btw != null && bth != null
-          ? [btx, bty, btw, bth, 0]
-          : [bbx, bby, bbw, bbh, pos.base_box_rx ?? 0]
-
-      const clipId = `clip-jig-gimg-${clipIdx++}`
-      emitImageElement(
-        defsLines, lines, clipId,
-        clipRect,
-        [jigImgX, jigImgY, jigImgW, jigImgH],
-        img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
-        kid, imageCache, svgCache,
-      )
+      if (bpts && bpts.length > 0 && pos.base_box_x == null) {
+        // 多边形底座：使用圆角 base_points path clipPath
+        pushRoundedPolygonClipPathDef(defsLines, clipId, bpts,
+          KEY_RADIUS_BASE_ISO * topScale)
+        emitImageWithCustomClip(defsLines, lines, clipId,
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
+      } else {
+        const clipRect: [number, number, number, number, number] =
+          btx != null && bty != null && btw != null && bth != null
+            ? [btx, bty, btw, bth, 0]
+            : [bbx, bby, bbw, bbh, pos.base_box_rx ?? 0]
+        emitImageElement(defsLines, lines, clipId, clipRect,
+          [jigImgX, jigImgY, jigImgW, jigImgH],
+          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          kid, imageCache, svgCache)
+      }
     }
   }
 
@@ -1047,7 +1367,10 @@ export async function generateJigSvg(design: DesignPayload): Promise<string> {
   if (!fs.existsSync(positionsPath)) {
     throw new Error(`治具位置文件不存在: ${positionsPath}`)
   }
-  const positions: JigPosition[] = JSON.parse(fs.readFileSync(positionsPath, "utf-8"))
+  // 用 stripBom 去除 UTF-8 BOM（\uFEFF），防止 JSON.parse 因 BOM 报错
+  const positions: JigPosition[] = JSON.parse(
+    fs.readFileSync(positionsPath, "utf-8").replace(/^\uFEFF/, ""),
+  )
 
   // 4. 计算比例因子
   const topScale = computeJigTopScale(positions, layout.baseUnit)

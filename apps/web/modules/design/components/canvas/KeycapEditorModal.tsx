@@ -14,7 +14,15 @@ import {
   KEY_RADIUS_TOP,
   KEY_LABEL_SIZE,
   KEY_LABEL_OPTICAL_CENTER_RATIO,
+  STEPPED_PAD_LEFT,
+  STEPPED_PAD_TOP,
+  STEPPED_PAD_RIGHT,
+  STEPPED_PAD_BOTTOM,
   clamp,
+  getIsoBasePoints,
+  getIsoTopFacePoints,
+  getIsoTopFaceRadii,
+  roundedPolygonPath,
 } from "@/modules/design/lib/design/keycapGeometry"
 import { KeycapEditorImageElement, MODAL_VIEW_INSET, type KeycapEditorImage } from "./KeycapEditorImageElement"
 import { Input } from "@workspace/ui/components/input"
@@ -110,11 +118,17 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const rawH = keyDef.h * unit
   const pw = rawW - GAP
   const ph = rawH - GAP
-  // 键帽顶部触面的 viewBox 映射
-  const topX = KEY_PAD_LEFT
-  const topY = KEY_PAD_TOP
-  const topW = pw - KEY_PAD_LEFT - KEY_PAD_RIGHT
-  const topH = ph - KEY_PAD_TOP - KEY_PAD_BOTTOM
+
+  const isIso = keyDef.shape === "iso"
+  const isStepped = keyDef.shape === "stepped"
+
+  // ISO：label 定位基准取上臂区域（对应 top_face_points 上半段）
+  // 比例来自 ISO_TOP_FACE_POINT_RATIOS：左 0.124，上 0.027，右 0.868，折角 y 0.415
+  // stepped：顶面偏左窄矩形，对应 STEPPED_PAD_* 常量
+  const topX = isIso ? 0.124 * pw : isStepped ? STEPPED_PAD_LEFT : KEY_PAD_LEFT
+  const topY = isIso ? 0.027 * ph : isStepped ? STEPPED_PAD_TOP : KEY_PAD_TOP
+  const topW = isIso ? (0.868 - 0.124) * pw : isStepped ? pw - STEPPED_PAD_LEFT - STEPPED_PAD_RIGHT : pw - KEY_PAD_LEFT - KEY_PAD_RIGHT
+  const topH = isIso ? (0.415 - 0.027) * ph : isStepped ? ph - STEPPED_PAD_TOP - STEPPED_PAD_BOTTOM : ph - KEY_PAD_TOP - KEY_PAD_BOTTOM
 
   // 5. 键帽默认样式及覆写样式读取
   const baseFill = override?.bgColor ?? globalDefaults.bgColor ?? "#3c3c3c"
@@ -531,11 +545,17 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                 <defs>
                   {/* 键帽底座轮廓裁切区域 */}
                   <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
-                    <rect x={0} y={0} width={pw} height={ph} rx={KEY_RADIUS_BASE} />
+                    {isIso
+                      ? <path d={roundedPolygonPath(getIsoBasePoints(0, 0, pw, ph), KEY_RADIUS_BASE)} />
+                      : <rect x={0} y={0} width={pw} height={ph} rx={KEY_RADIUS_BASE} />
+                    }
                   </clipPath>
                   {/* 键帽顶面（top face）裁切区域 */}
                   <clipPath id={`${clipId}-top`} clipPathUnits="userSpaceOnUse">
-                    <rect x={topX} y={topY} width={topW} height={topH} rx={KEY_RADIUS_TOP} />
+                    {isIso
+                      ? <path d={roundedPolygonPath(getIsoTopFacePoints(0, 0, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))} />
+                      : <rect x={topX} y={topY} width={topW} height={topH} rx={KEY_RADIUS_TOP} />
+                    }
                   </clipPath>
                   <filter id={`${clipId}-shadow`} x="-10%" y="-10%" width="120%" height="120%">
                     <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.5" />
@@ -544,21 +564,42 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
                 <g transform={`translate(${MODAL_VIEW_INSET}, ${MODAL_VIEW_INSET})`}>
                   {/* 键帽底座 */}
-                  <rect
-                    x={0} y={0} width={pw} height={ph}
-                    rx={KEY_RADIUS_BASE}
-                    fill={baseFill}
-                    stroke={borderColor}
-                    strokeWidth={0.8 / modalScale}
-                  />
+                  {isIso
+                    ? (
+                      <path
+                        d={roundedPolygonPath(getIsoBasePoints(0, 0, pw, ph), KEY_RADIUS_BASE)}
+                        fill={baseFill}
+                        stroke={borderColor}
+                        strokeWidth={0.8 / modalScale}
+                      />
+                    ) : (
+                      <rect
+                        x={0} y={0} width={pw} height={ph}
+                        rx={KEY_RADIUS_BASE}
+                        fill={baseFill}
+                        stroke={borderColor}
+                        strokeWidth={0.8 / modalScale}
+                      />
+                    )
+                  }
 
                   {/* 键帽顶面 */}
-                  <rect
-                    x={topX} y={topY} width={topW} height={topH}
-                    rx={KEY_RADIUS_TOP}
-                    fill={topFill}
-                    style={{ pointerEvents: "none" }}
-                  />
+                  {isIso
+                    ? (
+                      <path
+                        d={roundedPolygonPath(getIsoTopFacePoints(0, 0, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))}
+                        fill={topFill}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    ) : (
+                      <rect
+                        x={topX} y={topY} width={topW} height={topH}
+                        rx={KEY_RADIUS_TOP}
+                        fill={topFill}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    )
+                  }
 
                   {/* 动态渲染子组件 KeycapEditorImageElement 图层组 */}
                   {keycapImages.map((img) => (
@@ -587,14 +628,26 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                   ))}
 
                   {/* 模拟内凹高光，提升 3D 质感 */}
-                  <rect
-                    x={topX} y={topY} width={topW} height={topH}
-                    rx={KEY_RADIUS_TOP}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.12)"
-                    strokeWidth={0.6 / modalScale}
-                    style={{ pointerEvents: "none" }}
-                  />
+                  {isIso
+                    ? (
+                      <path
+                        d={roundedPolygonPath(getIsoTopFacePoints(0, 0, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.12)"
+                        strokeWidth={0.6 / modalScale}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    ) : (
+                      <rect
+                        x={topX} y={topY} width={topW} height={topH}
+                        rx={KEY_RADIUS_TOP}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.12)"
+                        strokeWidth={0.6 / modalScale}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    )
+                  }
 
                   {/* 刻字文本节点 */}
                   <text
@@ -624,8 +677,8 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                         : labelText}
                   </text>
 
-                  {/* 十字辅助线（以 top face 中心为原点，限定在 top face 范围内） */}
-                  {showCrosshair && (
+                  {/* 十字辅助线（ISO 形状不支持，stepped 及其余键帽可切换） */}
+                  {showCrosshair && !isIso && (
                     <g style={{ pointerEvents: "none" }}>
                       <line
                         x1={topX} y1={topY + topH / 2}
@@ -791,18 +844,20 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
             上传图片
           </button>
 
-          <button
-            onClick={() => setShowCrosshair((v) => !v)}
-            className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] transition-colors select-none ${
-              showCrosshair
-                ? "text-white/70 bg-white/10"
-                : "text-white/30 hover:text-white/60 hover:bg-white/6"
-            }`}
-            title="切换十字辅助线"
-          >
-            <Crosshair className="size-3.5" />
-            辅助线
-          </button>
+          {!isIso && (
+            <button
+              onClick={() => setShowCrosshair((v) => !v)}
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] transition-colors select-none ${
+                showCrosshair
+                  ? "text-white/70 bg-white/10"
+                  : "text-white/30 hover:text-white/60 hover:bg-white/6"
+              }`}
+              title="切换十字辅助线"
+            >
+              <Crosshair className="size-3.5" />
+              辅助线
+            </button>
+          )}
 
           {selectedImageId && (
             <button

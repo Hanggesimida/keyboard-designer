@@ -6,7 +6,14 @@ import { Home } from "lucide-react"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
-import { KEY_PAD_LEFT, KEY_PAD_TOP, KEY_PAD_RIGHT, KEY_PAD_BOTTOM, KEY_RADIUS_TOP } from "@/modules/design/lib/design/keycapGeometry"
+import {
+  KEY_RADIUS_TOP,
+  getTopFaceRects,
+  getIsoBasePoints,
+  getIsoTopFacePoints,
+  getIsoTopFaceRadii,
+  roundedPolygonPath,
+} from "@/modules/design/lib/design/keycapGeometry"
 import { CanvasElementLayer } from "./CanvasElementLayer"
 import { KeycapEditorModal } from "./KeycapEditorModal"
 import { CanvasToolbar } from "./CanvasToolbar"
@@ -113,14 +120,30 @@ function ClippedImagesLayer({
                   const pw = key.w * unit - GAP
                   const ph = key.h * unit - GAP
                   if (img.clipToTopFace) {
-                    return (
+                    if (key.shape === "iso") {
+                      return (
+                        <path
+                          key={key.keyId}
+                          d={roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))}
+                        />
+                      )
+                    }
+                    return getTopFaceRects(key.shape, px, py, pw, ph).map((r, ri) => (
                       <rect
-                        key={key.keyId}
-                        x={px + KEY_PAD_LEFT}
-                        y={py + KEY_PAD_TOP}
-                        width={pw - KEY_PAD_LEFT - KEY_PAD_RIGHT}
-                        height={ph - KEY_PAD_TOP - KEY_PAD_BOTTOM}
+                        key={`${key.keyId}-${ri}`}
+                        x={r.x}
+                        y={r.y}
+                        width={r.w}
+                        height={r.h}
                         rx={KEY_RADIUS_TOP}
+                      />
+                    ))
+                  }
+                  if (key.shape === "iso") {
+                    return (
+                      <path
+                        key={key.keyId}
+                        d={roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)}
                       />
                     )
                   }

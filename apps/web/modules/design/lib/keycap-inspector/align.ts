@@ -5,6 +5,12 @@
   KEYCAP_PAD_TOP,
   KEYCAP_PAD_BOTTOM,
 } from "@/modules/design/components/canvas/KeycapNode"
+import {
+  STEPPED_PAD_LEFT,
+  STEPPED_PAD_TOP,
+  STEPPED_PAD_RIGHT,
+  STEPPED_PAD_BOTTOM,
+} from "@/modules/design/lib/design/keycapGeometry"
 import type { KeycapOverride } from "@/modules/design/store/designUiStore"
 import { LABEL_ALIGN_PAD } from "./constants"
 
@@ -29,11 +35,20 @@ export const ALIGN_POSITIONS: AlignPos[] = [
   { alignH: "right", alignV: "bottom", title: "右下对齐" },
 ]
 
-/** 根据 keyDef 尺寸（以 unit 为基准）计算顶面宽高（SVG 单位） */
-export function getTopFaceSize(keyDef: { w: number; h: number }, unit: number) {
-  const topW = keyDef.w * unit - KEYCAP_GAP - KEYCAP_PAD_LEFT - KEYCAP_PAD_RIGHT
-  const topH = keyDef.h * unit - KEYCAP_GAP - KEYCAP_PAD_TOP - KEYCAP_PAD_BOTTOM
-  return { topW, topH }
+/** 根据 keyDef 尺寸与形状（以 unit 为基准）计算顶面宽高（SVG 单位） */
+export function getTopFaceSize(keyDef: { w: number; h: number; shape?: string }, unit: number) {
+  const base = keyDef.w * unit - KEYCAP_GAP
+  const baseH = keyDef.h * unit - KEYCAP_GAP
+  if (keyDef.shape === "stepped") {
+    return {
+      topW: base - STEPPED_PAD_LEFT - STEPPED_PAD_RIGHT,
+      topH: baseH - STEPPED_PAD_TOP - STEPPED_PAD_BOTTOM,
+    }
+  }
+  return {
+    topW: base - KEYCAP_PAD_LEFT - KEYCAP_PAD_RIGHT,
+    topH: baseH - KEYCAP_PAD_TOP - KEYCAP_PAD_BOTTOM,
+  }
 }
 
 /** 根据对齐方向计算 labelOffsetX / labelOffsetY（相对顶面中心） */
@@ -101,7 +116,7 @@ export function resolveTextHalfDimensionsMulti(
 }
 
 export function computeLabelAlignPatch(
-  keyDef: { w: number; h: number },
+  keyDef: { w: number; h: number; shape?: string },
   unit: number,
   alignH: AlignH,
   alignV: AlignV,

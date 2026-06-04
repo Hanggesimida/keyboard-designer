@@ -15,6 +15,11 @@ import {
   KEY_LABEL_SIZE,
   KEY_LABEL_OPTICAL_CENTER_RATIO,
   clamp,
+  getTopFaceRects,
+  getIsoBasePoints,
+  getIsoTopFacePoints,
+  getIsoTopFaceRadii,
+  roundedPolygonPath,
 } from "@/modules/design/lib/design/keycapGeometry"
 import {
   isGradientValue,
@@ -135,10 +140,12 @@ export function KeycapNode({
   const pw = rawW - GAP
   const ph = rawH - GAP
 
-  const topX = px + KEY_PAD_LEFT
-  const topY = py + KEY_PAD_TOP
-  const topW = pw - KEY_PAD_LEFT - KEY_PAD_RIGHT
-  const topH = ph - KEY_PAD_TOP - KEY_PAD_BOTTOM
+  const topFaceRects = getTopFaceRects(keyDef.shape, px, py, pw, ph)
+  // 以主顶面（首段）为标签定位和拖拽约束的基准；getTopFaceRects 始终返回至少一个元素
+  const topX = topFaceRects[0]!.x
+  const topY = topFaceRects[0]!.y
+  const topW = topFaceRects[0]!.w
+  const topH = topFaceRects[0]!.h
 
   const baseFill =
     override?.bgColor ??
@@ -337,6 +344,31 @@ export function KeycapNode({
 
   // ─── fills 阶段：底座、顶面色块（无文字/边框）
   if (renderMode === "fills") {
+    if (keyDef.shape === "iso") {
+      const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
+      const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
+      return (
+        <g data-keycap="true" style={{ cursor: "pointer" }} {...clickHandler}>
+          {hasDefs && (
+            <defs>
+              {baseSvg.gradientDef}
+              {topSvg.gradientDef}
+            </defs>
+          )}
+          <path
+            d={isoBasePath}
+            fill={baseSvg.fill}
+            stroke={borderHidden ? "none" : resolvedBorder}
+            strokeWidth={borderHidden ? 0 : 1}
+          />
+          <path
+            d={isoTopPath}
+            fill={topSvg.fill}
+            style={{ pointerEvents: "none" }}
+          />
+        </g>
+      )
+    }
     return (
       <g data-keycap="true" style={{ cursor: "pointer" }} {...clickHandler}>
         {hasDefs && (
@@ -351,28 +383,95 @@ export function KeycapNode({
           stroke={borderHidden ? "none" : resolvedBorder}
           strokeWidth={borderHidden ? 0 : 1}
         />
-        <rect
-          x={topX} y={topY} width={topW} height={topH} rx={KEY_RADIUS_TOP}
-          fill={topSvg.fill}
-          style={{ pointerEvents: "none" }}
-        />
+        {topFaceRects.map((r, i) => (
+          <rect
+            key={i}
+            x={r.x} y={r.y} width={r.w} height={r.h} rx={KEY_RADIUS_TOP}
+            fill={topSvg.fill}
+            style={{ pointerEvents: "none" }}
+          />
+        ))}
       </g>
     )
   }
 
   // ─── labels 阶段：顶面边框、文字、选中蓝框、交互矩形（无底层填充）
   if (renderMode === "labels") {
+    if (keyDef.shape === "iso") {
+      const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
+      const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
+      return (
+        <g data-keycap="true" style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
+          {/* 顶面边框 */}
+          <path
+            d={isoTopPath}
+            fill="none"
+            stroke={isLabelEditing ? "var(--design-keycap-selected-border)" : borderHidden ? "none" : resolvedBorder}
+            strokeWidth={isLabelEditing ? 1 : borderHidden ? 0 : 0.5}
+            strokeDasharray={isLabelEditing ? "3 2" : undefined}
+            style={{ pointerEvents: "none" }}
+          />
+          {/* 标签文字 */}
+          <text
+            ref={textRef}
+            x={textX} y={textYDraw}
+            fontSize={fontSize} fill={labelColor}
+            textAnchor="middle" dominantBaseline="central"
+            style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
+          >
+            {letterSpacing !== 0
+              ? labelLines.length > 1
+                ? labelLines.map((line, i) => (
+                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                      {renderChars(line || "\u00A0")}
+                    </tspan>
+                  ))
+                : renderChars(labelText)
+              : labelLines.length > 1
+                ? labelLines.map((line, i) => (
+                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                      {line || "\u00A0"}
+                    </tspan>
+                  ))
+                : labelText}
+          </text>
+          {/* 选中蓝框覆盖层 */}
+          {isSelected && (
+            <path
+              d={isoBasePath}
+              fill="none"
+              stroke="var(--design-keycap-selected-border)"
+              strokeWidth={KEY_SELECTED_STROKE_WIDTH}
+              style={{ pointerEvents: "none" }}
+            />
+          )}
+          {/* 透明交互层：保留外接矩形以确保命中区完整 */}
+          {isSelected && (
+            <rect
+              x={px} y={py} width={pw} height={ph}
+              fill="transparent"
+              style={{ cursor: isLabelEditing ? "move" : "pointer" }}
+              onDoubleClick={handleDoubleClick}
+              onMouseDown={handleTopFaceMouseDown}
+            />
+          )}
+        </g>
+      )
+    }
     return (
       <g data-keycap="true" style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
         {/* 顶面边框 */}
-        <rect
-          x={topX} y={topY} width={topW} height={topH} rx={KEY_RADIUS_TOP}
-          fill="none"
-          stroke={isLabelEditing ? "var(--design-keycap-selected-border)" : borderHidden ? "none" : resolvedBorder}
-          strokeWidth={isLabelEditing ? 1 : borderHidden ? 0 : 0.5}
-          strokeDasharray={isLabelEditing ? "3 2" : undefined}
-          style={{ pointerEvents: "none" }}
-        />
+        {topFaceRects.map((r, i) => (
+          <rect
+            key={i}
+            x={r.x} y={r.y} width={r.w} height={r.h} rx={KEY_RADIUS_TOP}
+            fill="none"
+            stroke={isLabelEditing ? "var(--design-keycap-selected-border)" : borderHidden ? "none" : resolvedBorder}
+            strokeWidth={isLabelEditing ? 1 : borderHidden ? 0 : 0.5}
+            strokeDasharray={isLabelEditing ? "3 2" : undefined}
+            style={{ pointerEvents: "none" }}
+          />
+        ))}
         {/* 标签文字 */}
         <text
           ref={textRef}
@@ -422,6 +521,93 @@ export function KeycapNode({
   }
 
   // ─── full 阶段（默认）：完整渲染 ──────────────────────
+  if (keyDef.shape === "iso") {
+    const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
+    const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
+    return (
+      <g
+        data-keycap="true"
+        {...clickHandler}
+        style={{ cursor: isLabelEditing ? "default" : "pointer" }}
+      >
+        {hasDefs && (
+          <defs>
+            {baseSvg.gradientDef}
+            {topSvg.gradientDef}
+          </defs>
+        )}
+        {/* ISO 底座（L 形圆角路径） */}
+        <path
+          d={isoBasePath}
+          fill={baseSvg.fill}
+          stroke={baseStroke}
+          strokeWidth={baseStrokeWidth}
+        />
+        {/* ISO 顶面填充（L 形圆角路径） */}
+        <path
+          d={isoTopPath}
+          fill={topSvg.fill}
+          style={{ pointerEvents: "none" }}
+        />
+        {/* ISO 顶面边框 */}
+        <path
+          d={isoTopPath}
+          fill="none"
+          stroke={
+            isLabelEditing
+              ? "var(--design-keycap-selected-border)"
+              : borderHidden
+                ? "none"
+                : resolvedBorder
+          }
+          strokeWidth={isLabelEditing ? 1 : borderHidden ? 0 : 0.5}
+          strokeDasharray={isLabelEditing ? "3 2" : undefined}
+          style={{ pointerEvents: "none" }}
+        />
+        {/* 标签文字 */}
+        <text
+          ref={textRef}
+          x={textX}
+          y={textYDraw}
+          fontSize={fontSize}
+          fill={labelColor}
+          textAnchor="middle"
+          dominantBaseline="central"
+          style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
+        >
+          {letterSpacing !== 0
+            ? labelLines.length > 1
+              ? labelLines.map((line, i) => (
+                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                    {renderChars(line || "\u00A0")}
+                  </tspan>
+                ))
+              : renderChars(labelText)
+            : labelLines.length > 1
+              ? labelLines.map((line, i) => (
+                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                    {line || "\u00A0"}
+                  </tspan>
+                ))
+              : labelText}
+        </text>
+        {/* 透明交互层：保留外接矩形以确保命中区完整 */}
+        {isSelected && (
+          <rect
+            x={px}
+            y={py}
+            width={pw}
+            height={ph}
+            fill="transparent"
+            style={{ cursor: isLabelEditing ? "move" : "pointer" }}
+            onDoubleClick={handleDoubleClick}
+            onMouseDown={handleTopFaceMouseDown}
+          />
+        )}
+      </g>
+    )
+  }
+
   return (
     <g
       data-keycap="true"
@@ -445,36 +631,42 @@ export function KeycapNode({
         stroke={baseStroke}
         strokeWidth={baseStrokeWidth}
       />
-      {/* 顶面填充 */}
-      <rect
-        x={topX}
-        y={topY}
-        width={topW}
-        height={topH}
-        rx={KEY_RADIUS_TOP}
-        fill={topSvg.fill}
-        style={{ pointerEvents: "none" }}
-      />
+      {/* 顶面填充（支持多段：stepped/iso） */}
+      {topFaceRects.map((r, i) => (
+        <rect
+          key={i}
+          x={r.x}
+          y={r.y}
+          width={r.w}
+          height={r.h}
+          rx={KEY_RADIUS_TOP}
+          fill={topSvg.fill}
+          style={{ pointerEvents: "none" }}
+        />
+      ))}
 
-      {/* 顶面边框叠层 */}
-      <rect
-        x={topX}
-        y={topY}
-        width={topW}
-        height={topH}
-        rx={KEY_RADIUS_TOP}
-        fill="none"
-        stroke={
-          isLabelEditing
-            ? "var(--design-keycap-selected-border)"
-            : borderHidden
-              ? "none"
-              : resolvedBorder
-        }
-        strokeWidth={isLabelEditing ? 1 : borderHidden ? 0 : 0.5}
-        strokeDasharray={isLabelEditing ? "3 2" : undefined}
-        style={{ pointerEvents: "none" }}
-      />
+      {/* 顶面边框叠层（支持多段） */}
+      {topFaceRects.map((r, i) => (
+        <rect
+          key={i}
+          x={r.x}
+          y={r.y}
+          width={r.w}
+          height={r.h}
+          rx={KEY_RADIUS_TOP}
+          fill="none"
+          stroke={
+            isLabelEditing
+              ? "var(--design-keycap-selected-border)"
+              : borderHidden
+                ? "none"
+                : resolvedBorder
+          }
+          strokeWidth={isLabelEditing ? 1 : borderHidden ? 0 : 0.5}
+          strokeDasharray={isLabelEditing ? "3 2" : undefined}
+          style={{ pointerEvents: "none" }}
+        />
+      ))}
 
       {/* 标签文字（始终在最上层） */}
       <text
