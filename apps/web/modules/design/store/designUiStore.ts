@@ -262,7 +262,7 @@ function applyOverridePatch(
 export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   temporal(
   (set, get) => ({
-    templateId: "ansi-104",
+    templateId: "ansi-144",
     layers: initialLayers,
     activeLayerId: null,
     artboardBackground: "#2c2c2c",

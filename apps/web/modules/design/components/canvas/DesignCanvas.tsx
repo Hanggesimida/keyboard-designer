@@ -306,6 +306,32 @@ function KeyboardTemplate({
         /* 无 clip 图片时走完整渲染路径，避免额外开销 */
         renderLayers("full")
       )}
+
+      {/* 增补区 Row Level 标识：在每个增补区键帽正下方显示 R 级别 */}
+      {keys.some((k) => k.section === "supplement") && (
+        <g style={{ pointerEvents: "none" }}>
+          {keys
+            .filter((k) => k.section === "supplement" && k.rowLevel)
+            .map((key) => {
+              const centerX = (key.x + key.w / 2) * unit
+              const labelY = (key.y + key.h) * unit + 3
+              return (
+                <text
+                  key={`supplement-rl-${key.keyId}`}
+                  x={centerX}
+                  y={labelY}
+                  fontSize={6}
+                  fill="rgba(255,255,255,0.45)"
+                  textAnchor="middle"
+                  dominantBaseline="hanging"
+                  style={{ userSelect: "none" }}
+                >
+                  {key.rowLevel}
+                </text>
+              )
+            })}
+        </g>
+      )}
     </svg>
   )
 }
@@ -340,7 +366,9 @@ export function DesignCanvas() {
   const { keys, unit, artW, artH, bounds } = useMemo(() => {
     const layout = getLayoutData(templateId)
     const u = layout.baseUnit
-    const allKeys = layout.rows.flatMap((row) => row.keys) as KeyDef[]
+    const allKeys = layout.rows.flatMap((row) =>
+      row.keys.map((key) => ({ ...key, section: row.section ?? "base" }))
+    ) as KeyDef[]
     const b = getTemplateBounds(allKeys, u)
     return {
       keys: allKeys,

@@ -36,6 +36,8 @@ export interface KeyDef {
   h: number
   shape: string
   rowLevel?: string
+  /** 键所属区域：标准键盘区（base）或增补键帽区（supplement） */
+  section?: "base" | "supplement"
 }
 
 /** 键帽间距（SVG 单位），供对齐计算使用 */
