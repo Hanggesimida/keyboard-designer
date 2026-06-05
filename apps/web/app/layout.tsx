@@ -1,6 +1,7 @@
 import "@workspace/ui/globals.css"
 import localFont from "next/font/local"
 import { Noto_Sans_SC, Noto_Serif_SC } from "next/font/google"
+import { Providers } from "../components/providers/providers"
 
 const inter = localFont({
   src: [
@@ -119,7 +120,9 @@ export default function RootLayout({
 
   return (
     <html lang="zh-CN" className={`dark ${fontVariables}`}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }
