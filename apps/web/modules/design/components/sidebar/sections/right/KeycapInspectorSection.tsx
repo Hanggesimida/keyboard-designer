@@ -4,7 +4,6 @@ import { EyeOff, Lock } from "lucide-react"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { PanelSection } from "../../panel-section"
-import { InfoRow } from "./keycap-inspector/InfoRow"
 import { MultiKeycapEditor } from "./keycap-inspector/MultiKeycapEditor"
 import { SingleKeycapEditor } from "./keycap-inspector/SingleKeycapEditor"
 
@@ -32,7 +31,7 @@ export function KeycapInspectorSection() {
 
   if (selectedKeycapIds.length === 0) {
     return (
-      <PanelSection title="键帽属性">
+      <PanelSection title="键帽样式">
         <p className="py-1 text-center text-[11px] text-[var(--muted-foreground)]">
           未选中键帽
         </p>
@@ -42,7 +41,7 @@ export function KeycapInspectorSection() {
 
   if (selectedKeycapIds.length > 1) {
     return (
-      <PanelSection title="键帽属性">
+      <PanelSection title="键帽样式">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">
             已选中{" "}
@@ -83,7 +82,7 @@ export function KeycapInspectorSection() {
 
   if (!key) {
     return (
-      <PanelSection title="键帽属性">
+      <PanelSection title="键帽样式">
         <p className="py-1 text-center text-[11px] text-[var(--muted-foreground)]">
           未选中键帽
         </p>
@@ -92,20 +91,7 @@ export function KeycapInspectorSection() {
   }
 
   return (
-    <PanelSection title="键帽属性">
-      <div className="flex flex-col gap-2">
-        <InfoRow label="标签" value={key.label} />
-        <InfoRow label="Key ID" value={key.keyId} />
-        <InfoRow label="所属行" value={key.rowLabel} />
-        {key.rowLevel && <InfoRow label="行级别" value={key.rowLevel} />}
-        <div className="my-0.5 border-t border-border/40" />
-        <InfoRow label="位置 X" value={`${key.x}u`} />
-        <InfoRow label="位置 Y" value={`${key.y}u`} />
-        <InfoRow label="宽度" value={`${key.w}u`} />
-        <InfoRow label="高度" value={`${key.h}u`} />
-        <InfoRow label="形状" value={key.shape} />
-      </div>
-
+    <PanelSection title="键帽样式">
       {editorDisabled && disabledReason && (
         <div className="mt-3 flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
           {isLayerLocked && <Lock className="size-3 shrink-0" />}

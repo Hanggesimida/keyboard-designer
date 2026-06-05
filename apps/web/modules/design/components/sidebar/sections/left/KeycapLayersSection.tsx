@@ -79,6 +79,7 @@ interface KeycapLayerRowProps {
   onMoveDown: (e: React.MouseEvent) => void
   onToggleVisible: (e: React.MouseEvent) => void
   onToggleLocked: (e: React.MouseEvent) => void
+  onToggleLabelsHidden: (e: React.MouseEvent) => void
   onRemove: (e: React.MouseEvent) => void
 }
 
@@ -94,6 +95,7 @@ function KeycapLayerRow({
   onMoveDown,
   onToggleVisible,
   onToggleLocked,
+  onToggleLabelsHidden,
   onRemove,
 }: KeycapLayerRowProps) {
   return (
@@ -151,10 +153,12 @@ function KeycapLayerRow({
         canRemove={total > 1}
         isVisible={layer.visible}
         isLocked={layer.locked}
+        labelsHidden={layer.labelsHidden}
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onToggleVisible={onToggleVisible}
         onToggleLocked={onToggleLocked}
+        onToggleLabelsHidden={onToggleLabelsHidden}
         onRemove={onRemove}
       />
     </li>
@@ -178,6 +182,7 @@ interface KeycapLayerTreeNodeProps {
   onMoveDown: (e: React.MouseEvent) => void
   onToggleVisible: (e: React.MouseEvent) => void
   onToggleLocked: (e: React.MouseEvent) => void
+  onToggleLabelsHidden: (e: React.MouseEvent) => void
   onRemove: (e: React.MouseEvent) => void
   onSelectKeycap: (keyId: string) => void
 }
@@ -198,6 +203,7 @@ function KeycapLayerTreeNode({
   onMoveDown,
   onToggleVisible,
   onToggleLocked,
+  onToggleLabelsHidden,
   onRemove,
   onSelectKeycap,
 }: KeycapLayerTreeNodeProps) {
@@ -215,6 +221,7 @@ function KeycapLayerTreeNode({
         onMoveDown={onMoveDown}
         onToggleVisible={onToggleVisible}
         onToggleLocked={onToggleLocked}
+        onToggleLabelsHidden={onToggleLabelsHidden}
         onRemove={onRemove}
       />
 
@@ -257,6 +264,7 @@ export function KeycapLayersSection() {
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
   const toggleLayerVisible = useDesignUIStore((s) => s.toggleLayerVisible)
   const toggleLayerLocked = useDesignUIStore((s) => s.toggleLayerLocked)
+  const toggleLayerLabelsHidden = useDesignUIStore((s) => s.toggleLayerLabelsHidden)
   const removeLayer = useDesignUIStore((s) => s.removeLayer)
   const reorderLayer = useDesignUIStore((s) => s.reorderLayer)
 
@@ -318,6 +326,7 @@ export function KeycapLayersSection() {
             onMoveDown={(e) => { e.stopPropagation(); reorderLayer(layer.id, "down") }}
             onToggleVisible={(e) => { e.stopPropagation(); toggleLayerVisible(layer.id) }}
             onToggleLocked={(e) => { e.stopPropagation(); toggleLayerLocked(layer.id) }}
+            onToggleLabelsHidden={(e) => { e.stopPropagation(); toggleLayerLabelsHidden(layer.id) }}
             onRemove={(e) => { e.stopPropagation(); removeLayer(layer.id) }}
             onSelectKeycap={(keyId) => {
               setActiveLayer(layer.id)

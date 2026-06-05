@@ -8,6 +8,8 @@ export interface Layer {
   visible: boolean
   locked: boolean
   opacity: number
+  /** 是否隐藏该图层上所有键帽的文字标签 */
+  labelsHidden?: boolean
 }
 
 // ─── 画布自由元素 ──────────────────────────────────────
@@ -165,6 +167,7 @@ interface DesignUIActions {
   setActiveLayer: (id: string | null) => void
   toggleLayerVisible: (id: string) => void
   toggleLayerLocked: (id: string) => void
+  toggleLayerLabelsHidden: (id: string) => void
   setLayerOpacity: (id: string, opacity: number) => void
   removeLayer: (id: string) => void
   renameLayer: (id: string, name: string) => void
@@ -249,11 +252,11 @@ function applyOverridePatch(
       ;(merged as Record<string, unknown>)[k as string] = v
     }
   }
-  // 清除空字符串字段
+  // 清除空字符串字段（labelText 允许为空，表示用户主动清空文案）
   const cleaned: KeycapOverride = {}
   for (const [k, v] of Object.entries(merged)) {
     if (v === undefined) continue
-    if (typeof v === "string" && v === "") continue
+    if (typeof v === "string" && v === "" && k !== "labelText") continue
     ;(cleaned as Record<string, unknown>)[k] = v
   }
   return cleaned
@@ -349,6 +352,13 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
       set((s) => ({
         layers: s.layers.map((l) =>
           l.id === id ? { ...l, locked: !l.locked } : l,
+        ),
+      })),
+
+    toggleLayerLabelsHidden: (id) =>
+      set((s) => ({
+        layers: s.layers.map((l) =>
+          l.id === id ? { ...l, labelsHidden: !l.labelsHidden } : l,
         ),
       })),
 

@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useMemo } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, X } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Button } from "@workspace/ui/components/button"
@@ -91,7 +91,7 @@ export function MultiKeycapEditor({
   return (
     <div
       className={cn(
-        "mt-3 flex flex-col gap-3 border-t border-border/40 pt-3",
+        "mt-2 flex flex-col gap-3",
         disabled && "pointer-events-none opacity-60",
       )}
     >
@@ -187,6 +187,22 @@ export function MultiKeycapEditor({
             className="h-7 text-xs tabular-nums"
           />
         </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Label className="text-[11px] font-normal text-muted-foreground">文案</Label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-[11px] text-red-400 hover:bg-red-500/10 hover:text-red-400"
+          disabled={disabled}
+          onClick={() => e.applyPatch({ labelText: "" })}
+          tabIndex={-1}
+        >
+          <X className="h-3 w-3" />
+          清空文案
+        </Button>
       </div>
 
       <LabelAlignmentGrid disabled={disabled} onAlign={e.handleAlignMulti} />

@@ -270,6 +270,7 @@ function KeyboardTemplate({
                 onLabelOffsetChange(layer.id, key.keyId, x, y)
               }
               renderMode={mode}
+              labelsHidden={layer.labelsHidden}
             />
           ))}
         </g>

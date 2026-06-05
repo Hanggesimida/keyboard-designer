@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, X } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Label } from "@workspace/ui/components/label"
@@ -70,17 +70,30 @@ export function SingleKeycapEditor({
   return (
     <div
       className={cn(
-        "mt-3 flex flex-col gap-3 border-t border-border/40 pt-3",
+        "flex flex-col gap-3",
         disabled && "pointer-events-none opacity-60",
       )}
     >
       <div className="flex flex-col gap-1.5">
-        <Label
-          htmlFor="keycap-label-input"
-          className="text-[11px] font-normal text-muted-foreground"
-        >
-          文案
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label
+            htmlFor="keycap-label-input"
+            className="text-[11px] font-normal text-muted-foreground"
+          >
+            文案
+          </Label>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 px-2 text-[11px] text-red-400 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-30"
+            disabled={disabled || !e.labelInput}
+            onClick={() => e.handleLabelChange("")}
+            tabIndex={-1}
+          >
+            <X className="h-3 w-3" />
+            清空
+          </Button>
+        </div>
         <Textarea
           id="keycap-label-input"
           value={e.labelInput}

@@ -114,6 +114,8 @@ interface KeycapNodeProps {
    * - "labels"：只渲染上层内容（顶面边框、文字、选中蓝框、交互矩形）
    */
   renderMode?: "full" | "fills" | "labels"
+  /** 是否隐藏该键帽的文字标签（图层级别控制） */
+  labelsHidden?: boolean
 }
 
 export function KeycapNode({
@@ -131,6 +133,7 @@ export function KeycapNode({
   zoom = 1,
   onLabelOffsetChange,
   renderMode = "full",
+  labelsHidden = false,
 }: KeycapNodeProps) {
   const rawX = keyDef.x * unit
   const rawY = keyDef.y * unit
@@ -414,29 +417,31 @@ export function KeycapNode({
             style={{ pointerEvents: "none" }}
           />
           {/* 标签文字 */}
-          <text
-            ref={textRef}
-            x={textX} y={textYDraw}
-            fontSize={fontSize} fill={labelColor}
-            textAnchor="middle" dominantBaseline="central"
-            style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
-          >
-            {letterSpacing !== 0
-              ? labelLines.length > 1
-                ? labelLines.map((line, i) => (
-                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                      {renderChars(line || "\u00A0")}
-                    </tspan>
-                  ))
-                : renderChars(labelText)
-              : labelLines.length > 1
-                ? labelLines.map((line, i) => (
-                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                      {line || "\u00A0"}
-                    </tspan>
-                  ))
-                : labelText}
-          </text>
+          {!labelsHidden && (
+            <text
+              ref={textRef}
+              x={textX} y={textYDraw}
+              fontSize={fontSize} fill={labelColor}
+              textAnchor="middle" dominantBaseline="central"
+              style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
+            >
+              {letterSpacing !== 0
+                ? labelLines.length > 1
+                  ? labelLines.map((line, i) => (
+                      <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                        {renderChars(line || "\u00A0")}
+                      </tspan>
+                    ))
+                  : renderChars(labelText)
+                : labelLines.length > 1
+                  ? labelLines.map((line, i) => (
+                      <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                        {line || "\u00A0"}
+                      </tspan>
+                    ))
+                  : labelText}
+            </text>
+          )}
           {/* 选中蓝框覆盖层 */}
           {isSelected && (
             <path
@@ -475,29 +480,31 @@ export function KeycapNode({
           />
         ))}
         {/* 标签文字 */}
-        <text
-          ref={textRef}
-          x={textX} y={textYDraw}
-          fontSize={fontSize} fill={labelColor}
-          textAnchor="middle" dominantBaseline="central"
-          style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
-        >
-          {letterSpacing !== 0
-            ? labelLines.length > 1
-              ? labelLines.map((line, i) => (
-                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                    {renderChars(line || "\u00A0")}
-                  </tspan>
-                ))
-              : renderChars(labelText)
-            : labelLines.length > 1
-              ? labelLines.map((line, i) => (
-                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                    {line || "\u00A0"}
-                  </tspan>
-                ))
-              : labelText}
-        </text>
+        {!labelsHidden && (
+          <text
+            ref={textRef}
+            x={textX} y={textYDraw}
+            fontSize={fontSize} fill={labelColor}
+            textAnchor="middle" dominantBaseline="central"
+            style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
+          >
+            {letterSpacing !== 0
+              ? labelLines.length > 1
+                ? labelLines.map((line, i) => (
+                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                      {renderChars(line || "\u00A0")}
+                    </tspan>
+                  ))
+                : renderChars(labelText)
+              : labelLines.length > 1
+                ? labelLines.map((line, i) => (
+                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                      {line || "\u00A0"}
+                    </tspan>
+                  ))
+                : labelText}
+          </text>
+        )}
         {/* 选中蓝框覆盖层 */}
         {isSelected && (
           <rect
@@ -567,32 +574,34 @@ export function KeycapNode({
           style={{ pointerEvents: "none" }}
         />
         {/* 标签文字 */}
-        <text
-          ref={textRef}
-          x={textX}
-          y={textYDraw}
-          fontSize={fontSize}
-          fill={labelColor}
-          textAnchor="middle"
-          dominantBaseline="central"
-          style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
-        >
-          {letterSpacing !== 0
-            ? labelLines.length > 1
-              ? labelLines.map((line, i) => (
-                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                    {renderChars(line || "\u00A0")}
-                  </tspan>
-                ))
-              : renderChars(labelText)
-            : labelLines.length > 1
-              ? labelLines.map((line, i) => (
-                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                    {line || "\u00A0"}
-                  </tspan>
-                ))
-              : labelText}
-        </text>
+        {!labelsHidden && (
+          <text
+            ref={textRef}
+            x={textX}
+            y={textYDraw}
+            fontSize={fontSize}
+            fill={labelColor}
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
+          >
+            {letterSpacing !== 0
+              ? labelLines.length > 1
+                ? labelLines.map((line, i) => (
+                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                      {renderChars(line || "\u00A0")}
+                    </tspan>
+                  ))
+                : renderChars(labelText)
+              : labelLines.length > 1
+                ? labelLines.map((line, i) => (
+                    <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                      {line || "\u00A0"}
+                    </tspan>
+                  ))
+                : labelText}
+          </text>
+        )}
         {/* 透明交互层：保留外接矩形以确保命中区完整 */}
         {isSelected && (
           <rect
@@ -671,32 +680,34 @@ export function KeycapNode({
       ))}
 
       {/* 标签文字（始终在最上层） */}
-      <text
-        ref={textRef}
-        x={textX}
-        y={textYDraw}
-        fontSize={fontSize}
-        fill={labelColor}
-        textAnchor="middle"
-        dominantBaseline="central"
-        style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
-      >
-        {letterSpacing !== 0
-          ? labelLines.length > 1
-            ? labelLines.map((line, i) => (
-                <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                  {renderChars(line || "\u00A0")}
-                </tspan>
-              ))
-            : renderChars(labelText)
-          : labelLines.length > 1
-            ? labelLines.map((line, i) => (
-                <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
-                  {line || "\u00A0"}
-                </tspan>
-              ))
-            : labelText}
-      </text>
+      {!labelsHidden && (
+        <text
+          ref={textRef}
+          x={textX}
+          y={textYDraw}
+          fontSize={fontSize}
+          fill={labelColor}
+          textAnchor="middle"
+          dominantBaseline="central"
+          style={{ userSelect: "none", pointerEvents: "none", fontFamily: labelFontFamily, fontWeight: labelFontWeight, fontStyle: labelFontStyle }}
+        >
+          {letterSpacing !== 0
+            ? labelLines.length > 1
+              ? labelLines.map((line, i) => (
+                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                    {renderChars(line || "\u00A0")}
+                  </tspan>
+                ))
+              : renderChars(labelText)
+            : labelLines.length > 1
+              ? labelLines.map((line, i) => (
+                  <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
+                    {line || "\u00A0"}
+                  </tspan>
+                ))
+              : labelText}
+        </text>
+      )}
       {/* 透明交互层：选中时覆盖整颗键帽，响应双击进入编辑与标签拖拽 */}
       {isSelected && (
         <rect
