@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useRef, useCallback, useMemo } from "react"
+import { useRef, useCallback, useMemo, useState, useEffect } from "react"
 import { ImagePlus, Trash2, Spline } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -17,12 +17,51 @@ interface AssetRowProps {
   keyLabelMap: Record<string, string>
   onSelect: () => void
   onDelete: () => void
+  onResize: (w: number, h: number) => void
 }
 
-function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete }: AssetRowProps) {
+function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, onResize }: AssetRowProps) {
   const keyLabel = element.clipToKeycapId
     ? (keyLabelMap[element.clipToKeycapId] ?? element.clipToKeycapId)
     : null
+
+  const [wVal, setWVal] = useState(String(Math.round(element.width)))
+  const [hVal, setHVal] = useState(String(Math.round(element.height)))
+
+  useEffect(() => {
+    setWVal(String(Math.round(element.width)))
+  }, [element.width])
+
+  useEffect(() => {
+    setHVal(String(Math.round(element.height)))
+  }, [element.height])
+
+  const commitResize = useCallback((rawW: string, rawH: string) => {
+    const w = parseInt(rawW, 10)
+    const h = parseInt(rawH, 10)
+    if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+      onResize(w, h)
+    } else {
+      setWVal(String(Math.round(element.width)))
+      setHVal(String(Math.round(element.height)))
+    }
+  }, [onResize, element.width, element.height])
+
+  const handleWKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.currentTarget.blur() }
+    if (e.key === "Escape") {
+      setWVal(String(Math.round(element.width)))
+      e.currentTarget.blur()
+    }
+  }
+
+  const handleHKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.currentTarget.blur() }
+    if (e.key === "Escape") {
+      setHVal(String(Math.round(element.height)))
+      e.currentTarget.blur()
+    }
+  }
 
   return (
     <li
@@ -43,15 +82,37 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete }:
         style={{ imageRendering: "auto" }}
       />
 
-      {/* 标签：键帽图片显示所属键名，普通图片显示像素尺寸 */}
-      <span className="min-w-0 flex-1 truncate text-[11px]">
+      {/* 标签：键帽图片显示所属键名，普通图片显示可编辑尺寸 */}
+      <span className="min-w-0 flex-1 text-[11px]">
         {keyLabel !== null ? (
           <span className="flex items-baseline gap-1">
             <span className="opacity-40">键帽</span>
             <span className="font-medium">{keyLabel}</span>
           </span>
         ) : (
-          `${Math.round(element.width)} × ${Math.round(element.height)}`
+          <span className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="number"
+              value={wVal}
+              min={1}
+              onChange={(e) => setWVal(e.target.value)}
+              onBlur={() => commitResize(wVal, hVal)}
+              onKeyDown={handleWKeyDown}
+              className="w-10 rounded bg-transparent px-0.5 text-center text-[11px] tabular-nums outline-none ring-1 ring-transparent focus:ring-border"
+              title="宽度（px）"
+            />
+            <span className="opacity-40">×</span>
+            <input
+              type="number"
+              value={hVal}
+              min={1}
+              onChange={(e) => setHVal(e.target.value)}
+              onBlur={() => commitResize(wVal, hVal)}
+              onKeyDown={handleHKeyDown}
+              className="w-10 rounded bg-transparent px-0.5 text-center text-[11px] tabular-nums outline-none ring-1 ring-transparent focus:ring-border"
+              title="高度（px）"
+            />
+          </span>
         )}
       </span>
 
@@ -89,6 +150,7 @@ export function AssetSection() {
   const addAsset = useDesignUIStore((s) => s.addAsset)
   const addCanvasElement = useDesignUIStore((s) => s.addCanvasElement)
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
+  const updateCanvasElement = useDesignUIStore((s) => s.updateCanvasElement)
   const setSelectedElementId = useDesignUIStore((s) => s.setSelectedElementId)
 
   const imageElements = canvasElements.filter(
@@ -222,6 +284,7 @@ export function AssetSection() {
               keyLabelMap={keyLabelMap}
               onSelect={() => setSelectedElementId(el.id)}
               onDelete={() => removeCanvasElement(el.id)}
+              onResize={(w, h) => updateCanvasElement(el.id, { width: w, height: h })}
             />
           ))}
         </ul>

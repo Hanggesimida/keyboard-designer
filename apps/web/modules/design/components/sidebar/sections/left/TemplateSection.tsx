@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Check, ChevronDown, LayoutGrid } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
@@ -11,7 +11,26 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 import { TEMPLATES, useDesignUIStore } from "@/modules/design/store/designUiStore"
+import { getLayoutData } from "@/modules/design/data/layouts"
 import { PanelSection } from "../../panel-section"
+
+function getBaseKeysBounds(templateId: string) {
+  const layout = getLayoutData(templateId)
+  const unit = layout.baseUnit
+  const baseKeys = layout.rows
+    .filter((r) => (r.section ?? "base") === "base")
+    .flatMap((r) => r.keys)
+  let maxX = 0
+  let maxY = 0
+  for (const k of baseKeys) {
+    maxX = Math.max(maxX, k.x + k.w)
+    maxY = Math.max(maxY, k.y + k.h)
+  }
+  return {
+    w: Math.ceil(maxX * unit),
+    h: Math.ceil(maxY * unit),
+  }
+}
 
 export function TemplateSection() {
   const templateId = useDesignUIStore((s) => s.templateId)
@@ -20,6 +39,8 @@ export function TemplateSection() {
 
   const currentLabel =
     TEMPLATES.find((t) => t.id === templateId)?.label ?? "未知"
+
+  const baseBounds = useMemo(() => getBaseKeysBounds(templateId), [templateId])
 
   return (
     <PanelSection title="模板" first>
@@ -89,6 +110,10 @@ export function TemplateSection() {
             </ul>
           </PopoverContent>
         </Popover>
+
+        <p className="text-[10px] text-muted-foreground/50 tabular-nums select-none">
+          主键盘区（不含增补区）：{baseBounds.w} × {baseBounds.h} px
+        </p>
       </div>
     </PanelSection>
   )
