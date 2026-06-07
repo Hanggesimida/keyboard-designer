@@ -427,6 +427,20 @@ function getKeyStyle(keyId: string, design: ParsedDesign, defaultLabel: string):
   }
 }
 
+// ─── 竖键横放检测 ─────────────────────────────────────────────────────────
+
+/**
+ * 判断某键是否在治具中被旋转了 90°（设计区竖向，治具槽横向）。
+ * KC_PPLS / KC_PENT 等跨行键在设计区 h > w，在治具 top_face 中 w > h。
+ */
+function isJigRotated(km: LayoutKey, pos: JigPosition): boolean {
+  if (km.h <= km.w) return false
+  const jw = pos.top_face_w ?? pos.bottom_box_w
+  const jh = pos.top_face_h ?? pos.bottom_box_h
+  if (jw == null || jh == null) return false
+  return jw > jh
+}
+
 // ─── 坐标比例因子 ─────────────────────────────────────────────────────────
 
 function computeJigTopScale(positions: JigPosition[], baseUnit: number): number {
@@ -548,6 +562,8 @@ interface DesignLayersIntermediate {
   textExtraAttrs: Record<string, string>
   /** CJK 降级：直接输出的 <text> 字符串列表 */
   fallbackTexts: string[]
+  /** 需要旋转的 descriptor ID → 旋转中心和角度（竖键横放治具槽专用） */
+  textRotations: Map<string, { cx: number; cy: number; angle: number }>
 }
 
 function buildDesignLayersIntermediate(
@@ -561,6 +577,7 @@ function buildDesignLayersIntermediate(
   const descriptors: TextDescriptor[] = []
   const extraAttrs: Record<string, string> = {}
   const fallbackTexts: string[] = []
+  const textRotations = new Map<string, { cx: number; cy: number; angle: number }>()
 
   // 为每个模板键分配治具位置（含增补键解码、匿名槽游标、先出现优先逻辑）
   const assignment = buildJigAssignment(positions, templateKeys)
@@ -621,22 +638,34 @@ function buildDesignLayersIntermediate(
         // 标签中心：矩形顶面取几何中心；多边形顶面优先使用 label_cx/cy，
         // 其次使用包围盒中心（仅当无矩形顶面时才走多边形路径）。
         let cx: number, blockCenterY: number
+        let rotCx: number, rotCy: number
         if (hasTopRect) {
           cx = tx! + tw! / 2 + offx
           blockCenterY = ty! + th! / 2 + offy - opticalY
+          rotCx = tx! + tw! / 2
+          rotCy = ty! + th! / 2
         } else {
           // 多边形：使用显式 label_cx/cy（最准确），否则取包围盒中心
           const bbox = pointsBBox(pos.top_face_points!)
           cx = (pos.label_cx ?? (bbox.x + bbox.w / 2)) + offx
           blockCenterY = (pos.label_cy ?? (bbox.y + bbox.h / 2)) + offy - opticalY
+          rotCx = pos.label_cx ?? (bbox.x + bbox.w / 2)
+          rotCy = pos.label_cy ?? (bbox.y + bbox.h / 2)
         }
         // firstLineCenterY：第一行的视觉中心（CJK <text> tspan 用）
         const cy = blockCenterY - multiY
 
+        // 竖键横放检测：治具槽旋转 90° 时需对文字做对应旋转
+        const km = templateKeys[keyId]
+        const jigRotated = km != null && isJigRotated(km, pos)
+        const rotTransform = jigRotated
+          ? ` transform="rotate(-90,${rotCx.toFixed(4)},${rotCy.toFixed(4)})"`
+          : ""
+
         // 判断是否 CJK
         const fontFile = resolveFontFile(st.fontFamily)
         if (fontFile === null) {
-          // CJK 降级：直接输出 <text>
+          // CJK 降级：直接输出 <text>（竖键横放时追加 transform）
           const ff = resolveFontFamily(st.fontFamily)
           const lc = st.labelColor
           const lsAttr = ls ? ` letter-spacing="${ls.toFixed(4)}"` : ""
@@ -644,7 +673,7 @@ function buildDesignLayersIntermediate(
             `font-size="${fs_.toFixed(4)}" fill="${lc}" ` +
             `text-anchor="middle" dominant-baseline="central" ` +
             `font-family="${ff}"${lsAttr} ` +
-            `data-key="${keyId}"`
+            `data-key="${keyId}"${rotTransform}`
 
           if (n === 1) {
             fallbackTexts.push(`  <text ${tAttrs}>${escapeXml(st.labelText)}</text>`)
@@ -670,6 +699,10 @@ function buildDesignLayersIntermediate(
             fill: st.labelColor,
           })
           extraAttrs[descId] = `data-key="${keyId}"`
+          // 竖键横放：记录旋转信息，在 buildLabelLayer 中包裹 <g transform>
+          if (jigRotated) {
+            textRotations.set(descId, { cx: rotCx, cy: rotCy, angle: -90 })
+          }
         }
       }
     }
@@ -685,6 +718,7 @@ function buildDesignLayersIntermediate(
     textDescriptors: descriptors,
     textExtraAttrs: extraAttrs,
     fallbackTexts,
+    textRotations,
   }
 }
 
@@ -700,7 +734,17 @@ async function buildLabelLayer(intermediate: DesignLayersIntermediate): Promise<
       if (r.pathD === null) continue
       const extra = intermediate.textExtraAttrs[r.id] ?? ""
       const fill = fillById.get(r.id) ?? "#000"
-      lines.push(`  <path d="${r.pathD}" fill="${fill}"${extra ? " " + extra : ""}/>`)
+      const rot = intermediate.textRotations.get(r.id)
+      if (rot) {
+        // 竖键横放：将文字路径旋转到与治具槽方向一致
+        lines.push(
+          `  <g transform="rotate(${rot.angle},${rot.cx.toFixed(4)},${rot.cy.toFixed(4)})">` +
+          `<path d="${r.pathD}" fill="${fill}"${extra ? " " + extra : ""}/>` +
+          `</g>`,
+        )
+      } else {
+        lines.push(`  <path d="${r.pathD}" fill="${fill}"${extra ? " " + extra : ""}/>`)
+      }
     }
   }
 
@@ -905,16 +949,37 @@ function buildCanvasImageLayer(
 
     const imgSvgX = img.x - ART_PAD
     const imgSvgY = img.y - ART_PAD
-    const relX = imgSvgX - dTopX
-    const relY = imgSvgY - dTopY
 
-    const sx = dTopW ? tw / dTopW : topScale
-    const sy = dTopH ? th / dTopH : topScale
+    let jigImgX: number, jigImgY: number, jigImgW: number, jigImgH: number
+    let effectiveRotation = img.rotation ?? 0
 
-    const jigImgX = tx + relX * sx
-    const jigImgY = ty + relY * sy
-    const jigImgW = img.width * sx
-    const jigImgH = img.height * sy
+    if (isJigRotated(km, pos)) {
+      // 竖键横放（如数字键盘 + / Enter）：设计竖向，治具横向，坐标轴互换
+      // CCW 90°（设计正面朝左放置）：设计 Y → 治具 X，设计 X → 治具 Y（取反）
+      const sxH = dTopH ? tw / dTopH : topScale  // 设计高度轴 → 治具宽度轴
+      const sxW = dTopW ? th / dTopW : topScale  // 设计宽度轴 → 治具高度轴
+      const relX = imgSvgX - dTopX
+      const relY = imgSvgY - dTopY
+      const relCX = relX + img.width / 2
+      const relCY = relY + img.height / 2
+      const jigRelCX = relCY * sxH               // 设计 Y → 治具 X（同向）
+      const jigRelCY = (dTopW - relCX) * sxW     // 设计 X → 治具 Y（取反）
+      // 图片框保持竖向比例，旋转 -90° 后在治具槽中展开为横向
+      jigImgW = img.width * sxW
+      jigImgH = img.height * sxH
+      jigImgX = tx + jigRelCX - jigImgW / 2
+      jigImgY = ty + jigRelCY - jigImgH / 2
+      effectiveRotation = (img.rotation ?? 0) - 90
+    } else {
+      const relX = imgSvgX - dTopX
+      const relY = imgSvgY - dTopY
+      const sx = dTopW ? tw / dTopW : topScale
+      const sy = dTopH ? th / dTopH : topScale
+      jigImgX = tx + relX * sx
+      jigImgY = ty + relY * sy
+      jigImgW = img.width * sx
+      jigImgH = img.height * sy
+    }
 
     const clipId = `clip-jig-img-${clipIdx++}`
 
@@ -924,12 +989,12 @@ function buildCanvasImageLayer(
         pushRoundedPolygonClipPathDef(defsLines, clipId, topPts, KEY_RADIUS_TOP * topScale)
         emitImageWithCustomClip(defsLines, lines, clipId,
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       } else {
         emitImageElement(defsLines, lines, clipId, [tx, ty, tw, th, trx],
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       }
     } else {
@@ -938,7 +1003,7 @@ function buildCanvasImageLayer(
       if (bx != null && by != null && bw != null && bh != null) {
         emitImageElement(defsLines, lines, clipId, [bx, by, bw, bh, 0],
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       } else if (pos.base_points && pos.base_points.length > 0) {
         // 多边形底座：使用圆角 path clipPath
@@ -946,12 +1011,12 @@ function buildCanvasImageLayer(
           KEY_RADIUS_BASE_ISO * topScale)
         emitImageWithCustomClip(defsLines, lines, clipId,
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       } else {
         emitImageElement(defsLines, lines, clipId, [tx, ty, tw, th, trx],
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       }
     }
@@ -1017,16 +1082,36 @@ function buildCanvasGlobalImageLayer(
         continue
       }
 
-      // 坐标映射仍基于底座框（base_box）比例，保持与底座框内图案位置一致
-      const sx = dKeyW ? bbw / dKeyW : topScale
-      const sy = dKeyH ? bbh / dKeyH : topScale
+      // 坐标映射基于底座框（base_box）比例
+      // 竖键横放时互换高宽轴，确保比例和坐标方向与治具槽一致
+      let jigImgX: number, jigImgY: number, jigImgW: number, jigImgH: number
+      let effectiveRotation = img.rotation ?? 0
 
-      const relX = imgSvgX - dKeyX
-      const relY = imgSvgY - dKeyY
-      const jigImgX = bbx + relX * sx
-      const jigImgY = bby + relY * sy
-      const jigImgW = imgW * sx
-      const jigImgH = imgH * sy
+      if (isJigRotated(km, pos)) {
+        // 竖键横放：设计高度轴 → 治具宽度轴；设计宽度轴 → 治具高度轴
+        const sxH = dKeyH ? bbw / dKeyH : topScale
+        const sxW = dKeyW ? bbh / dKeyW : topScale
+        const relX = imgSvgX - dKeyX
+        const relY = imgSvgY - dKeyY
+        const relCX = relX + imgW / 2
+        const relCY = relY + imgH / 2
+        const jigRelCX = relCY * sxH               // 设计 Y → 治具 X
+        const jigRelCY = (dKeyW - relCX) * sxW     // 设计 X → 治具 Y（取反）
+        jigImgW = imgW * sxW
+        jigImgH = imgH * sxH
+        jigImgX = bbx + jigRelCX - jigImgW / 2
+        jigImgY = bby + jigRelCY - jigImgH / 2
+        effectiveRotation = (img.rotation ?? 0) - 90
+      } else {
+        const sx = dKeyW ? bbw / dKeyW : topScale
+        const sy = dKeyH ? bbh / dKeyH : topScale
+        const relX = imgSvgX - dKeyX
+        const relY = imgSvgY - dKeyY
+        jigImgX = bbx + relX * sx
+        jigImgY = bby + relY * sy
+        jigImgW = imgW * sx
+        jigImgH = imgH * sy
+      }
 
       const clipId = `clip-jig-gimg-${clipIdx++}`
 
@@ -1039,7 +1124,7 @@ function buildCanvasGlobalImageLayer(
           KEY_RADIUS_BASE_ISO * topScale)
         emitImageWithCustomClip(defsLines, lines, clipId,
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       } else {
         const clipRect: [number, number, number, number, number] =
@@ -1048,7 +1133,7 @@ function buildCanvasGlobalImageLayer(
             : [bbx, bby, bbw, bbh, pos.base_box_rx ?? 0]
         emitImageElement(defsLines, lines, clipId, clipRect,
           [jigImgX, jigImgY, jigImgW, jigImgH],
-          img.rotation ?? 0, img.opacity ?? 1, img.src ?? "",
+          effectiveRotation, img.opacity ?? 1, img.src ?? "",
           kid, imageCache, svgCache)
       }
     }
