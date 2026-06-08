@@ -283,6 +283,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
 
     resetAll: () =>
       set({
+        templateId: "ansi-144",
+        layers: initialLayers,
         globalKeycapStyle: initialGlobalKeycapStyle,
         layerKeycapOverrides: {},
         artboardBackground: "#2c2c2c",
@@ -294,6 +296,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         selectedElementId: null,
         activeLayerId: null,
         keycapEditTarget: null,
+        liveDragOverrides: {},
         assetMap: {},
       }),
 

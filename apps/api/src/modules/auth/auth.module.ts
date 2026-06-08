@@ -24,7 +24,8 @@ import { JwtStrategy } from '@modules/auth/strategies/jwt.strategy';
         return {
           secret,
           signOptions: {
-            expiresIn: config.get<number>('JWT_EXPIRES_IN', 604800),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d') as any,
           },
         };
       },

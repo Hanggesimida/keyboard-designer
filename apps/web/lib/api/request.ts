@@ -70,6 +70,8 @@ export async function request<T = unknown>(
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
       useUserStore.getState().logout();
+      const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?redirect=${redirect}&reason=expired`;
     }
     throw new ApiError(401, { message: '登录已过期，请重新登录' });
   }

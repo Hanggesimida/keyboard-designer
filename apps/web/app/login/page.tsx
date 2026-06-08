@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,6 +11,9 @@ import { useUserStore } from "@/store/userStore"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect") ?? "/design"
+  const reason = searchParams.get("reason")
   const setToken = useUserStore((s) => s.setToken)
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -27,7 +30,7 @@ export default function LoginPage() {
     try {
       const res = await login(data)
       setToken(res.accessToken)
-      router.push("/design")
+      router.push(redirect)
     } catch {
       setServerError("邮箱或密码错误，请重试")
     }
@@ -99,6 +102,16 @@ export default function LoginPage() {
               登录你的账号，继续创作
             </p>
           </div>
+
+          {/* 登录过期提示 */}
+          {reason === "expired" && (
+            <div className="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3.5 py-2.5 flex items-start gap-2">
+              <span className="text-amber-400/80 text-sm mt-0.5 shrink-0">⚠</span>
+              <p className="text-xs text-amber-400/90 leading-relaxed">
+                登录已过期，请重新登录后继续
+              </p>
+            </div>
+          )}
 
           {/* 表单 */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

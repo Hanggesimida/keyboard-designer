@@ -31,7 +31,27 @@ model User {
   createdAt DateTime @default(now())    // 创建时间，默认当前时间
   updatedAt DateTime @updatedAt          // 更新时间，每次修改记录时 Prisma 会自动更新此时间
 
+  // 关联
+  designs   Design[]
+
   // 索引优化：高频查询的字段建议加索引（例如按激活状态、创建时间筛选）
   @@index([role])
+  @@index([createdAt])
+}
+
+// 键盘设计方案
+model Design {
+  id         String   @id @default(cuid())
+  name       String
+  previewUrl String?
+  data       Json
+  userId     String
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([createdAt])
 }

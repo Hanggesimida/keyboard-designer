@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { SaveDesignButton } from "./SaveDesignButton"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -262,6 +263,10 @@ export function CanvasToolbar({
         <FolderOpen className="size-3.5" />
         <span className="text-[11px] leading-none">导入</span>
       </button>
+
+      <span className="mx-0.5 h-3 w-px bg-white/15" />
+
+      <SaveDesignButton />
 
       <span className="mx-0.5 h-3 w-px bg-white/15" />
 

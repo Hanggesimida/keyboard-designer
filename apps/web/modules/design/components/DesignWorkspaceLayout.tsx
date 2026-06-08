@@ -8,10 +8,13 @@ import { DesignSidebarRight } from "./sidebar/SidebarRight"
 import { DesignCanvas } from "./canvas/DesignCanvas"
 import { DesignLoadingScreen } from "./DesignLoadingScreen"
 import { useTemporalDesignStore } from "@/modules/design/store/designUiStore"
+import { useLoadDesignFromUrl } from "@/modules/design/hooks/useLoadDesignFromUrl"
 
 export function DesignWorkspaceLayout() {
   const undo = useTemporalDesignStore((s) => s.undo)
   const redo = useTemporalDesignStore((s) => s.redo)
+
+  useLoadDesignFromUrl()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
