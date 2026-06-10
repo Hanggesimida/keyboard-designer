@@ -3,19 +3,17 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Keyboard, Plus, Pencil, Trash2, ExternalLink } from "lucide-react"
+import { Keyboard, Plus, Pencil, Trash2, ExternalLink, ShoppingBag } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@workspace/ui/components/dialog"
 import { ProfileLayout, ProfileSection, ProfileEmptyState } from "@/modules/profile"
 import { useMyDesigns, useDeleteDesign } from "@/hooks/queries/designs/useDesigns"
 import { Button } from "@workspace/ui/components/button"
@@ -24,12 +22,21 @@ export default function ProfileKeyboardsPage() {
   const router = useRouter()
   const { data: designs, isLoading } = useMyDesigns()
   const { mutate: deleteDesign, isPending: isDeleting } = useDeleteDesign()
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  function handleOpenDelete(id: string) {
+    setConfirmId(id)
+  }
 
   function handleConfirmDelete() {
-    if (!deleteTargetId) return
-    deleteDesign(deleteTargetId, {
-      onSuccess: () => setDeleteTargetId(null),
+    if (!confirmId) return
+    const id = confirmId
+    setConfirmId(null)
+    deleteDesign(id, {
+      onError: (err) => {
+        setErrorMessage(err.message || "删除失败，请稍后重试")
+      },
     })
   }
 
@@ -112,9 +119,9 @@ export default function ProfileKeyboardsPage() {
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    onClick={() => setDeleteTargetId(design.id)}
+                    onClick={() => handleOpenDelete(design.id)}
                     className="ml-auto text-white/30 hover:text-red-400 hover:bg-red-400/10 cursor-pointer"
-                    aria-label="删除设计"
+                    aria-label="删除此设计"
                   >
                     <Trash2 />
                   </Button>
@@ -125,32 +132,73 @@ export default function ProfileKeyboardsPage() {
         )}
       </ProfileSection>
 
-      {/* 删除确认弹窗 */}
-      <AlertDialog
-        open={!!deleteTargetId}
-        onOpenChange={(open) => !open && setDeleteTargetId(null)}
-      >
-        <AlertDialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除设计</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/50">
+      {/* 确认删除弹窗 */}
+      <Dialog open={!!confirmId} onOpenChange={(open) => !open && setConfirmId(null)}>
+        <DialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>确认删除设计</DialogTitle>
+            <DialogDescription className="text-white/50">
               此操作不可撤销，设计数据将被永久删除。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white/60 hover:bg-white/5">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmId(null)}
+              disabled={isDeleting}
+              className="border-white/10 text-white/60 hover:bg-white/5 cursor-pointer"
+            >
               取消
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
             >
-              {isDeleting ? "删除中..." : "确认删除"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {isDeleting ? (
+                <>
+                  <span className="size-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  删除中…
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} />
+                  确认删除
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除失败提示弹窗 */}
+      <Dialog open={!!errorMessage} onOpenChange={(open) => !open && setErrorMessage(null)}>
+        <DialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                <ShoppingBag size={18} className="text-amber-400" />
+              </div>
+              <DialogTitle>无法删除此设计</DialogTitle>
+            </div>
+            <DialogDescription className="text-white/50 pt-1">
+              {errorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setErrorMessage(null)}
+              className="border-white/10 text-white/60 hover:bg-white/5 cursor-pointer"
+            >
+              我知道了
+            </Button>
+            <Button asChild className="cursor-pointer">
+              <Link href="/profile/orders">查看我的订单</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ProfileLayout>
   )
 }

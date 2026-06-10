@@ -2,6 +2,8 @@ import {
   LayoutDashboard,
   Keyboard,
   Settings,
+  ShoppingBag,
+  MapPin,
   type LucideIcon,
 } from "lucide-react"
 
@@ -31,11 +33,21 @@ export const profileNavGroups: ProfileNavGroup[] = [
         href: "/profile/keyboards",
         icon: Keyboard,
       },
+      {
+        label: "我的订单",
+        href: "/profile/orders",
+        icon: ShoppingBag,
+      },
     ],
   },
   {
     title: "账号",
     items: [
+      {
+        label: "地址管理",
+        href: "/profile/addresses",
+        icon: MapPin,
+      },
       {
         label: "设置",
         href: "/profile/settings",

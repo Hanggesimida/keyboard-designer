@@ -14,8 +14,30 @@ datasource db {
 
 // 角色枚举
 enum Role {
-  USER       // 普通用户
-  ADMIN      // 管理员
+  USER  // 普通用户
+  ADMIN // 管理员
+}
+
+// 订单状态枚举
+enum OrderStatus {
+  PENDING   // 待支付
+  PAID      // 已支付
+  CANCELLED // 已取消
+  REFUNDING // 退款中
+  REFUNDED  // 已退款
+}
+
+// 支付方式枚举
+enum PaymentMethod {
+  ALIPAY // 支付宝
+  WECHAT // 微信支付
+}
+
+// 支付状态枚举
+enum PaymentStatus {
+  UNPAID // 未支付
+  PAID   // 已支付
+  FAILED // 支付失败
 }
 
 // 用户模型
@@ -33,6 +55,8 @@ model User {
 
   // 关联
   designs   Design[]
+  addresses Address[]
+  orders    Order[]
 
   // 索引优化：高频查询的字段建议加索引（例如按激活状态、创建时间筛选）
   @@index([role])
@@ -50,8 +74,85 @@ model Design {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// 收货地址
+model Address {
+  id       String @id @default(cuid())
+  userId   String
+  name     String // 收件人姓名
+  phone    String // 手机号
+  province String // 省
+  city     String // 市
+  district String // 区/县
+  detail   String // 详细地址
+
+  isDefault Boolean @default(false) // 是否为默认地址
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([userId])
+}
+
+// 订单
+model Order {
+  id       String @id @default(cuid())
+  orderNo  String @unique // 可读订单号，格式 JW-YYYYMMDD-XXXXX
+
+  userId    String
+  designId  String
+  addressId String
+
+  designSnapshot  Json // 下单时固化的设计数据快照
+  addressSnapshot Json // 下单时固化的地址信息快照
+
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  note        String?     // 买家备注
+
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  design  Design  @relation(fields: [designId], references: [id], onDelete: Restrict)
+  address Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  payment Payment?
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// 支付记录
+model Payment {
+  id      String @id @default(cuid())
+  orderId String @unique // 与 Order 1:1
+
+  method PaymentMethod
+  status PaymentStatus @default(UNPAID)
+  amount Decimal       @db.Decimal(10, 2)
+
+  paidAt DateTime?
+
+  // 预留给第三方支付平台的数据
+  thirdPartyId   String? // 第三方交易流水号
+  thirdPartyData Json?   // 第三方回调原始数据
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }

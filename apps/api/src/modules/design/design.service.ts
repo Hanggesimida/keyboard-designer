@@ -2,8 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { UpdateDesignDto } from './dto/update-design.dto';
 
@@ -66,6 +68,18 @@ export class DesignService {
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
 
-    await this.prisma.design.delete({ where: { id } });
+    try {
+      await this.prisma.design.delete({ where: { id } });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2003'
+      ) {
+        throw new ConflictException(
+          '该设计方案已关联订单，无法删除。如需删除，请先取消相关订单。',
+        );
+      }
+      throw err;
+    }
   }
 }
