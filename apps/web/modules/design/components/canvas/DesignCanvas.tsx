@@ -21,6 +21,7 @@ import { useViewport } from "@/modules/design/hooks/useViewport"
 import { usePanInteraction } from "@/modules/design/hooks/usePanInteraction"
 import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
+import { useAutoExport } from "@/modules/design/hooks/useAutoExport"
 
 // ─── 常量 ──────────────────────────────────────────────
 const ART_PAD = 28                    // 画板内边距
@@ -599,6 +600,71 @@ export function DesignCanvas() {
     }),
     [artW, artH, unit, keys],
   )
+
+  // ─── 治具 SVG 生成（autoExport jig 复用） ─────────────
+  const handleGenerateJig = useCallback(async () => {
+    const {
+      templateId: tid,
+      artboardBackground,
+      fontFamily,
+      globalKeycapStyle,
+      layers,
+      layerKeycapOverrides,
+      canvasElements: els,
+      assetMap,
+    } = useDesignUIStore.getState()
+
+    const resolvedElements = els.map((el) => {
+      const { assetId, ...rest } = el
+      return { ...rest, src: assetMap[assetId] ?? "" }
+    })
+
+    const design = {
+      version: 1,
+      templateId: tid,
+      artboardBackground,
+      fontFamily,
+      globalKeycapStyle,
+      layers,
+      layerKeycapOverrides,
+      canvasElements: resolvedElements,
+    }
+
+    const res = await fetch("/api/generate-jig", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ design }),
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "未知错误" }))
+      throw new Error(`治具 SVG 生成失败：${err.error ?? res.statusText}`)
+    }
+
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, "0")
+    const ts =
+      `${now.getFullYear()}-` +
+      `${pad(now.getMonth() + 1)}-` +
+      `${pad(now.getDate())}-` +
+      `${pad(now.getHours())}` +
+      `${pad(now.getMinutes())}` +
+      `${pad(now.getSeconds())}`
+    const filename = `jig-${tid ?? "custom"}-${ts}.svg`
+
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }, [])
+
+  // ─── autoExport URL 参数自动触发导出（管理员从后台一键导出） ─
+  useAutoExport(getExportParams, handleGenerateJig)
 
   // ─── 单键帽编辑模态框对应的 keyDef ────────────────────
   const editKeyDef = keycapEditTarget

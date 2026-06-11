@@ -44,17 +44,16 @@ export default function ProfileKeyboardsPage() {
     <ProfileLayout
       title="我的键盘"
       description="管理你保存的所有键盘设计方案。"
+      headerAction={
+        <Button asChild size="sm" className="cursor-pointer">
+          <Link href="/design">
+            <Plus />
+            新建设计
+          </Link>
+        </Button>
+      }
     >
-      <ProfileSection
-        action={
-          <Button asChild size="sm" className="cursor-pointer">
-            <Link href="/design">
-              <Plus />
-              新建设计
-            </Link>
-          </Button>
-        }
-      >
+      <ProfileSection>
         {isLoading ? (
           <DesignGridSkeleton />
         ) : !designs || designs.length === 0 ? (

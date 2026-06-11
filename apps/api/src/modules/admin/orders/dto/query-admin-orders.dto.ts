@@ -2,7 +2,7 @@ import { IsEnum, IsInt, IsOptional, IsString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from 'generated/prisma/client';
 
-export class QueryOrdersDto {
+export class QueryAdminOrdersDto {
   @IsInt()
   @Min(1)
   @IsOptional()
@@ -14,13 +14,13 @@ export class QueryOrdersDto {
   @Max(100)
   @IsOptional()
   @Type(() => Number)
-  limit?: number = 10;
+  limit?: number = 20;
 
   @IsEnum(OrderStatus)
   @IsOptional()
   status?: OrderStatus;
 
-  /** 关键词搜索：匹配订单号 */
+  /** 关键词搜索：匹配订单号或用户邮箱 */
   @IsString()
   @IsOptional()
   search?: string;

@@ -27,6 +27,10 @@ const STATUS_CONFIG: Record<
 > = {
   PENDING: { label: "待支付", icon: Clock, cls: "text-amber-400" },
   PAID: { label: "已支付", icon: CheckCircle2, cls: "text-emerald-400" },
+  APPROVED: { label: "已接单", icon: CheckCircle2, cls: "text-violet-400" },
+  PROCESSING: { label: "生产中", icon: Clock, cls: "text-blue-400" },
+  SHIPPING: { label: "运输中", icon: Clock, cls: "text-orange-400" },
+  COMPLETED: { label: "已完成", icon: CheckCircle2, cls: "text-emerald-400" },
   CANCELLED: { label: "已取消", icon: XCircle, cls: "text-white/30" },
   REFUNDING: { label: "退款中", icon: Clock, cls: "text-sky-400" },
   REFUNDED: { label: "已退款", icon: CheckCircle2, cls: "text-white/40" },

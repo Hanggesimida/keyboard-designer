@@ -89,15 +89,17 @@ export default function ProfileAddressesPage() {
   }
 
   return (
-    <ProfileLayout title="地址管理" description="管理你的收货地址，最多可保存 10 个地址。">
-      <ProfileSection
-        action={
-          <Button size="sm" onClick={openCreate} className="cursor-pointer">
-            <Plus />
-            新增地址
-          </Button>
-        }
-      >
+    <ProfileLayout
+      title="地址管理"
+      description="管理你的收货地址，最多可保存 10 个地址。"
+      headerAction={
+        <Button size="sm" onClick={openCreate} className="cursor-pointer">
+          <Plus />
+          新增地址
+        </Button>
+      }
+    >
+      <ProfileSection>
         {isLoading ? (
           <AddressListSkeleton />
         ) : !addresses || addresses.length === 0 ? (

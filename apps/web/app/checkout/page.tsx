@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Package } from "lucide-react"
 import Link from "next/link"
 import { useDesign } from "@/hooks/queries/designs/useDesigns"
+import { useOrderQuote } from "@/hooks/queries/pricing/usePricing"
 import { AddressSelector } from "@/modules/checkout/components/AddressSelector"
 import { OrderSummary } from "@/modules/checkout/components/OrderSummary"
 import { PaymentConfirmSection } from "@/modules/checkout/components/PaymentConfirmSection"
@@ -17,6 +18,7 @@ export default function CheckoutPage() {
 
   const { data: design, isLoading: isDesignLoading, error: designError } = useDesign(designId)
   const { data: addresses } = useMyAddresses()
+  const { data: quote, isLoading: isQuoteLoading } = useOrderQuote(designId)
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [addressRequired, setAddressRequired] = useState(false)
@@ -93,7 +95,12 @@ export default function CheckoutPage() {
           {isDesignLoading ? (
             <div className="h-24 rounded-xl border border-white/[0.07] bg-white/[0.02] animate-pulse" />
           ) : design ? (
-            <OrderSummary design={design} />
+            <OrderSummary
+              design={design}
+              totalAmount={quote?.totalAmount}
+              breakdown={quote?.breakdown}
+              isLoading={isQuoteLoading}
+            />
           ) : null}
         </section>
 
@@ -117,6 +124,7 @@ export default function CheckoutPage() {
             <PaymentConfirmSection
               designId={design.id}
               selectedAddressId={resolvedAddressId}
+              totalAmount={quote?.totalAmount}
               onAddressRequired={handleAddressRequired}
             />
           )}

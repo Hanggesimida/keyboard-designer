@@ -7,11 +7,12 @@ import { useCreateOrder } from "@/hooks/queries/orders/useOrders"
 import { useInitiatePayment, useMockCallback } from "@/hooks/queries/payments/usePayments"
 import type { PaymentMethod } from "@/lib/api/payments"
 import { ApiError } from "@/lib/api/request"
-import { FIXED_PRICE } from "./OrderSummary"
 
 interface PaymentConfirmSectionProps {
   designId: string
   selectedAddressId: string | null
+  /** 服务端报价金额，用于按钮展示，来自 useOrderQuote */
+  totalAmount: number | undefined
   /** 用户未选地址时，通知父组件高亮地址区域 */
   onAddressRequired: () => void
 }
@@ -24,6 +25,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string; desc: string }[] =
 export function PaymentConfirmSection({
   designId,
   selectedAddressId,
+  totalAmount,
   onAddressRequired,
 }: PaymentConfirmSectionProps) {
   const router = useRouter()
@@ -43,11 +45,11 @@ export function PaymentConfirmSection({
     }
     setSubmitError(null)
 
+    // totalAmount 由服务端在 POST /orders 时自行计算，前端不再传入
     createOrder(
       {
         designId,
         addressId: selectedAddressId,
-        totalAmount: FIXED_PRICE,
       },
       {
         onSuccess: (order) => {
@@ -83,6 +85,8 @@ export function PaymentConfirmSection({
       },
     )
   }
+
+  const priceLabel = totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "..."
 
   return (
     <div className="space-y-4">
@@ -123,7 +127,7 @@ export function PaymentConfirmSection({
       {/* 支付按钮 */}
       <button
         type="button"
-        disabled={isProcessing}
+        disabled={isProcessing || totalAmount == null}
         onClick={handlePay}
         className="w-full h-11 rounded-xl bg-white text-[#0d0d0d] text-sm font-semibold flex items-center justify-center gap-2 hover:bg-white/92 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_24px_rgba(255,255,255,0.10)] cursor-pointer"
       >
@@ -135,7 +139,7 @@ export function PaymentConfirmSection({
         ) : (
           <>
             <ShieldCheck size={15} className="opacity-60" />
-            立即支付 ¥{FIXED_PRICE.toFixed(2)}
+            立即支付 {priceLabel}
           </>
         )}
       </button>

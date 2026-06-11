@@ -5,13 +5,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
+import { PricingService } from '@modules/pricing/pricing.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { OrderStatus } from 'generated/prisma/client';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
     // 1. 验证设计方案归属
@@ -40,7 +44,13 @@ export class OrderService {
       throw new ForbiddenException('无权使用该收货地址');
     }
 
-    // 3. 生成订单号并创建订单（含双快照）
+    // 3. 服务端计算价格，前端不可传入金额
+    const quote = this.pricingService.quote({
+      type: 'CUSTOM_KEYCAP',
+      designId: dto.designId,
+    });
+
+    // 4. 生成订单号并创建订单（含双快照）
     const orderNo = this.generateOrderNo();
 
     return this.prisma.order.create({
@@ -49,7 +59,7 @@ export class OrderService {
         userId,
         designId: dto.designId,
         addressId: dto.addressId,
-        totalAmount: dto.totalAmount,
+        totalAmount: quote.totalAmount,
         note: dto.note,
         // 固化设计快照，防止设计后续修改影响历史订单
         designSnapshot: design.data as object,
@@ -71,10 +81,16 @@ export class OrderService {
   }
 
   async findAllByUser(userId: string, query: QueryOrdersDto) {
-    const { page = 1, limit = 10, status } = query;
+    const { page = 1, limit = 10, status, search } = query;
     const skip = (page - 1) * limit;
 
-    const where = { userId, ...(status && { status }) };
+    const where = {
+      userId,
+      ...(status && { status }),
+      ...(search && {
+        orderNo: { contains: search, mode: 'insensitive' as const },
+      }),
+    };
 
     const [total, items] = await this.prisma.$transaction([
       this.prisma.order.count({ where }),

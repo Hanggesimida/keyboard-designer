@@ -25,7 +25,7 @@ function getToken(): string | null {
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   /** GET 请求的 query 参数，自动序列化拼接到 URL */
-  params?: Record<string, string | number | boolean | null | undefined>;
+  params?: Record<string, string | number | boolean | null | undefined> | object;
 };
 
 export async function request<T = unknown>(

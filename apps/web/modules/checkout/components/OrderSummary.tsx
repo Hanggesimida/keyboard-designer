@@ -2,15 +2,16 @@
 
 import { Keyboard } from "lucide-react"
 import type { DesignSummary } from "@/lib/api/designs"
-
-// 开发阶段固定价格
-export const FIXED_PRICE = 999.00
+import type { PriceBreakdownItem } from "@/lib/api/pricing"
 
 interface OrderSummaryProps {
   design: DesignSummary
+  totalAmount: number | undefined
+  breakdown: PriceBreakdownItem[] | undefined
+  isLoading?: boolean
 }
 
-export function OrderSummary({ design }: OrderSummaryProps) {
+export function OrderSummary({ design, totalAmount, breakdown, isLoading }: OrderSummaryProps) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
       <div className="flex items-center gap-4 p-4">
@@ -36,16 +37,38 @@ export function OrderSummary({ design }: OrderSummaryProps) {
 
         {/* 价格 */}
         <div className="text-right shrink-0">
-          <p className="text-base font-semibold text-white/90">
-            ¥{FIXED_PRICE.toFixed(2)}
-          </p>
+          {isLoading ? (
+            <div className="h-5 w-16 rounded bg-white/[0.06] animate-pulse" />
+          ) : (
+            <p className="text-base font-semibold text-white/90">
+              {totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "—"}
+            </p>
+          )}
         </div>
       </div>
+
+      {/* 价格明细 */}
+      {!isLoading && breakdown && breakdown.length > 0 && (
+        <div className="border-t border-white/[0.06] px-4 py-2 space-y-1">
+          {breakdown.map((item) => (
+            <div key={item.label} className="flex items-center justify-between">
+              <span className="text-xs text-white/35">{item.label}</span>
+              <span className="text-xs text-white/50">¥{item.amount.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 合计 */}
       <div className="border-t border-white/[0.06] px-4 py-3 flex items-center justify-between">
         <span className="text-xs text-white/35">商品合计</span>
-        <span className="text-sm font-semibold text-white/80">¥{FIXED_PRICE.toFixed(2)}</span>
+        {isLoading ? (
+          <div className="h-4 w-16 rounded bg-white/[0.06] animate-pulse" />
+        ) : (
+          <span className="text-sm font-semibold text-white/80">
+            {totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "—"}
+          </span>
+        )}
       </div>
     </div>
   )

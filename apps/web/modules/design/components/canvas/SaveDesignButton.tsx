@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Save, Cloud, CloudOff } from "lucide-react"
+import { Save, Cloud, CloudOff, Pencil } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
-import { useCreateDesign, useUpdateDesign } from "@/hooks/queries/designs/useDesigns"
+import { useCreateDesign, useUpdateDesign, useDesign } from "@/hooks/queries/designs/useDesigns"
 import { useUserStore } from "@/store/userStore"
 import type { DesignData } from "@/lib/api/designs"
 import type { ExportCanvasElement } from "@/modules/design/lib/design/exportArtboard"
@@ -62,9 +62,12 @@ export function SaveDesignButton() {
   const [nameDialogOpen, setNameDialogOpen] = useState(false)
   const [nameInput, setNameInput] = useState("")
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [renameInput, setRenameInput] = useState("")
 
   const { mutate: createDesign, isPending: isCreating } = useCreateDesign()
   const { mutate: updateDesign, isPending: isUpdating } = useUpdateDesign()
+  const { data: currentDesign } = useDesign(designId)
 
   const isSaving = isCreating || isUpdating
 
@@ -79,6 +82,12 @@ export function SaveDesignButton() {
     }
   }
 
+  function handleRenameClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    setRenameInput(currentDesign?.name ?? "")
+    setRenameDialogOpen(true)
+  }
+
   function handleUpdate() {
     if (!designId) return
     updateDesign(
@@ -87,6 +96,19 @@ export function SaveDesignButton() {
         onSuccess: () => {
           setSaveSuccess(true)
           setTimeout(() => setSaveSuccess(false), 2000)
+        },
+      },
+    )
+  }
+
+  function handleRename() {
+    const trimmedName = renameInput.trim()
+    if (!trimmedName || !designId) return
+    updateDesign(
+      { id: designId, payload: { name: trimmedName } },
+      {
+        onSuccess: () => {
+          setRenameDialogOpen(false)
         },
       },
     )
@@ -147,6 +169,19 @@ export function SaveDesignButton() {
         </span>
       </button>
 
+      {/* 重命名按钮（仅已保存的设计显示） */}
+      {designId && (
+        <button
+          type="button"
+          title="重命名设计"
+          disabled={isSaving}
+          onClick={handleRenameClick}
+          className="flex cursor-pointer items-center justify-center rounded p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 text-white/40 hover:bg-white/10 hover:text-white/70"
+        >
+          <Pencil className="size-3.5" />
+        </button>
+      )}
+
       {/* 命名弹窗（首次保存） */}
       <Dialog
         open={nameDialogOpen}
@@ -191,6 +226,55 @@ export function SaveDesignButton() {
               }}
             >
               {isSaving ? "保存中..." : "确认保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 重命名弹窗（已保存设计改名） */}
+      <Dialog
+        open={renameDialogOpen}
+        onOpenChange={(open) => !isSaving && setRenameDialogOpen(open)}
+      >
+        <DialogContent showCloseButton={false} onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>重命名设计方案</DialogTitle>
+            <DialogDescription>
+              为此键盘设计方案输入新名称。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-1 py-2">
+            <input
+              type="text"
+              value={renameInput}
+              onChange={(e) => setRenameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRename()
+              }}
+              placeholder="请输入设计名称"
+              maxLength={100}
+              autoFocus
+              className="w-full rounded-md border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-0 transition-colors"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={isSaving}
+              onClick={() => setRenameDialogOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              disabled={!renameInput.trim() || isSaving}
+              onClick={(e) => {
+                e.preventDefault()
+                handleRename()
+              }}
+            >
+              {isSaving ? "保存中..." : "确认重命名"}
             </Button>
           </DialogFooter>
         </DialogContent>

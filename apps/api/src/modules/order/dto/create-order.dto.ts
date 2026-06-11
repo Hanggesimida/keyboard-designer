@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsPositive,
-  MaxLength,
-  IsNumber,
-} from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 
 export class CreateOrderDto {
   @IsString()
@@ -12,10 +6,6 @@ export class CreateOrderDto {
 
   @IsString()
   addressId: string;
-
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @IsPositive()
-  totalAmount: number;
 
   @IsString()
   @IsOptional()

@@ -2,7 +2,16 @@ import { request } from './request';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'REFUNDING' | 'REFUNDED';
+export type OrderStatus =
+  | 'PENDING'
+  | 'PAID'
+  | 'APPROVED'
+  | 'PROCESSING'
+  | 'SHIPPING'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'REFUNDING'
+  | 'REFUNDED';
 
 export interface OrderDesignSummary {
   id: string;
@@ -57,7 +66,6 @@ export interface Order extends OrderSummary {
 export interface CreateOrderPayload {
   designId: string;
   addressId: string;
-  totalAmount: number;
   note?: string;
 }
 
@@ -65,6 +73,7 @@ export interface QueryOrdersParams {
   page?: number;
   limit?: number;
   status?: OrderStatus;
+  search?: string;
 }
 
 export interface PaginatedOrders {

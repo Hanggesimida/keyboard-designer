@@ -6,8 +6,10 @@ import { PrismaModule } from '@prisma/prisma.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { DesignModule } from '@modules/design/design.module';
 import { AddressModule } from '@modules/address/address.module';
+import { PricingModule } from '@modules/pricing/pricing.module';
 import { OrderModule } from '@modules/order/order.module';
 import { PaymentModule } from '@modules/payment/payment.module';
+import { AdminModule } from '@modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -18,8 +20,10 @@ import { PaymentModule } from '@modules/payment/payment.module';
     AuthModule,
     DesignModule,
     AddressModule,
+    PricingModule,
     OrderModule,
     PaymentModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

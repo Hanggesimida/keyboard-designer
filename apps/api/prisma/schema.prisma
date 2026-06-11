@@ -20,11 +20,15 @@ enum Role {
 
 // 订单状态枚举
 enum OrderStatus {
-  PENDING   // 待支付
-  PAID      // 已支付
-  CANCELLED // 已取消
-  REFUNDING // 退款中
-  REFUNDED  // 已退款
+  PENDING    // 待支付
+  PAID       // 已支付（等待管理员接单）
+  APPROVED   // 已接单（管理员确认）
+  PROCESSING // 生产中
+  SHIPPING   // 运输中
+  COMPLETED  // 已完成
+  CANCELLED  // 已取消
+  REFUNDING  // 退款中
+  REFUNDED   // 已退款
 }
 
 // 支付方式枚举

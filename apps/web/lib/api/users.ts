@@ -5,6 +5,7 @@ import { request } from './request';
 export interface UserProfile {
   id: string;
   email: string;
+  role: 'USER' | 'ADMIN';
 }
 
 // ─── API Functions ─────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ShoppingBag, ChevronRight, Loader2 } from "lucide-react"
+import { ShoppingBag, ChevronRight, Loader2, Search, ChevronLeft, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { ProfileLayout, ProfileSection, ProfileEmptyState } from "@/modules/profile"
@@ -28,6 +28,22 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; cls: string }> = {
   },
   PAID: {
     label: "已支付",
+    cls: "text-emerald-400/80 border-emerald-400/25 bg-emerald-400/[0.06]",
+  },
+  APPROVED: {
+    label: "已接单",
+    cls: "text-violet-400/80 border-violet-400/25 bg-violet-400/[0.06]",
+  },
+  PROCESSING: {
+    label: "生产中",
+    cls: "text-blue-400/80 border-blue-400/25 bg-blue-400/[0.06]",
+  },
+  SHIPPING: {
+    label: "运输中",
+    cls: "text-orange-400/80 border-orange-400/25 bg-orange-400/[0.06]",
+  },
+  COMPLETED: {
+    label: "已完成",
     cls: "text-emerald-400/80 border-emerald-400/25 bg-emerald-400/[0.06]",
   },
   CANCELLED: {
@@ -66,16 +82,49 @@ const STATUS_TABS: { value: OrderStatus | undefined; label: string }[] = [
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 10
+
 export default function ProfileOrdersPage() {
   const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<OrderStatus | undefined>(undefined)
+  const [search, setSearch] = useState("")
+  const [searchInput, setSearchInput] = useState("")
+  const [page, setPage] = useState(1)
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { data, isLoading } = useMyOrders({ status: statusFilter, limit: 20 })
+  const { data, isLoading } = useMyOrders({
+    status: statusFilter,
+    search: search || undefined,
+    page,
+    limit: PAGE_SIZE,
+  })
   const { mutate: cancelOrder, isPending: isCancelling } = useCancelOrder()
 
   const orders = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  const handleSearchInputChange = useCallback((value: string) => {
+    setSearchInput(value)
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(() => {
+      setSearch(value)
+      setPage(1)
+    }, 400)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    }
+  }, [])
+
+  const handleStatusFilter = (value: OrderStatus | undefined) => {
+    setStatusFilter(value)
+    setPage(1)
+  }
 
   function handleConfirmCancel() {
     if (!cancelTargetId) return
@@ -89,27 +138,56 @@ export default function ProfileOrdersPage() {
   return (
     <ProfileLayout title="我的订单" description="查看你的所有键盘定制订单。">
       <ProfileSection>
-        {/* 状态筛选 Tab */}
-        <div className="flex items-center gap-1 mb-5 overflow-x-auto pb-1">
-          {STATUS_TABS.map((tab) => {
-            const isActive = statusFilter === tab.value
-            return (
+        {/* 筛选工具栏 */}
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* 状态筛选 Tab */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+            {STATUS_TABS.map((tab) => {
+              const isActive = statusFilter === tab.value
+              return (
+                <button
+                  key={String(tab.value)}
+                  type="button"
+                  onClick={() => handleStatusFilter(tab.value)}
+                  className={[
+                    "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+                    isActive
+                      ? "bg-white/[0.08] text-white/80"
+                      : "text-white/35 hover:text-white/60 hover:bg-white/[0.04]",
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* 搜索框 */}
+          <div className="relative flex items-center shrink-0">
+            <Search size={14} className="absolute left-3 text-white/30 pointer-events-none" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
+              placeholder="搜索订单号…"
+              className="w-full sm:w-52 rounded-lg border border-white/[0.08] bg-white/[0.03] pl-8 pr-8 py-1.5 text-xs text-white/70 placeholder-white/25 focus:outline-none focus:border-white/[0.15] focus:bg-white/[0.05] transition-colors"
+            />
+            {searchInput && (
               <button
-                key={String(tab.value)}
                 type="button"
-                onClick={() => setStatusFilter(tab.value)}
-                className={[
-                  "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
-                  isActive
-                    ? "bg-white/[0.08] text-white/80"
-                    : "text-white/35 hover:text-white/60 hover:bg-white/[0.04]",
-                ].join(" ")}
+                onClick={() => { setSearch(""); setSearchInput(""); setPage(1) }}
+                className="absolute right-2.5 text-white/25 hover:text-white/60 transition-colors cursor-pointer"
               >
-                {tab.label}
+                <X size={13} />
               </button>
-            )
-          })}
+            )}
+          </div>
         </div>
+
+        {/* 统计 */}
+        {!isLoading && (
+          <p className="mb-3 text-xs text-white/30">共 {total} 条订单</p>
+        )}
 
         {isLoading ? (
           <OrderListSkeleton />
@@ -181,6 +259,33 @@ export default function ProfileOrdersPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-xs text-white/30">
+              第 {page} / {totalPages} 页
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="flex items-center justify-center w-7 h-7 rounded-md border border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="flex items-center justify-center w-7 h-7 rounded-md border border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         )}
       </ProfileSection>

@@ -4,23 +4,14 @@ import {
   Settings,
   ShoppingBag,
   MapPin,
-  type LucideIcon,
 } from "lucide-react"
+import type { NavItem, NavGroup } from "@/modules/dashboard"
 
-export interface ProfileNavItem {
-  label: string
-  href: string
-  icon: LucideIcon
-  badge?: string
-  disabled?: boolean
-}
+export type { NavItem, NavGroup }
+export type ProfileNavItem = NavItem
+export type ProfileNavGroup = NavGroup
 
-export interface ProfileNavGroup {
-  title?: string
-  items: ProfileNavItem[]
-}
-
-export const profileNavGroups: ProfileNavGroup[] = [
+export const profileNavGroups: NavGroup[] = [
   {
     items: [
       {
