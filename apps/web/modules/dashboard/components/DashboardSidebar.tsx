@@ -36,8 +36,8 @@ export function DashboardSidebar({
             <ul className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive =
-                  item.href === "/profile"
-                    ? pathname === "/profile"
+                  item.exact || item.href === "/profile"
+                    ? pathname === item.href
                     : pathname.startsWith(item.href)
                 const Icon = item.icon
 

@@ -15,6 +15,8 @@ import {
   Wrench,
   User,
   Activity,
+  Copy,
+  Check,
 } from "lucide-react"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
@@ -36,6 +38,17 @@ export default function AdminOrderDetailPage({
 
   const { data: order, isLoading, error } = useAdminOrder(id)
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateOrderStatus()
+  const [addressCopied, setAddressCopied] = useState(false)
+
+  function handleCopyAddress() {
+    if (!order) return
+    const { name, phone, province, city, district, detail } = order.addressSnapshot
+    const text = `${name}${phone}${province}${city}${district}${detail}`
+    navigator.clipboard.writeText(text).then(() => {
+      setAddressCopied(true)
+      setTimeout(() => setAddressCopied(false), 2000)
+    })
+  }
 
   if (isLoading) {
     return <OrderDetailSkeleton />
@@ -106,7 +119,7 @@ export default function AdminOrderDetailPage({
           <ExportButton
             icon={ExternalLink}
             label="在设计器中打开"
-            onClick={() => window.open(`/design?id=${order.design.id}`, "_blank")}
+            onClick={() => window.open(`/design?id=${order.design.id}&orderId=${order.id}&from=admin`, "_blank")}
           />
           <ExportButton
             icon={FileJson}
@@ -116,17 +129,17 @@ export default function AdminOrderDetailPage({
           <ExportButton
             icon={ImageIcon}
             label="导出 PNG"
-            onClick={() => window.open(`/design?id=${order.design.id}&autoExport=png`, "_blank")}
+            onClick={() => window.open(`/design?id=${order.design.id}&orderId=${order.id}&from=admin&autoExport=png`, "_blank")}
           />
           <ExportButton
             icon={FileCode2}
             label="导出 SVG"
-            onClick={() => window.open(`/design?id=${order.design.id}&autoExport=svg`, "_blank")}
+            onClick={() => window.open(`/design?id=${order.design.id}&orderId=${order.id}&from=admin&autoExport=svg`, "_blank")}
           />
           <ExportButton
             icon={Wrench}
             label="治具 SVG"
-            onClick={() => window.open(`/design?id=${order.design.id}&autoExport=jig`, "_blank")}
+            onClick={() => window.open(`/design?id=${order.design.id}&orderId=${order.id}&from=admin&autoExport=jig`, "_blank")}
           />
         </div>
       </div>
@@ -202,7 +215,18 @@ export default function AdminOrderDetailPage({
 
       {/* 收货地址 */}
       <Section>
-        <SectionTitle icon={<MapPin size={14} />} text="收货地址" />
+        <div className="flex items-center justify-between mb-3">
+          <SectionTitle icon={<MapPin size={14} />} text="收货地址" noMargin />
+          <button
+            type="button"
+            onClick={handleCopyAddress}
+            title="复制收货地址"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/[0.08] text-white/35 hover:text-white/70 hover:bg-white/[0.05] transition-colors cursor-pointer text-xs"
+          >
+            {addressCopied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+            <span>{addressCopied ? "已复制" : "复制地址"}</span>
+          </button>
+        </div>
         <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm font-medium text-white/80">
@@ -305,9 +329,9 @@ function Section({ children }: { children: React.ReactNode }) {
   )
 }
 
-function SectionTitle({ icon, text }: { icon: React.ReactNode; text: string }) {
+function SectionTitle({ icon, text, noMargin }: { icon: React.ReactNode; text: string; noMargin?: boolean }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
+    <div className={["flex items-center gap-2", noMargin ? "" : "mb-3"].join(" ")}>
       <span className="text-white/35">{icon}</span>
       <h3 className="text-sm font-semibold text-white/60">{text}</h3>
     </div>

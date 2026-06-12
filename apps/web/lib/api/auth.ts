@@ -24,14 +24,18 @@ export interface AuthResponse {
 
 // ─── API Functions ─────────────────────────────────────────────────────────
 
-export async function register(data: RegisterInput): Promise<AuthResponse> {
+export async function register(
+  data: RegisterInput & { turnstileToken: string },
+): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/register', {
     method: 'POST',
     body: data,
   });
 }
 
-export async function login(data: LoginInput): Promise<AuthResponse> {
+export async function login(
+  data: LoginInput & { turnstileToken?: string },
+): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/login', {
     method: 'POST',
     body: data,

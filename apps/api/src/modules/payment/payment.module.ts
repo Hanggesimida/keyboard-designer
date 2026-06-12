@@ -4,9 +4,10 @@ import { PaymentService } from './payment.service';
 import { AlipayProvider } from './providers/alipay.provider';
 import { WechatProvider } from './providers/wechat.provider';
 import { OrderModule } from '@modules/order/order.module';
+import { NotificationsModule } from '@modules/admin/notifications/notifications.module';
 
 @Module({
-  imports: [OrderModule], // 引入 OrderModule 以使用 OrderService
+  imports: [OrderModule, NotificationsModule],
   controllers: [PaymentController],
   providers: [PaymentService, AlipayProvider, WechatProvider],
 })

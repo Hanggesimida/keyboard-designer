@@ -44,6 +44,13 @@ enum PaymentStatus {
   FAILED // 支付失败
 }
 
+// 通知类型枚举
+enum NotificationType {
+  ORDER_PAID           // 客户付款成功 → 需要接单操作
+  ORDER_CANCELLED      // 客户主动取消订单
+  ORDER_REFUND_REQUEST // 客户申请退款
+}
+
 // 用户模型
 model User {
   id        String   @id @default(uuid()) // 使用 UUID 作为主键，比自增 Int 更安全（防爬虫遍历 ID）
@@ -159,4 +166,18 @@ model Payment {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([status])
+}
+
+// 管理员通知
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?            // { orderId, orderNo, userId, amount, ... }
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([isRead])
+  @@index([createdAt])
 }

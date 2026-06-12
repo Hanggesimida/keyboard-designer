@@ -7,17 +7,19 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import { OrderService } from '@modules/order/order.service';
+import { NotificationsService } from '@modules/admin/notifications/notifications.service';
 import { AlipayProvider } from './providers/alipay.provider';
 import { WechatProvider } from './providers/wechat.provider';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { MockCallbackDto } from './dto/mock-callback.dto';
-import { OrderStatus, PaymentMethod, PaymentStatus } from 'generated/prisma/client';
+import { NotificationType, OrderStatus, PaymentMethod, PaymentStatus } from 'generated/prisma/client';
 
 @Injectable()
 export class PaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderService: OrderService,
+    private readonly notificationsService: NotificationsService,
     private readonly alipayProvider: AlipayProvider,
     private readonly wechatProvider: WechatProvider,
   ) {}
@@ -87,7 +89,7 @@ export class PaymentService {
     }
 
     // 使用事务确保 Payment 和 Order 状态同步更新
-    const [updatedPayment] = await this.prisma.$transaction([
+    const [updatedPayment, updatedOrder] = await this.prisma.$transaction([
       this.prisma.payment.update({
         where: { id: payment.id },
         data: { status: PaymentStatus.PAID, paidAt: new Date() },
@@ -98,29 +100,61 @@ export class PaymentService {
       }),
     ]);
 
+    // 支付成功后触发管理员通知（fire-and-forget，不阻塞响应）
+    this.notificationsService
+      .create({
+        type: NotificationType.ORDER_PAID,
+        title: '新订单待处理',
+        body: `订单 ${updatedOrder.orderNo} 已完成支付，等待接单`,
+        data: {
+          orderId: updatedOrder.id,
+          orderNo: updatedOrder.orderNo,
+          amount: updatedOrder.totalAmount.toString(),
+        },
+      })
+      .catch(() => {
+        // 通知创建失败不影响主流程
+      });
+
     return { success: true, payment: updatedPayment };
   }
 
   /**
    * 支付宝异步通知（预留桩位）。
-   * TODO: 接入支付宝后，在此处完成验签、状态变更逻辑。
+   * TODO: 接入支付宝后，在此处完成验签、状态变更逻辑，并调用 notifyOrderPaid。
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async handleAlipayNotify(rawBody: any) {
     await this.alipayProvider.verifyCallback(rawBody);
-    // TODO: 根据 verifyCallback 返回的 orderId 调用 orderService.markAsPaid
+    // TODO: const order = await this.orderService.markAsPaid(orderId);
+    // TODO: await this.notifyOrderPaid(order);
     return 'success';
   }
 
   /**
    * 微信支付通知（预留桩位）。
-   * TODO: 接入微信支付后，在此处完成验签、状态变更逻辑。
+   * TODO: 接入微信支付后，在此处完成验签、状态变更逻辑，并调用 notifyOrderPaid。
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async handleWechatNotify(rawBody: any) {
     await this.wechatProvider.verifyCallback(rawBody);
-    // TODO: 根据 verifyCallback 返回的 orderId 调用 orderService.markAsPaid
+    // TODO: const order = await this.orderService.markAsPaid(orderId);
+    // TODO: await this.notifyOrderPaid(order);
     return { code: 'SUCCESS', message: '成功' };
+  }
+
+  /** 复用：真实支付渠道回调成功后触发管理员通知 */
+  private async notifyOrderPaid(order: { id: string; orderNo: string; totalAmount: { toString(): string } }) {
+    await this.notificationsService.create({
+      type: NotificationType.ORDER_PAID,
+      title: '新订单待处理',
+      body: `订单 ${order.orderNo} 已完成支付，等待接单`,
+      data: {
+        orderId: order.id,
+        orderNo: order.orderNo,
+        amount: order.totalAmount.toString(),
+      },
+    });
   }
 
   private buildInitiateResponse(paymentId: string, method: PaymentMethod) {

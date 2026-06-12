@@ -8,15 +8,19 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '@modules/users/users.service';
 import { RegisterDto } from '@modules/auth/dto/register.dto';
 import { LoginDto } from '@modules/auth/dto/login.dto';
+import { TurnstileService } from '@modules/auth/turnstile.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private turnstileService: TurnstileService,
   ) {}
 
   async register(dto: RegisterDto) {
+    await this.turnstileService.verify(dto.turnstileToken);
+
     const exists = await this.usersService.findByEmail(dto.email);
 
     if (exists) {
@@ -34,6 +38,10 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    if (dto.turnstileToken) {
+      await this.turnstileService.verify(dto.turnstileToken);
+    }
+
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {

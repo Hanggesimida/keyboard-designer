@@ -39,7 +39,7 @@ export function DashboardLayout({
       <DashboardMobileHeader navGroups={navGroups} drawerHeader={drawerHeader} />
 
       <div className="relative flex min-h-screen">
-        <div className="hidden md:block w-56 lg:w-60 shrink-0 sticky top-0 h-screen overflow-hidden">
+        <div className="hidden md:block w-56 lg:w-60 shrink-0 sticky top-0 h-screen overflow-visible">
           <DashboardSidebar
             navGroups={navGroups}
             header={sidebarHeader}

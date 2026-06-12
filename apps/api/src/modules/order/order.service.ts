@@ -6,15 +6,17 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import { PricingService } from '@modules/pricing/pricing.service';
+import { NotificationsService } from '@modules/admin/notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
-import { OrderStatus } from 'generated/prisma/client';
+import { NotificationType, OrderStatus } from 'generated/prisma/client';
 
 @Injectable()
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
@@ -144,10 +146,28 @@ export class OrderService {
       throw new BadRequestException('仅待支付的订单可以取消');
     }
 
-    return this.prisma.order.update({
+    const cancelled = await this.prisma.order.update({
       where: { id },
       data: { status: OrderStatus.CANCELLED },
     });
+
+    // 取消成功后通知管理员（fire-and-forget）
+    this.notificationsService
+      .create({
+        type: NotificationType.ORDER_CANCELLED,
+        title: '订单已取消',
+        body: `订单 ${cancelled.orderNo} 已被用户取消`,
+        data: {
+          orderId: cancelled.id,
+          orderNo: cancelled.orderNo,
+          userId: cancelled.userId,
+        },
+      })
+      .catch(() => {
+        // 通知创建失败不影响主流程
+      });
+
+    return cancelled;
   }
 
   // 供 PaymentService 内部调用，将订单标记为已支付

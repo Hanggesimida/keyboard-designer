@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { Home, Monitor } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import { DesignSidebarLeft } from "./sidebar/SidebarLeft"
 import { DesignSidebarRight } from "./sidebar/SidebarRight"
 import { DesignCanvas } from "./canvas/DesignCanvas"
@@ -13,7 +14,6 @@ import { useLoadDesignFromUrl } from "@/modules/design/hooks/useLoadDesignFromUr
 export function DesignWorkspaceLayout() {
   const undo = useTemporalDesignStore((s) => s.undo)
   const redo = useTemporalDesignStore((s) => s.redo)
-
   useLoadDesignFromUrl()
 
   useEffect(() => {

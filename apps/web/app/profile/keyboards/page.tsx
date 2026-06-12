@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Keyboard, Plus, Pencil, Trash2, ExternalLink, ShoppingBag } from "lucide-react"
+import { Keyboard, Plus, Pencil, Trash2, ShoppingBag } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import {
@@ -105,15 +105,6 @@ export default function ProfileKeyboardsPage() {
                   >
                     <Pencil />
                     编辑
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push(`/design?id=${design.id}`)}
-                    className="cursor-pointer"
-                  >
-                    <ExternalLink />
-                    预览
                   </Button>
                   <Button
                     size="icon-sm"

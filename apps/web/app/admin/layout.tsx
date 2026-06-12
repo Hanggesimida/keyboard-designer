@@ -7,16 +7,20 @@ import { LayoutDashboard, UserCircle2, User } from "lucide-react"
 import { useUserStore } from "@/store/userStore"
 import { DashboardLayout } from "@/modules/dashboard"
 import { adminNavGroups } from "@/modules/admin/config"
+import { NotificationCenter } from "@/modules/admin/components/NotificationCenter"
 
 function AdminSidebarHeader() {
   const user = useUserStore((s) => s.user)
   return (
     <>
-      <div className="flex items-center gap-2 mb-4">
-        <LayoutDashboard size={16} className="text-violet-400/70" />
-        <span className="text-sm font-semibold text-white/70 tracking-wide">
-          管理后台
-        </span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <LayoutDashboard size={16} className="text-violet-400/70" />
+          <span className="text-sm font-semibold text-white/70 tracking-wide">
+            管理后台
+          </span>
+        </div>
+        <NotificationCenter />
       </div>
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-full bg-white/[0.08] border border-white/10 flex items-center justify-center shrink-0">

@@ -19,7 +19,7 @@ export const useUserStore = create<UserState>()(
       accessToken: null,
       user: null,
       _hasHydrated: false,
-      setToken: (token) => set({ accessToken: token }),
+      setToken: (token) => set({ accessToken: token, user: null }),
       setUser: (user) => set({ user }),
       setAuth: (token, user) => set({ accessToken: token, user }),
       logout: () => set({ accessToken: null, user: null }),

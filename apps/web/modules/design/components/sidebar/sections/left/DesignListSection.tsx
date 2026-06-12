@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Keyboard, Plus } from "lucide-react"
+import { Keyboard, Plus, ArrowLeft, User, Package } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,14 +15,91 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import { cn } from "@workspace/ui/lib/utils"
 import { useMyDesigns } from "@/hooks/queries/designs/useDesigns"
+import { useAdminOrder } from "@/hooks/queries/admin/useAdminOrders"
 import { useUserStore } from "@/store/userStore"
 import { useTemporalDesignStore } from "@/modules/design/store/designUiStore"
 import { PanelSection } from "../../panel-section"
+
+// ─── 管理员订单上下文面板 ──────────────────────────────────────────────────────
+
+function AdminOrderContextSection({ orderId, designId }: { orderId: string; designId: string | null }) {
+  const { data: order, isLoading } = useAdminOrder(orderId)
+
+  return (
+    <PanelSection title="客户方案" first collapsible defaultOpen>
+      {isLoading ? (
+        <div className="space-y-2 py-1">
+          <div className="h-3 rounded bg-white/[0.06] animate-pulse w-3/4" />
+          <div className="h-3 rounded bg-white/[0.06] animate-pulse w-1/2" />
+        </div>
+      ) : order ? (
+        <div className="space-y-3">
+          {/* 客户信息 */}
+          <div className="flex items-center gap-2 rounded-lg px-2 py-2 bg-white/[0.04] border border-white/[0.07]">
+            <User size={12} className="text-white/40 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] text-white/35 leading-none mb-0.5">客户</p>
+              <p className="text-xs text-white/70 truncate">{order.user.email}</p>
+            </div>
+          </div>
+
+          {/* 订单信息 */}
+          <div className="flex items-center gap-2 rounded-lg px-2 py-2 bg-white/[0.04] border border-white/[0.07]">
+            <Package size={12} className="text-white/40 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] text-white/35 leading-none mb-0.5">订单号</p>
+              <p className="text-xs text-white/70 font-mono truncate">{order.orderNo}</p>
+            </div>
+          </div>
+
+          {/* 当前设计条目 */}
+          {designId && (
+            <div className="w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 bg-accent text-accent-foreground">
+              <div className="w-10 h-7 rounded shrink-0 flex items-center justify-center overflow-hidden border border-accent-foreground/20 bg-background/30">
+                {order.design.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={order.design.previewUrl}
+                    alt={order.design.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Keyboard size={12} className="text-accent-foreground/50" />
+                )}
+              </div>
+              <span className="flex-1 min-w-0 text-xs truncate font-medium">
+                {order.design.name}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-foreground/60 shrink-0" />
+            </div>
+          )}
+
+          {/* 返回订单详情 */}
+          <a
+            href={`/admin/orders/${orderId}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-white/35 hover:text-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={11} />
+            返回订单详情
+          </a>
+        </div>
+      ) : (
+        <p className="text-[11px] text-white/30 py-1">订单加载失败</p>
+      )}
+    </PanelSection>
+  )
+}
+
+// ─── 普通用户设计列表面板 ──────────────────────────────────────────────────────
 
 export function DesignListSection() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentDesignId = searchParams.get("id")
+  const fromAdmin = searchParams.get("from") === "admin"
+  const orderId = searchParams.get("orderId")
   const accessToken = useUserStore((s) => s.accessToken)
 
   // undo 历史长度 > 0 说明新建设计已有改动
@@ -48,6 +125,11 @@ export function DesignListSection() {
   }
 
   if (!accessToken) return null
+
+  // 管理员审阅模式：用订单上下文面板替换我的设计列表
+  if (fromAdmin && orderId) {
+    return <AdminOrderContextSection orderId={orderId} designId={currentDesignId} />
+  }
 
   return (
     <>

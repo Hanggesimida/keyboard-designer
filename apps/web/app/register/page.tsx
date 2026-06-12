@@ -8,11 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { register as registerApi, registerSchema, type RegisterInput } from "@/lib/api/auth"
 import { useUserStore } from "@/store/userStore"
+import { getQueryClient } from "@/lib/api/queryClient"
+import { TurnstileWidget } from "@/components/ui/TurnstileWidget"
 
 export default function RegisterPage() {
   const router = useRouter()
   const setToken = useUserStore((s) => s.setToken)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string>("")
 
   const {
     register,
@@ -25,7 +28,8 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterInput) => {
     setServerError(null)
     try {
-      const res = await registerApi(data)
+      const res = await registerApi({ ...data, turnstileToken })
+      getQueryClient().clear()
       setToken(res.accessToken)
       router.push("/design")
     } catch {
@@ -145,6 +149,12 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {/* 人机验证 */}
+            <TurnstileWidget
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken("")}
+            />
+
             {/* 服务端错误 */}
             {serverError && (
               <div className="rounded-lg border border-red-500/20 bg-red-500/8 px-3.5 py-2.5">
@@ -155,7 +165,7 @@ export default function RegisterPage() {
             {/* 提交按钮 */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !turnstileToken}
               className="mt-2 w-full h-10 rounded-xl bg-white text-[#0d0d0d] text-sm font-semibold flex items-center justify-center gap-2
                 hover:bg-white/92 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed
                 transition-all duration-200 shadow-[0_0_24px_rgba(255,255,255,0.12)]"

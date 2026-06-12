@@ -42,6 +42,7 @@ const STATUS_TABS: { value: OrderStatus | undefined; label: string }[] = [
   { value: "COMPLETED", label: "已完成" },
   { value: "CANCELLED", label: "已取消" },
   { value: "REFUNDING", label: "退款中" },
+  { value: "REFUNDED", label: "已退款" },
 ]
 
 // ─── 操作菜单 ─────────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ function OrderActionsMenu({ order }: { order: AdminOrderSummary }) {
   const [open, setOpen] = useState(false)
 
   const handleOpenDesigner = () => {
-    window.open(`/design?id=${order.design.id}`, "_blank")
+    window.open(`/design?id=${order.design.id}&orderId=${order.id}&from=admin`, "_blank")
     setOpen(false)
   }
 

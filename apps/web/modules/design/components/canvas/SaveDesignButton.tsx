@@ -57,8 +57,24 @@ export function SaveDesignButton() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const designId = searchParams.get("id")
+  const fromAdmin = searchParams.get("from") === "admin"
 
   const accessToken = useUserStore((s) => s.accessToken)
+
+  // 管理员审阅模式：显示只读提示，不允许保存
+  if (fromAdmin) {
+    return (
+      <button
+        type="button"
+        title="管理员审阅模式，不可保存"
+        disabled
+        className="flex cursor-not-allowed items-center justify-center gap-1 rounded px-1 py-0.5 text-white/20"
+      >
+        <CloudOff className="size-3.5" />
+        <span className="text-[11px] leading-none">只读</span>
+      </button>
+    )
+  }
   const [nameDialogOpen, setNameDialogOpen] = useState(false)
   const [nameInput, setNameInput] = useState("")
   const [saveSuccess, setSaveSuccess] = useState(false)

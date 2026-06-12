@@ -5,6 +5,7 @@ import { useUserStore } from '@/store/userStore';
 
 export const userKeys = {
   me: ['users', 'me'] as const,
+  meWithToken: (token: string | null) => ['users', 'me', token] as const,
 };
 
 export function useMe() {
@@ -12,7 +13,7 @@ export function useMe() {
   const setUser = useUserStore((s) => s.setUser);
 
   const query = useQuery({
-    queryKey: userKeys.me,
+    queryKey: userKeys.meWithToken(accessToken),
     queryFn: getMe,
     enabled: !!accessToken,
   });

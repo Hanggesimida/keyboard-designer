@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { Role } from 'generated/prisma/enums';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { UpdateDesignDto } from './dto/update-design.dto';
 
@@ -38,16 +39,26 @@ export class DesignService {
     });
   }
 
-  async findOne(id: string, userId: string) {
+  private assertDesignAccess(
+    design: { userId: string },
+    userId: string,
+    role?: Role,
+  ) {
+    if (role === Role.ADMIN || design.userId === userId) {
+      return;
+    }
+
+    throw new ForbiddenException('无权访问该设计方案');
+  }
+
+  async findOne(id: string, userId: string, role?: Role) {
     const design = await this.prisma.design.findUnique({ where: { id } });
 
     if (!design) {
       throw new NotFoundException(`设计方案 ${id} 不存在`);
     }
 
-    if (design.userId !== userId) {
-      throw new ForbiddenException('无权访问该设计方案');
-    }
+    this.assertDesignAccess(design, userId, role);
 
     return design;
   }

@@ -6,6 +6,8 @@ export interface NavItem {
   icon: LucideIcon
   badge?: string
   disabled?: boolean
+  /** 精确匹配路径，防止前缀匹配误高亮 */
+  exact?: boolean
 }
 
 export interface NavGroup {

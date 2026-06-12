@@ -15,6 +15,7 @@ import { CreateDesignDto } from './dto/create-design.dto';
 import { UpdateDesignDto } from './dto/update-design.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@modules/auth/decorators/current-user.decorator';
+import { Role } from 'generated/prisma/enums';
 
 @UseGuards(JwtAuthGuard)
 @Controller('designs')
@@ -36,10 +37,10 @@ export class DesignController {
 
   @Get(':id')
   findOne(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { id: string; role: Role },
     @Param('id') id: string,
   ) {
-    return this.designService.findOne(id, user.id);
+    return this.designService.findOne(id, user.id, user.role);
   }
 
   @Patch(':id')

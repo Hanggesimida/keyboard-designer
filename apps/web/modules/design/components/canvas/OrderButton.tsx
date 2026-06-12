@@ -47,8 +47,12 @@ export function OrderButton() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const designId = searchParams.get("id")
+  const fromAdmin = searchParams.get("from") === "admin"
 
   const accessToken = useUserStore((s) => s.accessToken)
+
+  // 管理员审阅模式不显示下单按钮
+  if (fromAdmin) return null
   const [isNavigating, setIsNavigating] = useState(false)
 
   const { mutate: createDesign, isPending: isCreating } = useCreateDesign()

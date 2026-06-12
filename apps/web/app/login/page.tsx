@@ -8,6 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { login, loginSchema, type LoginInput } from "@/lib/api/auth"
 import { useUserStore } from "@/store/userStore"
+import { getQueryClient } from "@/lib/api/queryClient"
+import { TurnstileWidget } from "@/components/ui/TurnstileWidget"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -16,6 +18,10 @@ export default function LoginPage() {
   const reason = searchParams.get("reason")
   const setToken = useUserStore((s) => s.setToken)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [failCount, setFailCount] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState<string>("")
+
+  const requireTurnstile = failCount >= 3
 
   const {
     register,
@@ -28,11 +34,22 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput) => {
     setServerError(null)
     try {
-      const res = await login(data)
+      const res = await login({
+        ...data,
+        ...(requireTurnstile ? { turnstileToken } : {}),
+      })
+      getQueryClient().clear()
       setToken(res.accessToken)
       router.push(redirect)
     } catch {
-      setServerError("邮箱或密码错误，请重试")
+      const next = failCount + 1
+      setFailCount(next)
+      if (next >= 3) {
+        setTurnstileToken("")
+        setServerError("连续登录失败，请完成人机验证后重试")
+      } else {
+        setServerError(`邮箱或密码错误，请重试（还剩 ${3 - next} 次免验证机会）`)
+      }
     }
   }
 
@@ -168,10 +185,18 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* 人机验证：连续失败 3 次后出现 */}
+            {requireTurnstile && (
+              <TurnstileWidget
+                onSuccess={setTurnstileToken}
+                onExpire={() => setTurnstileToken("")}
+              />
+            )}
+
             {/* 提交按钮 */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (requireTurnstile && !turnstileToken)}
               className="mt-2 w-full h-10 rounded-xl bg-white text-[#0d0d0d] text-sm font-semibold flex items-center justify-center gap-2
                 hover:bg-white/92 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed
                 transition-all duration-200 shadow-[0_0_24px_rgba(255,255,255,0.12)]"

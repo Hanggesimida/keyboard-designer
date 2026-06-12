@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useUserStore } from "@/store/userStore"
+import { useLogout } from "@/hooks/queries/auth/useAuth"
 import { useRouter } from "next/navigation"
 import { ProfileLayout, ProfileSection } from "@/modules/profile"
 import { LogOut } from "lucide-react"
@@ -17,7 +18,7 @@ import { Button } from "@workspace/ui/components/button"
 
 export default function ProfileSettingsPage() {
   const user = useUserStore((s) => s.user)
-  const logout = useUserStore((s) => s.logout)
+  const logout = useLogout()
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
