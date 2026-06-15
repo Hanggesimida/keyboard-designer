@@ -17,7 +17,7 @@ import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { useAdminOrders } from "@/hooks/queries/admin/useAdminOrders"
 import { useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/queries/admin/useAdminNotifications"
-import { OrderStatusBadge } from "@/modules/admin/components/OrderStatusBadge"
+import { OrderStatusBadge } from "@/modules/orders"
 import { useNotificationStore } from "@/store/notificationStore"
 import type { OrderStatus } from "@/lib/api/orders"
 import type { NotificationType } from "@/lib/api/notifications"
@@ -196,8 +196,8 @@ export default function AdminOverviewPage() {
     <div>
       {/* 页头 */}
       <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-white/90">概览</h1>
-        <p className="mt-1 text-sm text-white/40">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">概览</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           后台数据一览，快速了解当前业务状态。
         </p>
       </div>

@@ -10,7 +10,7 @@ import {
   useSetDefaultAddress,
 } from "@/hooks/queries/addresses/useAddresses"
 import type { Address } from "@/lib/api/addresses"
-import { AddressFormDialog, type AddressFormValues } from "./AddressFormDialog"
+import { AddressFormDialog, type AddressFormValues } from "@/modules/addresses"
 import { ApiError } from "@/lib/api/request"
 
 interface AddressSelectorProps {

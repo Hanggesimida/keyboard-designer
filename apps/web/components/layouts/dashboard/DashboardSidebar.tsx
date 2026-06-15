@@ -1,0 +1,89 @@
+"use client"
+
+import * as React from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Home, Keyboard, type LucideIcon } from "lucide-react"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@workspace/ui/components/sidebar"
+import type { NavGroup } from "./types"
+import { NavUser } from "./NavUser"
+
+interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  navGroups: NavGroup[]
+  title?: string
+  headerIcon?: LucideIcon
+  headerHref?: string
+}
+
+export function DashboardSidebar({ navGroups, title = "烬炆外设", headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", ...props }: DashboardSidebarProps) {
+  const pathname = usePathname()
+
+  function isActive(href: string, exact?: boolean) {
+    if (exact || href === "/profile") return pathname === href
+    return pathname.startsWith(href)
+  }
+
+  return (
+    <Sidebar variant="floating" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
+            >
+              <Link href={headerHref}>
+                <HeaderIcon className="size-5!" />
+                <span className="text-base font-semibold">{title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        {navGroups.map((group, i) => (
+          <SidebarGroup key={i}>
+            {group.title && <SidebarGroupLabel>{group.title}</SidebarGroupLabel>}
+            <SidebarMenu className="gap-1">
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={isActive(item.href, item.exact)} disabled={item.disabled}>
+                    <Link href={item.disabled ? "#" : item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
+        <SidebarGroup className="mt-auto">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/">
+                  <Home />
+                  <span>返回首页</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}

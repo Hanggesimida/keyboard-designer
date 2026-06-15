@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react"
 import { getAvailableTransitions, type UpdateOrderStatusPayload } from "@/lib/api/admin-orders"
-import { ORDER_STATUS_CONFIG } from "./OrderStatusBadge"
+import { ORDER_STATUS_CONFIG } from "@/modules/orders"
 import type { OrderStatus } from "@/lib/api/orders"
 
 // ─── 每个目标状态的操作按钮样式 ──────────────────────────────────────────────────

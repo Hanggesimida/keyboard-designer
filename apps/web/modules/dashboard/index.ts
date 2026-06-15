@@ -1,6 +1,0 @@
-export { DashboardLayout } from "./components/DashboardLayout"
-export { DashboardSidebar } from "./components/DashboardSidebar"
-export { DashboardMobileHeader } from "./components/DashboardMobileHeader"
-export { BackgroundDecor } from "./components/BackgroundDecor"
-export type { BackgroundVariant } from "./components/BackgroundDecor"
-export type { NavItem, NavGroup } from "./types"

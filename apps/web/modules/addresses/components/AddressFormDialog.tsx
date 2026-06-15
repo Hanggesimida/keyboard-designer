@@ -15,8 +15,6 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import type { Address } from "@/lib/api/addresses"
 
-// ─── Schema ──────────────────────────────────────────────────────────────────
-
 export const addressSchema = z.object({
   name: z.string().min(1, "请填写收件人姓名").max(50),
   phone: z
@@ -31,19 +29,14 @@ export const addressSchema = z.object({
 
 export type AddressFormValues = z.infer<typeof addressSchema>
 
-// ─── Props ───────────────────────────────────────────────────────────────────
-
 interface AddressFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** 编辑模式传入已有地址，新增模式不传 */
   editAddress?: Address | null
   onSubmit: (values: AddressFormValues) => void
   isSubmitting: boolean
   submitError: string | null
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export function AddressFormDialog({
   open,
@@ -64,7 +57,6 @@ export function AddressFormDialog({
     resolver: zodResolver(addressSchema),
   })
 
-  // 打开时初始化表单值
   useEffect(() => {
     if (open) {
       if (editAddress) {
@@ -119,7 +111,6 @@ export function AddressFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-2 space-y-4">
-          {/* 收件人 */}
           <div>
             <label className={labelCls}>收件人</label>
             <input
@@ -131,7 +122,6 @@ export function AddressFormDialog({
             {errors.name && <p className={errorCls}>{errors.name.message}</p>}
           </div>
 
-          {/* 手机号 */}
           <div>
             <label className={labelCls}>手机号</label>
             <input
@@ -143,7 +133,6 @@ export function AddressFormDialog({
             {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
           </div>
 
-          {/* 省市区 */}
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className={labelCls}>省份</label>
@@ -181,7 +170,6 @@ export function AddressFormDialog({
             </div>
           </div>
 
-          {/* 详细地址 */}
           <div>
             <label className={labelCls}>详细地址</label>
             <textarea
@@ -196,7 +184,6 @@ export function AddressFormDialog({
             )}
           </div>
 
-          {/* 设为默认 */}
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -207,14 +194,12 @@ export function AddressFormDialog({
             <span className="text-sm text-white/50">设为默认地址</span>
           </label>
 
-          {/* 提交级错误 */}
           {submitError && (
             <div className="rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5">
               <p className="text-xs text-red-400/90">{submitError}</p>
             </div>
           )}
 
-          {/* 操作按钮 */}
           <div className="flex justify-end gap-2 pt-1">
             <Button
               type="button"

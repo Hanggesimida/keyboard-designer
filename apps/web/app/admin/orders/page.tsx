@@ -17,7 +17,7 @@ import {
 import { formatDistanceToNow, format } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { useAdminOrders } from "@/hooks/queries/admin/useAdminOrders"
-import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/admin/components/OrderStatusBadge"
+import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import {
   Popover,
   PopoverContent,
@@ -219,8 +219,8 @@ export default function AdminOrdersPage() {
     <div>
       {/* 页头 */}
       <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-white/90">订单管理</h1>
-        <p className="mt-1 text-sm text-white/40">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">订单管理</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           管理所有用户的键盘定制订单，进行接单、生产、发货等状态操作。
         </p>
       </div>

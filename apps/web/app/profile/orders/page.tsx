@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { ShoppingBag, ChevronRight, Loader2, Search, ChevronLeft, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
-import { ProfileLayout, ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { useMyOrders, useCancelOrder } from "@/hooks/queries/orders/useOrders"
 import {
   AlertDialog,
@@ -19,65 +20,11 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import type { OrderStatus } from "@/lib/api/orders"
 
-// ─── 状态标签 ─────────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<OrderStatus, { label: string; cls: string }> = {
-  PENDING: {
-    label: "待支付",
-    cls: "text-amber-400/80 border-amber-400/25 bg-amber-400/[0.06]",
-  },
-  PAID: {
-    label: "已支付",
-    cls: "text-emerald-400/80 border-emerald-400/25 bg-emerald-400/[0.06]",
-  },
-  APPROVED: {
-    label: "已接单",
-    cls: "text-violet-400/80 border-violet-400/25 bg-violet-400/[0.06]",
-  },
-  PROCESSING: {
-    label: "生产中",
-    cls: "text-blue-400/80 border-blue-400/25 bg-blue-400/[0.06]",
-  },
-  SHIPPING: {
-    label: "运输中",
-    cls: "text-orange-400/80 border-orange-400/25 bg-orange-400/[0.06]",
-  },
-  COMPLETED: {
-    label: "已完成",
-    cls: "text-emerald-400/80 border-emerald-400/25 bg-emerald-400/[0.06]",
-  },
-  CANCELLED: {
-    label: "已取消",
-    cls: "text-white/30 border-white/10 bg-white/[0.03]",
-  },
-  REFUNDING: {
-    label: "退款中",
-    cls: "text-sky-400/80 border-sky-400/25 bg-sky-400/[0.06]",
-  },
-  REFUNDED: {
-    label: "已退款",
-    cls: "text-white/40 border-white/10 bg-white/[0.03]",
-  },
-}
-
-function StatusBadge({ status }: { status: OrderStatus }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING
-  return (
-    <span
-      className={`inline-flex text-[11px] font-medium border rounded px-1.5 py-0.5 ${cfg.cls}`}
-    >
-      {cfg.label}
-    </span>
-  )
-}
-
-// ─── 状态筛选 ─────────────────────────────────────────────────────────────────
-
 const STATUS_TABS: { value: OrderStatus | undefined; label: string }[] = [
   { value: undefined, label: "全部" },
-  { value: "PENDING", label: "待支付" },
-  { value: "PAID", label: "已支付" },
-  { value: "CANCELLED", label: "已取消" },
+  { value: "PENDING", label: ORDER_STATUS_CONFIG.PENDING.label },
+  { value: "PAID", label: ORDER_STATUS_CONFIG.PAID.label },
+  { value: "CANCELLED", label: ORDER_STATUS_CONFIG.CANCELLED.label },
 ]
 
 // ─── Page ──────────────────────────────────────────────────────────────────
@@ -136,7 +83,15 @@ export default function ProfileOrdersPage() {
   }
 
   return (
-    <ProfileLayout title="我的订单" description="查看你的所有键盘定制订单。">
+    <>
+      {/* 页头 */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">我的订单</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          查看所有键盘定制订单的状态与详情。
+        </p>
+      </div>
+
       <ProfileSection>
         {/* 筛选工具栏 */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -209,7 +164,7 @@ export default function ProfileOrdersPage() {
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05]">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-white/30 font-mono">{order.orderNo}</span>
-                    <StatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status} />
                   </div>
                   <span className="text-[11px] text-white/25">
                     {formatDistanceToNow(new Date(order.createdAt), {
@@ -328,7 +283,7 @@ export default function ProfileOrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </ProfileLayout>
+    </>
   )
 }
 

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Plus, Pencil, Trash2, Star, Loader2 } from "lucide-react"
-import { ProfileLayout, ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { MapPin, Pencil, Trash2, Star, Loader2 } from "lucide-react"
+import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
 import {
   useMyAddresses,
   useCreateAddress,
@@ -20,11 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
-import { Button } from "@workspace/ui/components/button"
 import {
   AddressFormDialog,
   type AddressFormValues,
-} from "@/modules/checkout/components/AddressFormDialog"
+} from "@/modules/addresses"
 import { ApiError } from "@/lib/api/request"
 import type { Address } from "@/lib/api/addresses"
 
@@ -89,16 +88,15 @@ export default function ProfileAddressesPage() {
   }
 
   return (
-    <ProfileLayout
-      title="地址管理"
-      description="管理你的收货地址，最多可保存 10 个地址。"
-      headerAction={
-        <Button size="sm" onClick={openCreate} className="cursor-pointer">
-          <Plus />
-          新增地址
-        </Button>
-      }
-    >
+    <>
+      {/* 页头 */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">收货地址</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          管理你的收货地址，下单时可快速选择。
+        </p>
+      </div>
+
       <ProfileSection>
         {isLoading ? (
           <AddressListSkeleton />
@@ -224,7 +222,7 @@ export default function ProfileAddressesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </ProfileLayout>
+    </>
   )
 }
 

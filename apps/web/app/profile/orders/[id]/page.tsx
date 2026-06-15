@@ -7,34 +7,14 @@ import {
   Package,
   MapPin,
   CreditCard,
-  Clock,
-  CheckCircle2,
-  XCircle,
   Keyboard,
   Loader2,
 } from "lucide-react"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
-import { ProfileLayout, ProfileSection } from "@/modules/profile"
+import { ProfileSection } from "@/modules/profile"
+import { ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { useOrder, useCancelOrder } from "@/hooks/queries/orders/useOrders"
-import type { OrderStatus } from "@/lib/api/orders"
-
-// ─── 状态展示配置 ─────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
-  OrderStatus,
-  { label: string; icon: React.ElementType; cls: string }
-> = {
-  PENDING: { label: "待支付", icon: Clock, cls: "text-amber-400" },
-  PAID: { label: "已支付", icon: CheckCircle2, cls: "text-emerald-400" },
-  APPROVED: { label: "已接单", icon: CheckCircle2, cls: "text-violet-400" },
-  PROCESSING: { label: "生产中", icon: Clock, cls: "text-blue-400" },
-  SHIPPING: { label: "运输中", icon: Clock, cls: "text-orange-400" },
-  COMPLETED: { label: "已完成", icon: CheckCircle2, cls: "text-emerald-400" },
-  CANCELLED: { label: "已取消", icon: XCircle, cls: "text-white/30" },
-  REFUNDING: { label: "退款中", icon: Clock, cls: "text-sky-400" },
-  REFUNDED: { label: "已退款", icon: CheckCircle2, cls: "text-white/40" },
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -50,32 +30,26 @@ export default function OrderDetailPage({
   const { mutate: cancelOrder, isPending: isCancelling } = useCancelOrder()
 
   if (isLoading) {
-    return (
-      <ProfileLayout title="订单详情">
-        <OrderDetailSkeleton />
-      </ProfileLayout>
-    )
+    return <OrderDetailSkeleton />
   }
 
   if (error || !order) {
     return (
-      <ProfileLayout title="订单详情">
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <Package size={36} className="text-white/20" />
-          <p className="text-white/40 text-sm">订单不存在或加载失败</p>
-          <button
-            type="button"
-            onClick={() => router.push("/profile/orders")}
-            className="text-xs text-white/40 hover:text-white/70 underline underline-offset-2 cursor-pointer"
-          >
-            返回订单列表
-          </button>
-        </div>
-      </ProfileLayout>
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <Package size={36} className="text-white/20" />
+        <p className="text-white/40 text-sm">订单不存在或加载失败</p>
+        <button
+          type="button"
+          onClick={() => router.push("/profile/orders")}
+          className="text-xs text-white/40 hover:text-white/70 underline underline-offset-2 cursor-pointer"
+        >
+          返回订单列表
+        </button>
+      </div>
     )
   }
 
-  const statusCfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.PENDING
+  const statusCfg = ORDER_STATUS_CONFIG[order.status] ?? ORDER_STATUS_CONFIG.PENDING
   const StatusIcon = statusCfg.icon
 
   function handleCancel() {
@@ -85,8 +59,7 @@ export default function OrderDetailPage({
   }
 
   return (
-    <ProfileLayout title="订单详情" description={`订单号：${order.orderNo}`}>
-      <div className="max-w-[1200px] space-y-5">
+    <div className="max-w-[1200px] space-y-5">
         {/* 返回 */}
         <button
           type="button"
@@ -97,13 +70,21 @@ export default function OrderDetailPage({
           返回订单列表
         </button>
 
+        {/* 页头 */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">订单详情</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            查看该笔订单的状态、商品、地址与支付信息。
+          </p>
+        </div>
+
         {/* 订单状态 */}
         <ProfileSection>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <StatusIcon size={20} className={statusCfg.cls} />
+              <StatusIcon size={20} className={statusCfg.iconCls} />
               <div>
-                <p className={`text-base font-semibold ${statusCfg.cls}`}>
+                <p className={`text-base font-semibold ${statusCfg.iconCls}`}>
                   {statusCfg.label}
                 </p>
                 <p className="text-xs text-white/30 mt-0.5">
@@ -213,8 +194,7 @@ export default function OrderDetailPage({
             </div>
           </div>
         </ProfileSection>
-      </div>
-    </ProfileLayout>
+    </div>
   )
 }
 

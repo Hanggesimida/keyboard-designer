@@ -6,7 +6,6 @@ import { Keyboard, Plus, Pencil } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import {
-  ProfileLayout,
   ProfileSection,
   ProfileStatCard,
   ProfileEmptyState,
@@ -23,11 +22,15 @@ export default function ProfilePage() {
   const recentDesigns = designs?.slice(0, 3) ?? []
 
   return (
-    <ProfileLayout
-      title={`你好，${user?.email?.split("@")[0] ?? "用户"}`}
-      description="这是你的个人主页，在这里管理你的键盘设计。"
-    >
-      <div className="space-y-8">
+    <div className="space-y-8">
+        {/* 页头 */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">个人主页</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            查看你的键盘设计概览与最近动态。
+          </p>
+        </div>
+
         {/* 统计数据 */}
         <ProfileSection title="数据概览">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -106,8 +109,7 @@ export default function ProfilePage() {
             </div>
           )}
         </ProfileSection>
-      </div>
-    </ProfileLayout>
+    </div>
   )
 }
 

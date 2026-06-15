@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Keyboard, Plus, Pencil, Trash2, ShoppingBag } from "lucide-react"
+import { Keyboard, Pencil, Trash2, ShoppingBag } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import {
@@ -14,7 +14,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import { ProfileLayout, ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
 import { useMyDesigns, useDeleteDesign } from "@/hooks/queries/designs/useDesigns"
 import { Button } from "@workspace/ui/components/button"
 
@@ -41,18 +41,15 @@ export default function ProfileKeyboardsPage() {
   }
 
   return (
-    <ProfileLayout
-      title="我的键盘"
-      description="管理你保存的所有键盘设计方案。"
-      headerAction={
-        <Button asChild size="sm" className="cursor-pointer">
-          <Link href="/design">
-            <Plus />
-            新建设计
-          </Link>
-        </Button>
-      }
-    >
+    <>
+      {/* 页头 */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">我的设计</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          管理你创建的所有键盘设计方案，支持编辑与删除。
+        </p>
+      </div>
+
       <ProfileSection>
         {isLoading ? (
           <DesignGridSkeleton />
@@ -189,7 +186,7 @@ export default function ProfileKeyboardsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </ProfileLayout>
+    </>
   )
 }
 

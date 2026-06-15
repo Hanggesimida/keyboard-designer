@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useUserStore } from "@/store/userStore"
 import { useLogout } from "@/hooks/queries/auth/useAuth"
 import { useRouter } from "next/navigation"
-import { ProfileLayout, ProfileSection } from "@/modules/profile"
+import { ProfileSection } from "@/modules/profile"
 import { LogOut } from "lucide-react"
 import {
   Dialog,
@@ -28,8 +28,16 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <ProfileLayout title="设置" description="管理你的账号信息与偏好设置。">
+    <>
       <div className="space-y-8">
+        {/* 页头 */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">账号设置</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            查看账号信息，管理登录状态。
+          </p>
+        </div>
+
         {/* 账号信息 */}
         <ProfileSection title="账号信息">
           <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] divide-y divide-white/[0.05]">
@@ -85,6 +93,6 @@ export default function ProfileSettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </ProfileLayout>
+    </>
   )
 }

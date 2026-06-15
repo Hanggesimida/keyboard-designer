@@ -5,7 +5,7 @@ import {
   ShoppingBag,
   MapPin,
 } from "lucide-react"
-import type { NavItem, NavGroup } from "@/modules/dashboard"
+import type { NavItem, NavGroup } from "@/components/layouts/dashboard"
 
 export type { NavItem, NavGroup }
 export type ProfileNavItem = NavItem

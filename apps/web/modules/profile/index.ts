@@ -1,4 +1,3 @@
-export { ProfileLayout } from "./components/ProfileLayout"
 export { ProfileStatCard } from "./components/ProfileStatCard"
 export { ProfileSection } from "./components/ProfileSection"
 export { ProfileEmptyState } from "./components/ProfileEmptyState"

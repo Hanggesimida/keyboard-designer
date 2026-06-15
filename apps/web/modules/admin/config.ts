@@ -1,5 +1,5 @@
 import { LayoutDashboard, ShoppingBag } from "lucide-react"
-import type { NavGroup } from "@/modules/dashboard"
+import type { NavGroup } from "@/components/layouts/dashboard"
 
 export const adminNavGroups: NavGroup[] = [
   {

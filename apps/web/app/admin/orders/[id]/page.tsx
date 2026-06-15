@@ -21,7 +21,7 @@ import {
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { useAdminOrder, useUpdateOrderStatus } from "@/hooks/queries/admin/useAdminOrders"
-import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/admin/components/OrderStatusBadge"
+import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { StatusActionButtons } from "@/modules/admin/components/StatusActionButtons"
 import type { UpdateOrderStatusPayload } from "@/lib/api/admin-orders"
 
