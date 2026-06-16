@@ -39,8 +39,9 @@ export function DataTablePagination<TData>({
   const filteredCount = table.getFilteredRowModel().rows.length
 
   return (
-    <div className="flex items-center justify-between px-2">
-      <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
+    <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
+      {/* 统计信息：移动端显示在顶部居中，桌面端靠左 */}
+      <div className="text-center text-sm text-muted-foreground sm:flex-1 sm:text-left">
         {totalRows !== undefined ? (
           <span>共 {totalRows} 条</span>
         ) : (
@@ -50,9 +51,10 @@ export function DataTablePagination<TData>({
         )}
       </div>
 
-      <div className="flex items-center space-x-6 lg:space-x-8">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:flex-nowrap sm:space-x-6 lg:space-x-8">
+        {/* 每页行数：移动端隐藏文字标签，仅显示 Select */}
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium whitespace-nowrap">每页行数</p>
+          <p className="hidden text-sm font-medium whitespace-nowrap sm:block">每页行数</p>
           <Select
             value={String(pageSize)}
             onValueChange={(value) => table.setPageSize(Number(value))}
@@ -70,11 +72,13 @@ export function DataTablePagination<TData>({
           </Select>
         </div>
 
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          第 {pageIndex + 1} / {table.getPageCount()} 页
+        {/* 页码信息 */}
+        <div className="flex min-w-[80px] items-center justify-center text-sm font-medium">
+          {pageIndex + 1} / {table.getPageCount()} 页
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* 翻页按钮 */}
+        <div className="flex items-center space-x-1">
           <Button
             variant="outline"
             size="icon"

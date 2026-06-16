@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { OrdersTable } from "@/modules/admin"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 
 export default function AdminOrdersPage() {
   return (

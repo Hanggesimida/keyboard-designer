@@ -6,7 +6,7 @@ import { ShoppingBag, ChevronRight, Loader2, Search, ChevronLeft, X } from "luci
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { useMyOrders, useCancelOrder } from "@/hooks/queries/orders/useOrders"
 import {

@@ -70,18 +70,27 @@ export function OrdersTable() {
 
   // 将表格分页状态同步到本地 page state
   const tablePageIndex = table.getState().pagination.pageIndex
+  const isFirstRender = React.useRef(true)
   React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     setPage(tablePageIndex + 1)
   }, [tablePageIndex])
 
   // 将表格列筛选中的 status 同步到本地 statuses state
+  // 用 JSON.stringify 序列化作为依赖，避免数组引用每次渲染都变化导致无限触发
   const tableFilters = table.getState().columnFilters
+  const tableFiltersKey = JSON.stringify(tableFilters)
   React.useEffect(() => {
-    const statusFilter = tableFilters.find((f) => f.id === "status")
+    const filters: typeof tableFilters = JSON.parse(tableFiltersKey)
+    const statusFilter = filters.find((f) => f.id === "status")
     const values = (statusFilter?.value as string[] | undefined) ?? []
     setStatuses(values as OrderStatus[])
     setPage(1)
-  }, [tableFilters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableFiltersKey])
 
   const isFiltered = tableFilters.length > 0
 
@@ -106,7 +115,7 @@ export function OrdersTable() {
             placeholder="搜索订单号…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-[150px] lg:w-[250px] text-sm"
           />
           <DataTableFacetedFilter
             column={table.getColumn("status")}

@@ -13,7 +13,7 @@ import {
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { ProfileSection } from "@/modules/profile"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 import { ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { useOrder, useCancelOrder } from "@/hooks/queries/orders/useOrders"
 

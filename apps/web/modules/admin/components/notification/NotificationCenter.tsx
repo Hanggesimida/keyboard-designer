@@ -5,8 +5,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@workspace/ui/components/popover';
-import { NotificationBell } from '@/components/ui/NotificationBell';
-import { NotificationPanel } from '@/components/ui/NotificationPanel';
+import { NotificationBell } from '@/modules/admin/components/notification/NotificationBell';
+import { NotificationPanel } from '@/modules/admin/components/notification/NotificationPanel';
 import { useNotificationStore } from '@/store/notificationStore';
 import {
   useNotificationsWithSync,
@@ -42,7 +42,7 @@ export function NotificationCenter() {
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-auto p-0 bg-transparent"
+        className="p-0"
         avoidCollisions={true}
         collisionPadding={16}
       >

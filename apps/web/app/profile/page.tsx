@@ -13,7 +13,7 @@ import {
 import { useUserStore } from "@/store/userStore"
 import { useMyDesigns } from "@/hooks/queries/designs/useDesigns"
 import { Button } from "@workspace/ui/components/button"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 
 export default function ProfilePage() {
   const router = useRouter()

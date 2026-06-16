@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { MapPin, Pencil, Trash2, Star, Loader2, Plus } from "lucide-react"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 import {
   useMyAddresses,
   useCreateAddress,
@@ -136,7 +136,7 @@ export default function ProfileAddressesPage() {
                   </div>
 
                   {/* 操作 */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center shrink-0">
                     {!addr.isDefault && (
                       <button
                         type="button"

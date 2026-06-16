@@ -2,6 +2,7 @@
 
 import { forwardRef } from 'react';
 import { Bell } from 'lucide-react';
+import { cn } from '@workspace/ui/lib/utils';
 
 interface NotificationBellProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   unreadCount: number;
@@ -9,22 +10,23 @@ interface NotificationBellProps extends React.ButtonHTMLAttributes<HTMLButtonEle
 }
 
 export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellProps>(
-  ({ unreadCount, isOpen, ...props }, ref) => {
+  ({ unreadCount, isOpen, className, ...props }, ref) => {
     return (
       <button
         ref={ref}
         aria-label={`通知${unreadCount > 0 ? `（${unreadCount} 条未读）` : ''}`}
-        className={[
-          'relative flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+        className={cn(
+          'relative flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
           isOpen
-            ? 'bg-white/[0.08] text-white/80'
-            : 'text-white/40 hover:text-white/70 hover:bg-white/[0.05]',
-        ].join(' ')}
+            ? 'bg-accent text-accent-foreground'
+            : 'hover:bg-accent',
+          className
+        )}
         {...props}
       >
         <Bell size={15} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[14px] h-[14px]  rounded-full bg-rose-500 text-white text-[6px] leading-none font-bold">
+          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[14px] h-[14px] rounded-full bg-rose-500/80 text-destructive-foreground text-[10px] leading-none font-medium px-0.5">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

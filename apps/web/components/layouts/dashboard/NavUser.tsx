@@ -43,7 +43,7 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
@@ -74,19 +74,19 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push("/profile")}>
+              <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
                 <UserCircle className="text-muted-foreground" />
                 账号
               </DropdownMenuItem>
               {isAdmin && (
-                <DropdownMenuItem onClick={() => router.push("/admin")}>
+                <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
                   <ShieldCheck className="text-muted-foreground" />
                   管理员后台
                 </DropdownMenuItem>
               )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <LogOut className="text-muted-foreground" />
               退出登录
             </DropdownMenuItem>

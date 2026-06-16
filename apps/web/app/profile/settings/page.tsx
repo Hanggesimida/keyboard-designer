@@ -5,7 +5,7 @@ import { useUserStore } from "@/store/userStore"
 import { useLogout } from "@/hooks/queries/auth/useAuth"
 import { useRouter } from "next/navigation"
 import { ProfileSection } from "@/modules/profile"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 import { LogOut } from "lucide-react"
 import {
   Dialog,

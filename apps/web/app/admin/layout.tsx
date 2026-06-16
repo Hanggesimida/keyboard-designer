@@ -6,7 +6,7 @@ import { Settings2 } from "lucide-react"
 import { useUserStore } from "@/store/userStore"
 import { DashboardLayout } from "@/components/layouts/dashboard"
 import { adminNavGroups } from "@/modules/admin/config"
-import { NotificationCenter } from "@/modules/admin/components/NotificationCenter"
+import { NotificationCenter } from "@/modules/admin/components/notification/NotificationCenter"
 
 export default function AdminLayout({
   children,

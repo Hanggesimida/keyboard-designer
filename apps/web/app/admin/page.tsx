@@ -12,6 +12,7 @@ import {
   Bell,
   XCircle,
   RefreshCw,
+  CheckCheck,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
@@ -21,7 +22,7 @@ import { OrderStatusBadge } from "@/modules/orders"
 import { useNotificationStore } from "@/store/notificationStore"
 import type { OrderStatus } from "@/lib/api/orders"
 import type { NotificationType } from "@/lib/api/notifications"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 
 // ─── 统计卡片 ─────────────────────────────────────────────────────────────────
 
@@ -100,8 +101,9 @@ function NotificationWidget() {
         {unreadCount > 0 && (
           <button
             onClick={() => markAllRead()}
-            className="text-[11px] text-violet-400/60 hover:text-violet-400 transition-colors"
+            className="flex items-center gap-1 text-[11px] text-violet-400/60 hover:text-violet-400 transition-colors cursor-pointer"
           >
+            <CheckCheck size={12} />
             全部已读
           </button>
         )}
@@ -133,7 +135,7 @@ function NotificationWidget() {
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs font-medium text-foreground/75 truncate">{n.title}</p>
                     {!n.isRead && (
-                      <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-400" />
+                      <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500/80" />
                     )}
                   </div>
                   <p className="mt-0.5 text-[11px] text-muted-foreground/70 truncate">{n.body}</p>

@@ -10,7 +10,7 @@ import { GalleryVerticalEnd, Loader2 } from "lucide-react"
 import { login, loginSchema, type LoginInput } from "@/lib/api/auth"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
-import { TurnstileWidget } from "@/components/ui/TurnstileWidget"
+import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {

@@ -98,6 +98,13 @@ function OrderActionsMenu({ order }: { order: AdminOrderSummary }) {
   )
 }
 
+// ─── 工具 ─────────────────────────────────────────────────────────────────────
+
+const cnyFormatter = new Intl.NumberFormat("zh-CN", {
+  style: "currency",
+  currency: "CNY",
+})
+
 // ─── 列定义 ───────────────────────────────────────────────────────────────────
 
 export const columns: ColumnDef<AdminOrderSummary>[] = [
@@ -133,7 +140,7 @@ export const columns: ColumnDef<AdminOrderSummary>[] = [
       const amount = parseFloat(row.getValue("totalAmount"))
       return (
         <span className="text-sm font-semibold text-foreground/75">
-          {new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" }).format(amount)}
+          {cnyFormatter.format(amount)}
         </span>
       )
     },

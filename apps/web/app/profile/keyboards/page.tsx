@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@workspace/ui/components/dialog"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
-import { PageHeader } from "@/components/ui/PageHeader"
+import { PageHeader } from "@/components/layouts/PageHeader"
 import { useMyDesigns, useDeleteDesign } from "@/hooks/queries/designs/useDesigns"
 import { Button } from "@workspace/ui/components/button"
 
