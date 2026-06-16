@@ -7,7 +7,7 @@ This is a Next.js monorepo template with shadcn/ui.
 From the monorepo root, add a shadcn component to the shared UI package:
 
 ```bash
-pnpm dlx shadcn@latest add textarea -c packages/ui
+pnpm dlx shadcn@latest add table -c packages/ui
 ```
 
 This places generated files under `packages/ui` (for example `packages/ui/src/components`).

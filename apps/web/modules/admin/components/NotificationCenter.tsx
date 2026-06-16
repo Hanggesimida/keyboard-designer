@@ -43,6 +43,8 @@ export function NotificationCenter() {
         align="start"
         sideOffset={8}
         className="w-auto p-0 bg-transparent"
+        avoidCollisions={true}
+        collisionPadding={16}
       >
         <NotificationPanel
           notifications={notifications}

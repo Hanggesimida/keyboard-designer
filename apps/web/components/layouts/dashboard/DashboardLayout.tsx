@@ -16,6 +16,7 @@ interface DashboardLayoutProps {
   title?: string
   headerIcon?: LucideIcon
   headerHref?: string
+  headerRight?: React.ReactNode
 }
 
 export function DashboardLayout({
@@ -24,6 +25,7 @@ export function DashboardLayout({
   title,
   headerIcon,
   headerHref,
+  headerRight,
 }: DashboardLayoutProps) {
   const pathname = usePathname()
 
@@ -37,7 +39,7 @@ export function DashboardLayout({
 
   return (
     <SidebarProvider style={{ "--sidebar-width": "19rem" } as React.CSSProperties}>
-      <DashboardSidebar navGroups={navGroups} title={title} headerIcon={headerIcon} headerHref={headerHref} />
+      <DashboardSidebar navGroups={navGroups} title={title} headerIcon={headerIcon} headerHref={headerHref} headerRight={headerRight} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 px-4 md:hidden">
           <SidebarTrigger className="-ml-1" />

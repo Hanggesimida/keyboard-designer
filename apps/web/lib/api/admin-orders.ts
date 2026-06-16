@@ -48,7 +48,8 @@ export interface AdminOrder extends AdminOrderSummary {
 export interface QueryAdminOrdersParams {
   page?: number;
   limit?: number;
-  status?: OrderStatus;
+  /** 支持多选，对应后端 ?status=PAID&status=APPROVED */
+  status?: OrderStatus[];
   search?: string;
 }
 

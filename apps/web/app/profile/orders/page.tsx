@@ -6,6 +6,7 @@ import { ShoppingBag, ChevronRight, Loader2, Search, ChevronLeft, X } from "luci
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { PageHeader } from "@/components/ui/PageHeader"
 import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { useMyOrders, useCancelOrder } from "@/hooks/queries/orders/useOrders"
 import {
@@ -18,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
+import { Spinner } from "@workspace/ui/components/spinner"
 import type { OrderStatus } from "@/lib/api/orders"
 
 const STATUS_TABS: { value: OrderStatus | undefined; label: string }[] = [
@@ -84,13 +86,7 @@ export default function ProfileOrdersPage() {
 
   return (
     <>
-      {/* 页头 */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">我的订单</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          查看所有键盘定制订单的状态与详情。
-        </p>
-      </div>
+      <PageHeader title="我的订单" description="查看所有键盘定制订单的状态与详情。" />
 
       <ProfileSection>
         {/* 筛选工具栏 */}
@@ -107,8 +103,8 @@ export default function ProfileOrdersPage() {
                   className={[
                     "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
                     isActive
-                      ? "bg-white/[0.08] text-white/80"
-                      : "text-white/35 hover:text-white/60 hover:bg-white/[0.04]",
+                      ? "bg-muted/60 text-foreground/80"
+                      : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/40",
                   ].join(" ")}
                 >
                   {tab.label}
@@ -119,19 +115,19 @@ export default function ProfileOrdersPage() {
 
           {/* 搜索框 */}
           <div className="relative flex items-center shrink-0">
-            <Search size={14} className="absolute left-3 text-white/30 pointer-events-none" />
+            <Search size={14} className="absolute left-3 text-muted-foreground/55 pointer-events-none" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchInputChange(e.target.value)}
               placeholder="搜索订单号…"
-              className="w-full sm:w-52 rounded-lg border border-white/[0.08] bg-white/[0.03] pl-8 pr-8 py-1.5 text-xs text-white/70 placeholder-white/25 focus:outline-none focus:border-white/[0.15] focus:bg-white/[0.05] transition-colors"
+              className="w-full sm:w-52 rounded-lg border border-border bg-muted/40 pl-8 pr-8 py-1.5 text-xs text-foreground/70 placeholder:text-muted-foreground/45 focus:outline-none focus:border-ring focus:bg-muted/50 transition-colors"
             />
             {searchInput && (
               <button
                 type="button"
                 onClick={() => { setSearch(""); setSearchInput(""); setPage(1) }}
-                className="absolute right-2.5 text-white/25 hover:text-white/60 transition-colors cursor-pointer"
+                className="absolute right-2.5 text-muted-foreground/45 hover:text-muted-foreground transition-colors cursor-pointer"
               >
                 <X size={13} />
               </button>
@@ -141,11 +137,13 @@ export default function ProfileOrdersPage() {
 
         {/* 统计 */}
         {!isLoading && (
-          <p className="mb-3 text-xs text-white/30">共 {total} 条订单</p>
+          <p className="mb-3 text-xs text-muted-foreground/55">共 {total} 条订单</p>
         )}
 
         {isLoading ? (
-          <OrderListSkeleton />
+          <div className="flex justify-center py-12">
+            <Spinner className="size-5 text-muted-foreground" />
+          </div>
         ) : orders.length === 0 ? (
           <ProfileEmptyState
             icon={ShoppingBag}
@@ -158,15 +156,15 @@ export default function ProfileOrdersPage() {
             {orders.map((order) => (
               <div
                 key={order.id}
-                className="rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.03] transition-colors"
+                className="rounded-xl border border-border bg-muted/30 hover:bg-muted/35 transition-colors"
               >
                 {/* 订单头部 */}
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05]">
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/30 font-mono">{order.orderNo}</span>
+                    <span className="text-xs text-muted-foreground/55 font-mono">{order.orderNo}</span>
                     <OrderStatusBadge status={order.status} />
                   </div>
-                  <span className="text-[11px] text-white/25">
+                  <span className="text-[11px] text-muted-foreground/45">
                     {formatDistanceToNow(new Date(order.createdAt), {
                       addSuffix: true,
                       locale: zhCN,
@@ -177,16 +175,16 @@ export default function ProfileOrdersPage() {
                 {/* 订单内容 */}
                 <div className="flex items-center justify-between px-4 py-3 gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white/80 truncate">
+                    <p className="text-sm font-medium text-foreground/80 truncate">
                       {order.design.name}
                     </p>
-                    <p className="mt-0.5 text-xs text-white/35">
+                    <p className="mt-0.5 text-xs text-muted-foreground/60">
                       {order.addressSnapshot.name} · {order.addressSnapshot.phone}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
-                    <p className="text-sm font-semibold text-white/80">
+                    <p className="text-sm font-semibold text-foreground/80">
                       ¥{parseFloat(order.totalAmount).toFixed(2)}
                     </p>
 
@@ -196,7 +194,7 @@ export default function ProfileOrdersPage() {
                         <button
                           type="button"
                           onClick={() => setCancelTargetId(order.id)}
-                          className="text-[11px] text-white/30 hover:text-red-400/70 transition-colors cursor-pointer"
+                          className="text-[11px] text-muted-foreground/55 hover:text-destructive/70 transition-colors cursor-pointer"
                         >
                           取消
                         </button>
@@ -204,7 +202,7 @@ export default function ProfileOrdersPage() {
                       <button
                         type="button"
                         onClick={() => router.push(`/profile/orders/${order.id}`)}
-                        className="flex items-center gap-0.5 text-[11px] text-white/35 hover:text-white/70 transition-colors cursor-pointer"
+                        className="flex items-center gap-0.5 text-[11px] text-muted-foreground/60 hover:text-foreground/70 transition-colors cursor-pointer"
                       >
                         详情
                         <ChevronRight size={12} />
@@ -220,7 +218,7 @@ export default function ProfileOrdersPage() {
         {/* 分页 */}
         {totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-white/30">
+            <p className="text-xs text-muted-foreground/55">
               第 {page} / {totalPages} 页
             </p>
             <div className="flex items-center gap-1">
@@ -228,7 +226,7 @@ export default function ProfileOrdersPage() {
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="flex items-center justify-center w-7 h-7 rounded-md border border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="flex items-center justify-center w-7 h-7 rounded-md border border-border text-muted-foreground/70 hover:text-foreground/70 hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -236,7 +234,7 @@ export default function ProfileOrdersPage() {
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="flex items-center justify-center w-7 h-7 rounded-md border border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="flex items-center justify-center w-7 h-7 rounded-md border border-border text-muted-foreground/70 hover:text-foreground/70 hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <ChevronRight size={14} />
               </button>
@@ -255,24 +253,24 @@ export default function ProfileOrdersPage() {
           }
         }}
       >
-        <AlertDialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认取消订单？</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/50">
+            <AlertDialogDescription>
               取消后订单将无法恢复，若需要再次购买请重新下单。
             </AlertDialogDescription>
           </AlertDialogHeader>
           {cancelError && (
-            <p className="text-xs text-red-400/80 px-1">{cancelError}</p>
+            <p className="text-xs text-destructive/80 px-1">{cancelError}</p>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white/60 hover:bg-white/5">
+            <AlertDialogCancel>
               返回
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isCancelling}
               onClick={handleConfirmCancel}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isCancelling ? (
                 <><Loader2 size={13} className="animate-spin" /> 取消中...</>
@@ -284,27 +282,5 @@ export default function ProfileOrdersPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
-
-function OrderListSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-xl border border-white/[0.07] bg-white/[0.02]"
-        >
-          <div className="h-9 border-b border-white/[0.05] animate-pulse bg-white/[0.015]" />
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3.5 w-1/2 rounded bg-white/[0.06] animate-pulse" />
-              <div className="h-3 w-1/3 rounded bg-white/[0.04] animate-pulse" />
-            </div>
-            <div className="h-4 w-16 rounded bg-white/[0.06] animate-pulse" />
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }

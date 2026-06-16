@@ -41,7 +41,7 @@ export class AdminOrderService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.OrderWhereInput = {
-      ...(status && { status }),
+      ...(status?.length && { status: { in: status } }),
       ...(search && {
         OR: [
           { orderNo: { contains: search, mode: 'insensitive' } },

@@ -6,6 +6,7 @@ import { Settings2 } from "lucide-react"
 import { useUserStore } from "@/store/userStore"
 import { DashboardLayout } from "@/components/layouts/dashboard"
 import { adminNavGroups } from "@/modules/admin/config"
+import { NotificationCenter } from "@/modules/admin/components/NotificationCenter"
 
 export default function AdminLayout({
   children,
@@ -37,6 +38,7 @@ export default function AdminLayout({
       title="烬炆外设后台"
       headerIcon={Settings2}
       headerHref="/admin"
+      headerRight={<NotificationCenter />}
     >
       {children}
     </DashboardLayout>

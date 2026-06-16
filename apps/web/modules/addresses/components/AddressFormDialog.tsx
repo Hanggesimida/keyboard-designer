@@ -84,18 +84,18 @@ export function AddressFormDialog({
   }, [open, editAddress, reset])
 
   const inputCls =
-    "w-full h-9 px-3 rounded-lg border bg-white/[0.04] text-sm text-white placeholder:text-white/25 outline-none transition-colors border-white/10 hover:border-white/20 focus:border-white/30 focus:bg-white/[0.07] disabled:opacity-50"
-  const labelCls = "block text-xs font-medium text-white/50 mb-1"
-  const errorCls = "mt-1 text-xs text-red-400/80"
+    "w-full h-9 px-3 rounded-lg border border-border bg-muted/40 text-sm text-foreground placeholder:text-muted-foreground/45 outline-none transition-colors hover:border-border focus:border-ring focus:bg-muted/50 disabled:opacity-50"
+  const labelCls = "block text-xs font-medium text-muted-foreground mb-1"
+  const errorCls = "mt-1 text-xs text-destructive/80"
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isSubmitting && onOpenChange(v)}>
       <DialogContent
         showCloseButton={false}
-        className="bg-[#141414] border border-white/[0.1] text-white max-w-md"
+        className="max-w-md"
       >
         <DialogHeader>
-          <DialogTitle className="text-base font-semibold text-white/90">
+          <DialogTitle className="text-base font-semibold">
             {isEdit ? "编辑收货地址" : "新增收货地址"}
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -104,7 +104,7 @@ export function AddressFormDialog({
           <button
             type="button"
             onClick={() => !isSubmitting && onOpenChange(false)}
-            className="absolute right-4 top-4 text-white/30 hover:text-white/70 transition-colors"
+            className="absolute right-4 top-4 text-muted-foreground/55 hover:text-foreground/70 transition-colors"
           >
             <X size={16} />
           </button>
@@ -177,7 +177,7 @@ export function AddressFormDialog({
               placeholder="街道、门牌号等详细信息"
               rows={2}
               disabled={isSubmitting}
-              className="w-full px-3 py-2 rounded-lg border bg-white/[0.04] text-sm text-white placeholder:text-white/25 outline-none transition-colors border-white/10 hover:border-white/20 focus:border-white/30 focus:bg-white/[0.07] disabled:opacity-50 resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-muted/40 text-sm text-foreground placeholder:text-muted-foreground/45 outline-none transition-colors hover:border-border focus:border-ring focus:bg-muted/50 disabled:opacity-50 resize-none"
             />
             {errors.detail && (
               <p className={errorCls}>{errors.detail.message}</p>
@@ -189,14 +189,14 @@ export function AddressFormDialog({
               type="checkbox"
               {...register("isDefault")}
               disabled={isSubmitting}
-              className="w-4 h-4 rounded border-white/20 bg-white/[0.05] accent-white cursor-pointer"
+              className="w-4 h-4 rounded border-border bg-muted/50 accent-primary cursor-pointer"
             />
-            <span className="text-sm text-white/50">设为默认地址</span>
+            <span className="text-sm text-muted-foreground">设为默认地址</span>
           </label>
 
           {submitError && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5">
-              <p className="text-xs text-red-400/90">{submitError}</p>
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5">
+              <p className="text-xs text-destructive/90">{submitError}</p>
             </div>
           )}
 
@@ -207,7 +207,7 @@ export function AddressFormDialog({
               size="sm"
               disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
-              className="border-white/10 text-white/60 hover:bg-white/5 cursor-pointer"
+              className="cursor-pointer"
             >
               取消
             </Button>

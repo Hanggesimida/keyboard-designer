@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Pencil, Trash2, Star, Loader2 } from "lucide-react"
+import { MapPin, Pencil, Trash2, Star, Loader2, Plus } from "lucide-react"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { PageHeader } from "@/components/ui/PageHeader"
 import {
   useMyAddresses,
   useCreateAddress,
@@ -26,6 +27,7 @@ import {
 } from "@/modules/addresses"
 import { ApiError } from "@/lib/api/request"
 import type { Address } from "@/lib/api/addresses"
+import { Button } from "@workspace/ui/components/button"
 
 export default function ProfileAddressesPage() {
   const { data: addresses, isLoading } = useMyAddresses()
@@ -89,13 +91,16 @@ export default function ProfileAddressesPage() {
 
   return (
     <>
-      {/* 页头 */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">收货地址</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          管理你的收货地址，下单时可快速选择。
-        </p>
-      </div>
+      <PageHeader
+        title="收货地址"
+        description="管理你的收货地址，下单时可快速选择。"
+        action={
+          <Button onClick={openCreate} className="w-full sm:w-auto cursor-pointer">
+            <Plus size={15} />
+            新建地址
+          </Button>
+        }
+      />
 
       <ProfileSection>
         {isLoading ? (
@@ -111,13 +116,13 @@ export default function ProfileAddressesPage() {
             {addresses.map((addr) => (
               <div
                 key={addr.id}
-                className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5"
+                className="rounded-xl border border-border bg-muted/30 px-4 py-3.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-white/85">{addr.name}</span>
-                      <span className="text-sm text-white/50">{addr.phone}</span>
+                      <span className="text-sm font-medium text-foreground/85">{addr.name}</span>
+                      <span className="text-sm text-muted-foreground">{addr.phone}</span>
                       {addr.isDefault && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-400/80 border border-amber-400/25 rounded px-1.5 py-0.5">
                           <Star size={9} />
@@ -125,7 +130,7 @@ export default function ProfileAddressesPage() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-white/40 leading-relaxed">
+                    <p className="mt-1 text-xs text-muted-foreground/70 leading-relaxed">
                       {addr.province}{addr.city}{addr.district} {addr.detail}
                     </p>
                   </div>
@@ -138,7 +143,7 @@ export default function ProfileAddressesPage() {
                         disabled={isSettingDefault}
                         onClick={() => setDefault(addr.id)}
                         title="设为默认地址"
-                        className="flex items-center gap-1 text-[11px] text-white/30 hover:text-amber-400/70 border border-white/[0.07] hover:border-amber-400/20 rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center gap-1 text-[11px] text-muted-foreground/55 hover:text-amber-400/70 border border-border hover:border-amber-400/20 rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {isSettingDefault ? (
                           <Loader2 size={11} className="animate-spin" />
@@ -153,7 +158,7 @@ export default function ProfileAddressesPage() {
                       type="button"
                       onClick={() => openEdit(addr)}
                       title="编辑地址"
-                      className="p-2 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.05] transition-colors cursor-pointer"
+                      className="p-2 rounded-lg text-muted-foreground/55 hover:text-foreground/70 hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       <Pencil size={14} />
                     </button>
@@ -162,7 +167,7 @@ export default function ProfileAddressesPage() {
                       type="button"
                       onClick={() => setDeleteTargetId(addr.id)}
                       title="删除地址"
-                      className="p-2 rounded-lg text-white/30 hover:text-red-400/70 hover:bg-red-400/[0.07] transition-colors cursor-pointer"
+                      className="p-2 rounded-lg text-muted-foreground/55 hover:text-destructive/70 hover:bg-destructive/10 transition-colors cursor-pointer"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -194,24 +199,24 @@ export default function ProfileAddressesPage() {
           }
         }}
       >
-        <AlertDialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除地址？</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/50">
+            <AlertDialogDescription>
               删除后该地址将无法恢复，请确认操作。
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteError && (
-            <p className="text-xs text-red-400/80 px-1">{deleteError}</p>
+            <p className="text-xs text-destructive/80 px-1">{deleteError}</p>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white/60 hover:bg-white/5">
+            <AlertDialogCancel>
               取消
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeleting}
               onClick={handleConfirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (
                 <><Loader2 size={13} className="animate-spin" /> 删除中...</>
@@ -232,7 +237,7 @@ function AddressListSkeleton() {
       {Array.from({ length: 2 }).map((_, i) => (
         <div
           key={i}
-          className="h-20 rounded-xl border border-white/[0.07] bg-white/[0.02] animate-pulse"
+          className="h-20 rounded-xl border border-border bg-muted/30 animate-pulse"
         />
       ))}
     </div>

@@ -23,9 +23,10 @@ interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
   title?: string
   headerIcon?: LucideIcon
   headerHref?: string
+  headerRight?: React.ReactNode
 }
 
-export function DashboardSidebar({ navGroups, title = "烬炆外设", headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", ...props }: DashboardSidebarProps) {
+export function DashboardSidebar({ navGroups, title = "烬炆外设", headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", headerRight, ...props }: DashboardSidebarProps) {
   const pathname = usePathname()
 
   function isActive(href: string, exact?: boolean) {
@@ -36,19 +37,26 @@ export function DashboardSidebar({ navGroups, title = "烬炆外设", headerIcon
   return (
     <Sidebar variant="floating" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <Link href={headerHref}>
-                <HeaderIcon className="size-5!" />
-                <span className="text-base font-semibold">{title}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex items-center">
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="data-[slot=sidebar-menu-button]:p-1.5!"
+              >
+                <Link href={headerHref}>
+                  <HeaderIcon className="size-5!" />
+                  <span className="text-base font-semibold">{title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          {headerRight && (
+            <div className="shrink-0 pr-1">
+              {headerRight}
+            </div>
+          )}
+        </div>
       </SidebarHeader>
       <SidebarContent>
         {navGroups.map((group, i) => (

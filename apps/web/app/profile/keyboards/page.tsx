@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@workspace/ui/components/dialog"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { PageHeader } from "@/components/ui/PageHeader"
 import { useMyDesigns, useDeleteDesign } from "@/hooks/queries/designs/useDesigns"
 import { Button } from "@workspace/ui/components/button"
 
@@ -42,13 +43,18 @@ export default function ProfileKeyboardsPage() {
 
   return (
     <>
-      {/* 页头 */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">我的设计</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          管理你创建的所有键盘设计方案，支持编辑与删除。
-        </p>
-      </div>
+      <PageHeader
+        title="我的设计"
+        description="管理你创建的所有键盘设计方案，支持编辑与删除。"
+        action={
+          <Button asChild className="w-full sm:w-auto cursor-pointer">
+            <Link href="/design">
+              <Keyboard size={15} />
+              新建设计
+            </Link>
+          </Button>
+        }
+      />
 
       <ProfileSection>
         {isLoading ? (
@@ -65,10 +71,10 @@ export default function ProfileKeyboardsPage() {
             {designs.map((design) => (
               <div
                 key={design.id}
-                className="group relative flex flex-col gap-3 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                className="group relative flex flex-col gap-3 p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/40 transition-colors"
               >
                 {/* 预览图占位 */}
-                <div className="w-full aspect-video rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center overflow-hidden">
+                <div className="w-full aspect-video rounded-lg bg-muted/40 border border-border/60 flex items-center justify-center overflow-hidden">
                   {design.previewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -77,14 +83,14 @@ export default function ProfileKeyboardsPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Keyboard size={24} className="text-white/20" />
+                    <Keyboard size={24} className="text-muted-foreground/35" />
                   )}
                 </div>
 
                 {/* 名称与时间 */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white/80 truncate">{design.name}</p>
-                  <p className="mt-0.5 text-xs text-white/30">
+                  <p className="text-sm font-medium text-foreground/80 truncate">{design.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground/55">
                     {formatDistanceToNow(new Date(design.updatedAt), {
                       addSuffix: true,
                       locale: zhCN,
@@ -107,7 +113,7 @@ export default function ProfileKeyboardsPage() {
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => handleOpenDelete(design.id)}
-                    className="ml-auto text-white/30 hover:text-red-400 hover:bg-red-400/10 cursor-pointer"
+                    className="ml-auto text-muted-foreground/55 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     aria-label="删除此设计"
                   >
                     <Trash2 />
@@ -121,10 +127,10 @@ export default function ProfileKeyboardsPage() {
 
       {/* 确认删除弹窗 */}
       <Dialog open={!!confirmId} onOpenChange={(open) => !open && setConfirmId(null)}>
-        <DialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>确认删除设计</DialogTitle>
-            <DialogDescription className="text-white/50">
+            <DialogDescription>
               此操作不可撤销，设计数据将被永久删除。
             </DialogDescription>
           </DialogHeader>
@@ -133,18 +139,19 @@ export default function ProfileKeyboardsPage() {
               variant="outline"
               onClick={() => setConfirmId(null)}
               disabled={isDeleting}
-              className="border-white/10 text-white/60 hover:bg-white/5 cursor-pointer"
+              className="cursor-pointer"
             >
               取消
             </Button>
             <Button
+              variant="destructive"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+              className="cursor-pointer"
             >
               {isDeleting ? (
                 <>
-                  <span className="size-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="size-3.5 animate-spin rounded-full border-2 border-destructive-foreground/30 border-t-destructive-foreground" />
                   删除中…
                 </>
               ) : (
@@ -160,7 +167,7 @@ export default function ProfileKeyboardsPage() {
 
       {/* 删除失败提示弹窗 */}
       <Dialog open={!!errorMessage} onOpenChange={(open) => !open && setErrorMessage(null)}>
-        <DialogContent className="bg-[#1a1a1a] border border-white/[0.1] text-white sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <div className="flex items-center gap-2.5">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
@@ -168,7 +175,7 @@ export default function ProfileKeyboardsPage() {
               </div>
               <DialogTitle>无法删除此设计</DialogTitle>
             </div>
-            <DialogDescription className="text-white/50 pt-1">
+            <DialogDescription className="pt-1">
               {errorMessage}
             </DialogDescription>
           </DialogHeader>
@@ -176,7 +183,7 @@ export default function ProfileKeyboardsPage() {
             <Button
               variant="outline"
               onClick={() => setErrorMessage(null)}
-              className="border-white/10 text-white/60 hover:bg-white/5 cursor-pointer"
+              className="cursor-pointer"
             >
               我知道了
             </Button>
@@ -196,11 +203,11 @@ function DesignGridSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="flex flex-col gap-3 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02]"
+          className="flex flex-col gap-3 p-4 rounded-xl border border-border bg-muted/30"
         >
-          <div className="w-full aspect-video rounded-lg bg-white/[0.04] animate-pulse" />
-          <div className="h-4 w-3/4 rounded bg-white/[0.06] animate-pulse" />
-          <div className="h-3 w-1/3 rounded bg-white/[0.04] animate-pulse" />
+          <div className="w-full aspect-video rounded-lg bg-muted/40 animate-pulse" />
+          <div className="h-4 w-3/4 rounded bg-muted/50 animate-pulse" />
+          <div className="h-3 w-1/3 rounded bg-muted/40 animate-pulse" />
         </div>
       ))}
     </div>

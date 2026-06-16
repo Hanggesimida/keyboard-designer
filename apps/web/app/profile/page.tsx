@@ -13,6 +13,7 @@ import {
 import { useUserStore } from "@/store/userStore"
 import { useMyDesigns } from "@/hooks/queries/designs/useDesigns"
 import { Button } from "@workspace/ui/components/button"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -23,13 +24,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8">
-        {/* 页头 */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">个人主页</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            查看你的键盘设计概览与最近动态。
-          </p>
-        </div>
+        <PageHeader title="个人主页" description="查看你的键盘设计概览与最近动态。" />
 
         {/* 统计数据 */}
         <ProfileSection title="数据概览">
@@ -70,9 +65,9 @@ export default function ProfilePage() {
               {recentDesigns.map((design) => (
                 <div
                   key={design.id}
-                  className="group relative flex flex-col gap-3 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                  className="group relative flex flex-col gap-3 p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/40 transition-colors"
                 >
-                  <div className="w-full aspect-video rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center overflow-hidden">
+                  <div className="w-full aspect-video rounded-lg bg-muted/40 border border-border/60 flex items-center justify-center overflow-hidden">
                     {design.previewUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -81,12 +76,12 @@ export default function ProfilePage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Keyboard size={24} className="text-white/20" />
+                      <Keyboard size={24} className="text-muted-foreground/35" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white/80 truncate">{design.name}</p>
-                    <p className="mt-0.5 text-xs text-white/30">
+                    <p className="text-sm font-medium text-foreground/80 truncate">{design.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground/55">
                       {formatDistanceToNow(new Date(design.updatedAt), {
                         addSuffix: true,
                         locale: zhCN,
@@ -119,11 +114,11 @@ function RecentDesignsSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="flex flex-col gap-3 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02]"
+          className="flex flex-col gap-3 p-4 rounded-xl border border-border bg-muted/30"
         >
-          <div className="w-full aspect-video rounded-lg bg-white/[0.04] animate-pulse" />
-          <div className="h-4 w-3/4 rounded bg-white/[0.06] animate-pulse" />
-          <div className="h-3 w-1/3 rounded bg-white/[0.04] animate-pulse" />
+          <div className="w-full aspect-video rounded-lg bg-muted/40 animate-pulse" />
+          <div className="h-4 w-3/4 rounded bg-muted/50 animate-pulse" />
+          <div className="h-3 w-1/3 rounded bg-muted/40 animate-pulse" />
         </div>
       ))}
     </div>

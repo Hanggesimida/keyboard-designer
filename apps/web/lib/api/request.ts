@@ -24,8 +24,8 @@ function getToken(): string | null {
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
-  /** GET 请求的 query 参数，自动序列化拼接到 URL */
-  params?: Record<string, string | number | boolean | null | undefined> | object;
+  /** GET 请求的 query 参数，自动序列化拼接到 URL；数组会展开为重复参数 ?k=v1&k=v2 */
+  params?: Record<string, string | number | boolean | null | undefined | (string | number | boolean)[]> | object;
 };
 
 export async function request<T = unknown>(
@@ -39,7 +39,12 @@ export async function request<T = unknown>(
   if (params) {
     const searchParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
-      if (value !== null && value !== undefined) {
+      if (value === null || value === undefined) continue;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          searchParams.append(key, String(item));
+        }
+      } else {
         searchParams.append(key, String(value));
       }
     }

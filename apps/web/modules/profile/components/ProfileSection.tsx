@@ -22,10 +22,10 @@ export function ProfileSection({
         <div className="flex items-center justify-between gap-4">
           <div>
             {title && (
-              <h2 className="text-sm font-semibold text-white/70">{title}</h2>
+              <h2 className="text-sm font-semibold text-foreground/70">{title}</h2>
             )}
             {description && (
-              <p className="mt-0.5 text-xs text-white/35">{description}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground/60">{description}</p>
             )}
           </div>
           {action && <div className="shrink-0">{action}</div>}

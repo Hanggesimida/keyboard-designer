@@ -18,6 +18,7 @@ export const profileNavGroups: NavGroup[] = [
         label: "概览",
         href: "/profile",
         icon: LayoutDashboard,
+        exact: true,
       },
       {
         label: "我的键盘",

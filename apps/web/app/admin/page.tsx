@@ -21,6 +21,7 @@ import { OrderStatusBadge } from "@/modules/orders"
 import { useNotificationStore } from "@/store/notificationStore"
 import type { OrderStatus } from "@/lib/api/orders"
 import type { NotificationType } from "@/lib/api/notifications"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 // ─── 统计卡片 ─────────────────────────────────────────────────────────────────
 
@@ -34,18 +35,18 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon: Icon, iconCls, href }: StatCardProps) {
   const inner = (
-    <div className="relative flex flex-col gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 hover:bg-white/[0.035] transition-colors">
+    <div className="relative flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/35 transition-colors">
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconCls}`}>
         <Icon size={16} />
       </div>
       <div>
-        <p className="text-2xl font-bold text-white/90 tabular-nums">{value}</p>
-        <p className="mt-0.5 text-xs text-white/40">{label}</p>
+        <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground/70">{label}</p>
       </div>
       {href && (
         <ArrowRight
           size={13}
-          className="absolute top-4 right-4 text-white/20 group-hover:text-white/40 transition-colors"
+          className="absolute top-4 right-4 text-muted-foreground/35 group-hover:text-muted-foreground/70 transition-colors"
         />
       )}
     </div>
@@ -65,7 +66,7 @@ function StatCard({ label, value, icon: Icon, iconCls, href }: StatCardProps) {
 
 const NOTIFICATION_ICON: Record<NotificationType, { icon: React.ElementType; cls: string }> = {
   ORDER_PAID: { icon: ShoppingBag, cls: "text-sky-400" },
-  ORDER_CANCELLED: { icon: XCircle, cls: "text-white/40" },
+  ORDER_CANCELLED: { icon: XCircle, cls: "text-muted-foreground/70" },
   ORDER_REFUND_REQUEST: { icon: RefreshCw, cls: "text-rose-400" },
 }
 
@@ -86,10 +87,10 @@ function NotificationWidget() {
     .slice(0, 5)
 
   return (
-    <div className="rounded-xl border border-white/[0.07] overflow-hidden mb-4">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+    <div className="rounded-xl border border-border overflow-hidden mb-4">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/30">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">最新通知</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">最新通知</span>
           {unreadCount > 0 && (
             <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500/80 text-white text-[9px]">
               {unreadCount > 99 ? "99+" : unreadCount}
@@ -108,8 +109,8 @@ function NotificationWidget() {
 
       {recent.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 gap-2">
-          <Bell size={18} className="text-white/10" />
-          <p className="text-xs text-white/20">暂无通知</p>
+          <Bell size={18} className="text-muted-foreground/20" />
+          <p className="text-xs text-muted-foreground/35">暂无通知</p>
         </div>
       ) : (
         <div>
@@ -120,8 +121,8 @@ function NotificationWidget() {
               <div
                 key={n.id}
                 className={[
-                  "flex items-start gap-3 px-4 py-3 border-b border-white/[0.04] last:border-b-0 transition-colors",
-                  !n.isRead ? "cursor-pointer hover:bg-white/[0.02]" : "opacity-50",
+                  "flex items-start gap-3 px-4 py-3 border-b border-border/40 last:border-b-0 transition-colors",
+                  !n.isRead ? "cursor-pointer hover:bg-muted/30" : "opacity-50",
                 ].join(" ")}
                 onClick={() => !n.isRead && markRead(n.id)}
               >
@@ -130,14 +131,14 @@ function NotificationWidget() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-medium text-white/75 truncate">{n.title}</p>
+                    <p className="text-xs font-medium text-foreground/75 truncate">{n.title}</p>
                     {!n.isRead && (
                       <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-400" />
                     )}
                   </div>
-                  <p className="mt-0.5 text-[11px] text-white/40 truncate">{n.body}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/70 truncate">{n.body}</p>
                 </div>
-                <p className="text-[10px] text-white/20 shrink-0 pt-0.5">
+                <p className="text-[10px] text-muted-foreground/35 shrink-0 pt-0.5">
                   {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: zhCN })}
                 </p>
               </div>
@@ -172,12 +173,12 @@ const ATTENTION_STATUSES: { status: OrderStatus; label: string; color: string }[
 export default function AdminOverviewPage() {
   // 拉取各关键状态数量
   const { data: allData, isLoading: allLoading } = useAdminOrders({ limit: 1 })
-  const { data: paidData } = useAdminOrders({ status: "PAID", limit: 1 })
-  const { data: approvedData } = useAdminOrders({ status: "APPROVED", limit: 1 })
-  const { data: processingData } = useAdminOrders({ status: "PROCESSING", limit: 1 })
-  const { data: shippingData } = useAdminOrders({ status: "SHIPPING", limit: 1 })
-  const { data: completedData } = useAdminOrders({ status: "COMPLETED", limit: 1 })
-  const { data: refundingData } = useAdminOrders({ status: "REFUNDING", limit: 1 })
+  const { data: paidData } = useAdminOrders({ status: ["PAID"], limit: 1 })
+  const { data: approvedData } = useAdminOrders({ status: ["APPROVED"], limit: 1 })
+  const { data: processingData } = useAdminOrders({ status: ["PROCESSING"], limit: 1 })
+  const { data: shippingData } = useAdminOrders({ status: ["SHIPPING"], limit: 1 })
+  const { data: completedData } = useAdminOrders({ status: ["COMPLETED"], limit: 1 })
+  const { data: refundingData } = useAdminOrders({ status: ["REFUNDING"], limit: 1 })
 
   // 最近 5 条订单
   const { data: recentData, isLoading: recentLoading } = useAdminOrders({ limit: 5, page: 1 })
@@ -194,13 +195,7 @@ export default function AdminOverviewPage() {
 
   return (
     <div>
-      {/* 页头 */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">概览</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          后台数据一览，快速了解当前业务状态。
-        </p>
-      </div>
+      <PageHeader title="概览" description="后台数据一览，快速了解当前业务状态。" />
 
       {/* 通知列表 */}
       <NotificationWidget />
@@ -211,7 +206,7 @@ export default function AdminOverviewPage() {
           label="订单总数"
           value={allLoading ? "—" : total}
           icon={ShoppingBag}
-          iconCls="bg-white/[0.06] text-white/50"
+          iconCls="bg-muted/50 text-muted-foreground"
           href="/admin/orders"
         />
         <StatCard
@@ -239,66 +234,70 @@ export default function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* 最近订单 */}
-        <div className="lg:col-span-3 rounded-xl border border-white/[0.07] overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
-            <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">最近订单</span>
+        <div className="lg:col-span-3 rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/30">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">最近订单</span>
             <Link
               href="/admin/orders"
-              className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground/55 hover:text-muted-foreground transition-colors"
             >
               全部 <ArrowRight size={11} />
             </Link>
           </div>
 
           {recentLoading ? (
-            <div className="space-y-0">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-b-0 animate-pulse"
-                >
-                  <div className="h-3 w-32 rounded bg-white/[0.06]" />
-                  <div className="flex-1 h-3 rounded bg-white/[0.04]" />
-                  <div className="h-4 w-12 rounded bg-white/[0.06]" />
-                  <div className="h-3 w-16 rounded bg-white/[0.04]" />
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <div className="min-w-[480px] space-y-0">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-border/40 last:border-b-0 animate-pulse"
+                  >
+                    <div className="h-3 w-32 rounded bg-muted/50" />
+                    <div className="flex-1 h-3 rounded bg-muted/40" />
+                    <div className="h-4 w-12 rounded bg-muted/50" />
+                    <div className="h-3 w-16 rounded bg-muted/40" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (recentData?.items ?? []).length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-white/25">暂无订单</p>
+              <p className="text-sm text-muted-foreground/45">暂无订单</p>
             </div>
           ) : (
-            <div>
-              {(recentData?.items ?? []).map((order) => (
-                <Link
-                  key={order.id}
-                  href={`/admin/orders/${order.id}`}
-                  className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors group"
-                >
-                  <p className="text-xs font-mono text-white/50 w-36 shrink-0 truncate">
-                    {order.orderNo}
-                  </p>
-                  <p className="flex-1 text-sm text-white/70 truncate min-w-0">
-                    {order.design.name}
-                  </p>
-                  <OrderStatusBadge status={order.status} />
-                  <p className="text-xs text-white/25 shrink-0 w-20 text-right">
-                    {formatDistanceToNow(new Date(order.createdAt), {
-                      addSuffix: true,
-                      locale: zhCN,
-                    })}
-                  </p>
-                </Link>
-              ))}
+            <div className="overflow-x-auto">
+              <div className="min-w-[480px]">
+                {(recentData?.items ?? []).map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-border/40 last:border-b-0 hover:bg-muted/30 transition-colors group"
+                  >
+                    <p className="text-xs font-mono text-muted-foreground w-36 shrink-0 truncate">
+                      {order.orderNo}
+                    </p>
+                    <p className="flex-1 text-sm text-foreground/70 truncate min-w-0">
+                      {order.design.name}
+                    </p>
+                    <OrderStatusBadge status={order.status} />
+                    <p className="text-xs text-muted-foreground/45 shrink-0 w-20 text-right">
+                      {formatDistanceToNow(new Date(order.createdAt), {
+                        addSuffix: true,
+                        locale: zhCN,
+                      })}
+                    </p>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* 右侧：状态分布 */}
-        <div className="lg:col-span-2 rounded-xl border border-white/[0.07] overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
-            <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">状态分布</span>
+        <div className="lg:col-span-2 rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/60 bg-muted/30">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">状态分布</span>
           </div>
           <div className="p-4 space-y-3">
             {ATTENTION_STATUSES.map(({ status, label, color }) => {
@@ -319,14 +318,14 @@ export default function AdminOverviewPage() {
                   className="flex items-center gap-3 group"
                 >
                   <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${color} opacity-70`} />
-                  <span className="text-xs text-white/50 w-14 shrink-0">{label}</span>
-                  <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                  <span className="text-xs text-muted-foreground w-14 shrink-0">{label}</span>
+                  <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden">
                     <div
                       className={`h-full rounded-full ${color} opacity-40 transition-all duration-500`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-xs tabular-nums text-white/40 w-6 text-right shrink-0">
+                  <span className="text-xs tabular-nums text-muted-foreground/70 w-6 text-right shrink-0">
                     {count}
                   </span>
                 </Link>
@@ -353,12 +352,12 @@ export default function AdminOverviewPage() {
           )}
 
           {/* 生产统计 */}
-          <div className="border-t border-white/[0.06] px-4 py-3">
-            <div className="flex items-center gap-2 text-xs text-white/30">
+          <div className="border-t border-border/60 px-4 py-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/55">
               <TrendingUp size={12} />
               <span>
-                生产中 <span className="text-white/50 font-medium tabular-nums">{processingCount}</span> 笔
-                · 运输 <span className="text-white/50 font-medium tabular-nums">{shippingCount}</span> 笔
+                生产中 <span className="text-muted-foreground font-medium tabular-nums">{processingCount}</span> 笔
+                · 运输 <span className="text-muted-foreground font-medium tabular-nums">{shippingCount}</span> 笔
               </span>
             </div>
           </div>
