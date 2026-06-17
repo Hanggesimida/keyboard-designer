@@ -1,5 +1,10 @@
-﻿import { DesignWorkspaceLayout } from "@/modules/design/components/DesignWorkspaceLayout"
+﻿import { Suspense } from "react"
+import { DesignWorkspaceLayout } from "@/modules/design/components/DesignWorkspaceLayout"
 
 export default function DesignPage() {
-  return <DesignWorkspaceLayout />
+  return (
+    <Suspense>
+      <DesignWorkspaceLayout />
+    </Suspense>
+  )
 }

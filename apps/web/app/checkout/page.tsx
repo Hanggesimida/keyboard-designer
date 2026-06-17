@@ -1,6 +1,7 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { Suspense, useRef, useState } from "react"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Package } from "lucide-react"
 import Link from "next/link"
@@ -12,6 +13,14 @@ import { PaymentConfirmSection } from "@/modules/checkout/components/PaymentConf
 import { useMyAddresses } from "@/hooks/queries/addresses/useAddresses"
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<PageShell><div className="flex h-screen items-center justify-center"><Spinner className="size-6 text-muted-foreground" /></div></PageShell>}>
+      <CheckoutContent />
+    </Suspense>
+  )
+}
+
+function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const designId = searchParams.get("designId")

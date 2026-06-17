@@ -1,5 +1,5 @@
 import { IsString, MaxLength, IsObject, IsUrl, IsOptional, MinLength } from 'class-validator';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from 'generated/prisma/client';
 
 export class CreateDesignDto {
   @IsString()
