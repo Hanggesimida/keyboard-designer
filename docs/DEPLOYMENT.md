@@ -125,7 +125,7 @@ postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
 ### 1. 获取代码
 
 ```bash
-git clone <仓库地址> jw-keyboard-designer
+git clone https://github.com/Hanggesimida/jw-keyboard-designer.git jw-keyboard-designer
 cd jw-keyboard-designer
 ```
 
