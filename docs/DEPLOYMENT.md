@@ -145,15 +145,15 @@ cp .env.example .env   # 若仓库提供了示例文件
 ### 4. 构建并启动
 
 ```bash
-docker compose build
-docker compose up -d
+sudo docker compose build
+sudo docker compose up -d
 ```
 
 查看服务状态：
 
 ```bash
-docker compose ps
-docker compose logs -f
+sudo docker compose ps
+sudo docker compose logs -f
 ```
 
 正常启动后，四个服务均为 `running`，`postgres` 健康检查通过后再启动 `api`。
