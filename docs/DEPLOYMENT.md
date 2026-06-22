@@ -59,7 +59,7 @@ Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
 ### 1. 域名
 
 1. 将域名 A 记录指向服务器公网 IP。
-2. 修改 [`docker/nginx.conf`](../docker/nginx.conf) 中的 `server_name`（默认为 `jw-key.com`）为你的实际域名。
+2. 修改 [`docker/nginx.conf`](../docker/nginx.conf) 中的 `server_name`（默认为 `jinwenkey.com`）为你的实际域名。
 3. 如需 HTTPS，见下文 [配置 HTTPS](#配置-https)。
 
 ### 2. Cloudflare Turnstile
@@ -163,13 +163,13 @@ docker compose logs -f
 **API 镜像不会自动运行迁移**，首次部署及每次 schema 变更后需手动执行：
 
 ```bash
-docker compose exec api npx prisma migrate deploy
+sudo docker compose exec api npx prisma migrate deploy
 ```
 
 确认迁移成功：
 
 ```bash
-docker compose exec api npx prisma migrate status
+sudo docker compose exec api npx prisma migrate status
 ```
 
 ### 6. 创建管理员账号
