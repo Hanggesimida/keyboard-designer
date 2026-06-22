@@ -1,0 +1,75 @@
+# 构建上下文：项目根目录
+# docker build -f docker/api.Dockerfile .
+
+# ============================================================
+# Stage 1: pruner — 执行 turbo prune，裁剪出 api 所需的最小子集
+# ============================================================
+FROM node:24-alpine AS pruner
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+
+WORKDIR /app
+
+COPY . .
+
+RUN pnpm dlx turbo prune api --docker --out-dir /pruned
+
+# ============================================================
+# Stage 2: installer — 仅用 json/ 层安装依赖（最大化 layer 缓存）
+# ============================================================
+FROM node:24-alpine AS installer
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+
+WORKDIR /app
+
+# json/ 层：只含 package.json，不含源码，依赖层可跨构建复用
+COPY --from=pruner /pruned/json/ .
+COPY --from=pruner /pruned/pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile
+
+# ============================================================
+# Stage 3: builder — 复制完整源码，生成 Prisma Client，编译
+# ============================================================
+FROM node:24-alpine AS builder
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+
+WORKDIR /app
+
+# 带 node_modules 的完整工作区
+COPY --from=installer /app/ .
+COPY --from=pruner /pruned/full/ .
+
+# 生成 Prisma Client（输出到 apps/api/generated/prisma）
+RUN pnpm --filter api exec prisma generate
+
+# NestJS webpack 打包 → apps/api/dist/main.js
+RUN pnpm --filter api build
+
+# pnpm deploy：将 api 的生产依赖提取到干净目录，解决 workspace 符号链接问题
+RUN pnpm --filter api deploy --prod /out/api
+
+# ============================================================
+# Stage 4: runner — 最小运行时镜像
+# ============================================================
+FROM node:24-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /out/api/node_modules        ./node_modules
+COPY --from=builder /app/apps/api/dist           ./dist
+COPY --from=builder /app/apps/api/generated      ./generated
+COPY --from=builder /app/apps/api/prisma         ./prisma
+COPY --from=builder /app/apps/api/prisma.config.ts ./prisma.config.ts
+
+EXPOSE 3001
+CMD ["node", "dist/main"]

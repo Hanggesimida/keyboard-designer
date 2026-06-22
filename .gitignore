@@ -8,6 +8,7 @@ node_modules
 # Local env files
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
@@ -30,6 +31,9 @@ dist
 
 # Debug
 npm-debug.log*
+
+# Editor settings
+.vscode/
 
 # Misc
 .DS_Store

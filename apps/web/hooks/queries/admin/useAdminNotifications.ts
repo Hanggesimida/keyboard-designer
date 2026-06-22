@@ -12,7 +12,12 @@ import {
 import { useUserStore } from '@/store/userStore';
 import { useNotificationStore } from '@/store/notificationStore';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+// 生产：Nginx 同域反代，使用相对路径 /api/...
+// 开发：EventSource 不走 Next.js rewrite，需要直连后端
+const SSE_BASE =
+  process.env.NODE_ENV === 'production'
+    ? ''
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001');
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -87,7 +92,7 @@ export function useNotificationSSE() {
       esRef.current.close();
     }
 
-    const url = `${API_BASE}/admin/notifications/stream?token=${encodeURIComponent(accessToken)}`;
+    const url = `${SSE_BASE}/api/admin/notifications/stream?token=${encodeURIComponent(accessToken)}`;
     const es = new EventSource(url);
     esRef.current = es;
 

@@ -1,0 +1,46 @@
+# 依赖目录（Docker 内部会重新安装）
+**/node_modules
+
+# 构建产物（Docker 内部会重新构建）
+apps/api/dist
+apps/api/generated
+apps/web/.next
+
+# 本地环境变量（不应进入镜像）
+**/.env
+**/.env.*
+!**/.env.example
+
+# Git
+.git
+.gitignore
+
+# Turbo 缓存
+.turbo
+
+# turbo prune 本地输出目录（不进入构建上下文，由 Dockerfile 内部生成）
+out/
+
+# 编辑器
+.vscode
+.cursor
+.idea
+*.swp
+*.swo
+
+# 日志
+*.log
+logs/
+
+# 测试产物
+coverage/
+apps/api/test-results/
+
+# 文档和脚本（生产镜像不需要）
+docs/
+scripts/
+README.md
+DEPLOYMENT.md
+
+# macOS
+.DS_Store
