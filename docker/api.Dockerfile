@@ -55,7 +55,8 @@ RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter api build
 
 # pnpm deploy：将 api 的生产依赖提取到干净目录，解决 workspace 符号链接问题
-RUN pnpm --filter api deploy --prod /out/api
+# pnpm v10+ 默认要求 inject-workspace-packages；Docker 构建用 --legacy 避免影响本地开发体验
+RUN pnpm --filter api deploy --prod --legacy /out/api
 
 # ============================================================
 # Stage 4: runner — 最小运行时镜像
