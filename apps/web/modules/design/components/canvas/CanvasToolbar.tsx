@@ -26,6 +26,7 @@ import {
   type ImportPayload,
 } from "@/modules/design/lib/design/exportArtboard"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
+import { useUserStore } from "@/store/userStore"
 
 interface CanvasToolbarProps {
   canUndo: boolean
@@ -63,6 +64,7 @@ export function CanvasToolbar({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<ImportPayload | null>(null)
   const [exporting, setExporting] = useState<ExportingFormat>(null)
+  const isAdmin = useUserStore((s) => s.user?.role === "ADMIN")
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -219,51 +221,53 @@ export function CanvasToolbar({
         </AlertDialogContent>
       </AlertDialog>
 
-      <span className="mx-0.5 h-3 w-px bg-white/15" />
+      {isAdmin && (
+        <>
+          <span className="mx-0.5 h-3 w-px bg-white/15" />
 
-      <button
-        type="button"
-        title="导出 PNG"
-        disabled={exporting !== null}
-        onClick={handleExportPng}
-        className={btnBase}
-      >
-        {exporting === "png" ? <Spinner className="size-3.5" /> : <FileImage className="size-3.5" />}
-        <span className="text-[11px] leading-none">PNG</span>
-      </button>
+          <button
+            type="button"
+            title="导出 PNG"
+            disabled={exporting !== null}
+            onClick={handleExportPng}
+            className={btnBase}
+          >
+            {exporting === "png" ? <Spinner className="size-3.5" /> : <FileImage className="size-3.5" />}
+            <span className="text-[11px] leading-none">PNG</span>
+          </button>
 
-      <button
-        type="button"
-        title="导出 SVG（字体转曲）"
-        disabled={exporting !== null}
-        onClick={handleExportSvg}
-        className={btnBase}
-      >
-        {exporting === "svg" ? <Spinner className="size-3.5" /> : <FileCode2 className="size-3.5" />}
-        <span className="text-[11px] leading-none">SVG</span>
-      </button>
+          <button
+            type="button"
+            title="导出 SVG（字体转曲）"
+            disabled={exporting !== null}
+            onClick={handleExportSvg}
+            className={btnBase}
+          >
+            {exporting === "svg" ? <Spinner className="size-3.5" /> : <FileCode2 className="size-3.5" />}
+            <span className="text-[11px] leading-none">SVG</span>
+          </button>
 
-      <button
-        type="button"
-        title="导出 JSON"
-        onClick={(e) => { e.stopPropagation(); exportArtboardJson() }}
-        className={btnBase}
-      >
-        <FileJson2 className="size-3.5" />
-        <span className="text-[11px] leading-none">JSON</span>
-      </button>
+          <button
+            type="button"
+            title="导出 JSON"
+            onClick={(e) => { e.stopPropagation(); exportArtboardJson() }}
+            className={btnBase}
+          >
+            <FileJson2 className="size-3.5" />
+            <span className="text-[11px] leading-none">JSON</span>
+          </button>
 
-      <span className="mx-0.5 h-3 w-px bg-white/15" />
-
-      <button
-        type="button"
-        title="导入 JSON"
-        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
-        className={btnBase}
-      >
-        <FolderOpen className="size-3.5" />
-        <span className="text-[11px] leading-none">导入</span>
-      </button>
+          <button
+            type="button"
+            title="导入 JSON"
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+            className={btnBase}
+          >
+            <FolderOpen className="size-3.5" />
+            <span className="text-[11px] leading-none">导入</span>
+          </button>
+        </>
+      )}
 
       <span className="mx-0.5 h-3 w-px bg-white/15" />
 
@@ -273,18 +277,22 @@ export function CanvasToolbar({
 
       <OrderButton />
 
-      <span className="mx-0.5 h-3 w-px bg-white/15" />
+      {isAdmin && (
+        <>
+          <span className="mx-0.5 h-3 w-px bg-white/15" />
 
-      <button
-        type="button"
-        title="生成治具 SVG（字体转曲）"
-        disabled={exporting !== null}
-        onClick={handleGenerateJig}
-        className={`${btnBase} hover:text-sky-400/80`}
-      >
-        {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
-        <span className="text-[11px] leading-none">治具</span>
-      </button>
+          <button
+            type="button"
+            title="生成治具 SVG（字体转曲）"
+            disabled={exporting !== null}
+            onClick={handleGenerateJig}
+            className={`${btnBase} hover:text-sky-400/80`}
+          >
+            {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
+            <span className="text-[11px] leading-none">治具</span>
+          </button>
+        </>
+      )}
 
       {/* 隐藏的文件输入 */}
       <input

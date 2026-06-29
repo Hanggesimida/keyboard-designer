@@ -40,7 +40,7 @@ export interface PriceQuote {
  * 当前阶段价格由此处统一管理，未来可替换为查询数据库的动态规则。
  */
 class CustomKeycapRule implements PricingRule {
-  private static readonly BASE_PRICE = 999.00;
+  private static readonly BASE_PRICE = 99.00;
 
   applies(context: PricingContext): boolean {
     return context.type === 'CUSTOM_KEYCAP';

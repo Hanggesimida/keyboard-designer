@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
+import { useUserStore } from "@/store/userStore"
 import {
   exportArtboardPng,
   exportArtboardSvg,
@@ -24,10 +25,11 @@ export function useAutoExport(
 ) {
   const searchParams = useSearchParams()
   const autoExport = searchParams.get("autoExport") as AutoExportType | null
+  const isAdmin = useUserStore((s) => s.user?.role === "ADMIN")
   const hasTriggeredRef = useRef(false)
 
   useEffect(() => {
-    if (!autoExport) return
+    if (!autoExport || !isAdmin) return
     if (hasTriggeredRef.current) return
 
     const validTypes: AutoExportType[] = ["png", "svg", "jig"]
@@ -69,5 +71,5 @@ export function useAutoExport(
 
     return () => clearInterval(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoExport])
+  }, [autoExport, isAdmin])
 }
