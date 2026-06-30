@@ -8,10 +8,8 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useUserStore } from "@/store/userStore"
 
 const menuItems = [
-  { name: "Features", href: "#link" },
-  { name: "Solution", href: "#link" },
-  { name: "Pricing", href: "#link" },
-  { name: "About", href: "#link" },
+  { name: "首页", href: "/" },
+  { name: "功能特性", href: "#features" },
 ]
 
 export function HomeHeader() {
@@ -50,7 +48,7 @@ export function HomeHeader() {
 
               <button
                 onClick={() => setMenuState(!menuState)}
-                aria-label={menuState === true ? "Close Menu" : "Open Menu"}
+                aria-label={menuState === true ? "关闭菜单" : "打开菜单"}
                 className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden">
                 <Menu className="in-data-[state=active]:rotate-180 group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
                 <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
@@ -89,7 +87,7 @@ export function HomeHeader() {
                 {!hasHydrated ? null : isLoggedIn ? (
                   <Button asChild>
                     <Link href="/profile">
-                      <span>Profile</span>
+                      <span>个人中心</span>
                     </Link>
                   </Button>
                 ) : (
@@ -99,14 +97,14 @@ export function HomeHeader() {
                       variant="outline"
                       className={cn(isScrolled && "lg:hidden")}>
                       <Link href="/login">
-                        <span>Login</span>
+                        <span>登录</span>
                       </Link>
                     </Button>
                     <Button
                       asChild
                       className={cn(isScrolled && "lg:hidden")}>
                       <Link href="/register">
-                        <span>Sign Up</span>
+                        <span>注册</span>
                       </Link>
                     </Button>
                     <Button
@@ -116,7 +114,7 @@ export function HomeHeader() {
                         menuState && "max-lg:hidden",
                       )}>
                       <Link href="/design">
-                        <span>Get Started</span>
+                        <span>开始设计</span>
                       </Link>
                     </Button>
                   </>

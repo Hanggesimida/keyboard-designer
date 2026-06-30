@@ -14,7 +14,11 @@ import {
   textDescriptorsToPathResults,
   type TextDescriptor,
 } from "@/lib/jig/fontToPath"
-import { roundedPolygonPath, getIsoTopFaceRadii } from "@/modules/design/lib/design/keycapGeometry"
+import {
+  roundedPolygonPath,
+  getIsoTopFaceRadii,
+  getTopFaceRects,
+} from "@/modules/design/lib/design/keycapGeometry"
 
 // ─── 几何常量（与 keycapGeometry.ts / Python 脚本保持同步）─────────────────
 const KEYCAP_GAP = 2
@@ -69,6 +73,12 @@ interface CanvasElement {
   [key: string]: unknown
 }
 
+interface DesignLayer {
+  id: string
+  labelsHidden?: boolean
+  [key: string]: unknown
+}
+
 /** 与 exportArtboardJson 导出格式完全一致 */
 export interface DesignPayload {
   version?: number
@@ -76,7 +86,7 @@ export interface DesignPayload {
   artboardBackground?: string
   fontFamily?: string
   globalKeycapStyle?: GlobalKeycapStyle
-  layers?: unknown[]
+  layers?: DesignLayer[]
   layerKeycapOverrides?: Record<string, Record<string, KeycapOverride>>
   canvasElements?: CanvasElement[]
 }
@@ -99,6 +109,7 @@ interface LayoutKey {
   h: number
   label: string
   rowLevel?: string
+  shape?: string
 }
 
 interface Layout {
@@ -388,6 +399,7 @@ function loadTemplateLayout(templateId: string): Layout {
           h: Number(key.h ?? 1),
           label: key.label ?? "",
           rowLevel: key.rowLevel ?? undefined,
+          shape: key.shape ?? undefined,
         }
       }
     }
@@ -425,6 +437,25 @@ function getKeyStyle(keyId: string, design: ParsedDesign, defaultLabel: string):
     labelOffsetX: ov.labelOffsetX ?? 0,
     labelOffsetY: ov.labelOffsetY ?? 0,
   }
+}
+
+// ─── 设计顶面参考矩形（与设计器 KeycapEditorModal 保持一致）──────────────
+
+function resolveKeyShape(keyId: string, km: LayoutKey): string {
+  return km.shape ?? resolveJigLookup(keyId).shape ?? "rect"
+}
+
+function getDesignTopFaceRect(
+  keyId: string,
+  km: LayoutKey,
+  baseUnit: number,
+): { x: number; y: number; w: number; h: number } {
+  const shape = resolveKeyShape(keyId, km)
+  const px = km.x * baseUnit + KEYCAP_GAP / 2
+  const py = km.y * baseUnit + KEYCAP_GAP / 2
+  const pw = km.w * baseUnit - KEYCAP_GAP
+  const ph = km.h * baseUnit - KEYCAP_GAP
+  return getTopFaceRects(shape, px, py, pw, ph)[0]!
 }
 
 // ─── 竖键横放检测 ─────────────────────────────────────────────────────────
@@ -942,10 +973,8 @@ function buildCanvasImageLayer(
       continue
     }
 
-    const dTopW = km.w * baseUnit - KEYCAP_GAP - KEY_PAD_LEFT - KEY_PAD_RIGHT
-    const dTopH = km.h * baseUnit - KEYCAP_GAP - KEY_PAD_TOP - KEY_PAD_BOTTOM
-    const dTopX = km.x * baseUnit + KEYCAP_GAP / 2 + KEY_PAD_LEFT
-    const dTopY = km.y * baseUnit + KEYCAP_GAP / 2 + KEY_PAD_TOP
+    const { x: dTopX, y: dTopY, w: dTopW, h: dTopH } =
+      getDesignTopFaceRect(kid, km, baseUnit)
 
     const imgSvgX = img.x - ART_PAD
     const imgSvgY = img.y - ART_PAD
@@ -1439,6 +1468,9 @@ export async function generateJigSvg(design: DesignPayload): Promise<string> {
   // 1. 解析设计数据
   const parsedDesign = parseDesign(design)
 
+  // 判断是否有任意图层隐藏了文字——若有，治具图不输出 jig-label-layer
+  const anyLabelsHidden = (design.layers ?? []).some((l) => l.labelsHidden === true)
+
   // 2. 加载模板布局
   const layout = parsedDesign.templateId
     ? loadTemplateLayout(parsedDesign.templateId)
@@ -1473,8 +1505,8 @@ export async function generateJigSvg(design: DesignPayload): Promise<string> {
   // 6. 构建颜色层 + 收集文字描述符
   const intermediate = buildDesignLayersIntermediate(positions, parsedDesign, layout, topScale)
 
-  // 7. 将文字描述符转曲为路径，生成标签层
-  const labelLayer = await buildLabelLayer(intermediate)
+  // 7. 将文字描述符转曲为路径，生成标签层；若任意图层隐藏了文字则跳过
+  const labelLayer = anyLabelsHidden ? "" : await buildLabelLayer(intermediate)
   const colorLayer = intermediate.colorLayer
 
   // 8. 图片图层（两个函数共享同一组缓存，确保跨图层的相同资源只写一份）
