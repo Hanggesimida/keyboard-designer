@@ -15,7 +15,8 @@
     "baseUrl": "./",
     "paths": {
       "@modules/*": ["src/modules/*"],
-      "@prisma/*": ["src/prisma/*"]
+      "@prisma/*": ["src/prisma/*"],
+      "@redis/*": ["src/redis/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

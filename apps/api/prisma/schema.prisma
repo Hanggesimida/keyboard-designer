@@ -55,7 +55,7 @@ enum NotificationType {
 model User {
   id        String   @id @default(uuid()) // 使用 UUID 作为主键，比自增 Int 更安全（防爬虫遍历 ID）
   email     String   @unique             // 邮箱，唯一索引，作为登录账号
-  password  String                       // 哈希加密后的密码（绝对不能存明文！）
+  password  String?                      // 哈希加密后的密码；OTP 注册时初始为 null，set-password 后填入
   
   // 角色字段：默认为普通用户
   role      Role     @default(USER)

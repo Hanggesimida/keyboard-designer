@@ -42,6 +42,29 @@ services:
       - jw-network
 
   # ─────────────────────────────────────────────
+  # Redis 8
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:8-alpine
+    container_name: jw-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jw-network
+
+  # ─────────────────────────────────────────────
   # NestJS API
   # ─────────────────────────────────────────────
   api:
@@ -59,8 +82,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      # 容器内通过服务名 redis 访问，密码来自 .env
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - jw-network
@@ -92,3 +119,4 @@ networks:
 
 volumes:
   pg_data:
+  redis_data:

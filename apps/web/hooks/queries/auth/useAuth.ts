@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { login, register, type LoginInput, type RegisterInput } from '@/lib/api/auth';
+import {
+  login,
+  sendOtp,
+  verifyOtp,
+  setPassword,
+  type LoginInput,
+} from '@/lib/api/auth';
 import { useUserStore } from '@/store/userStore';
 
 export function useLogin() {
@@ -7,7 +13,7 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: LoginInput) => login(data),
+    mutationFn: (data: LoginInput & { turnstileToken?: string }) => login(data),
     onSuccess: ({ accessToken }) => {
       queryClient.clear();
       setToken(accessToken);
@@ -15,20 +21,51 @@ export function useLogin() {
   });
 }
 
-type RegisterMutationInput =
-  RegisterInput & {
-    turnstileToken: string;
-  };
+export function useSendOtp() {
+  return useMutation({
+    mutationFn: ({
+      email,
+      turnstileToken,
+    }: {
+      email: string;
+      turnstileToken: string;
+    }) => sendOtp(email, turnstileToken),
+  });
+}
 
-export function useRegister() {
+export function useVerifyOtp() {
   const setToken = useUserStore((s) => s.setToken);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RegisterMutationInput) => register(data),
+    mutationFn: ({ email, otp }: { email: string; otp: string }) =>
+      verifyOtp(email, otp),
+    onSuccess: (res) => {
+      if (res.action === 'logged_in') {
+        queryClient.clear();
+        setToken(res.accessToken);
+      }
+    },
+  });
+}
+
+export function useSetPassword() {
+  const setToken = useUserStore((s) => s.setToken);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      password,
+      setupToken,
+    }: {
+      password: string;
+      setupToken: string;
+    }) => setPassword(password, setupToken),
     onSuccess: ({ accessToken }) => {
       queryClient.clear();
       setToken(accessToken);
+      sessionStorage.removeItem('otp_setup_token');
+      sessionStorage.removeItem('otp_email');
     },
   });
 }

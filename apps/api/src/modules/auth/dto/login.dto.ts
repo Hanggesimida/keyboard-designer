@@ -1,7 +1,7 @@
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsString, IsOptional } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail()
+  @IsEmail({}, { message: '邮箱格式不正确' })
   email: string;
 
   @IsString()

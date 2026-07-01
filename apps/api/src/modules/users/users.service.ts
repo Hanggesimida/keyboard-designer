@@ -18,9 +18,17 @@ export class UsersService {
     });
   }
 
-  create(data: { email: string; password: string }) {
+  create(data: { email: string; password?: string }) {
     return this.prisma.user.create({
       data,
+    });
+  }
+
+  setPassword(id: string, hashedPassword: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+      select: { id: true, email: true, role: true },
     });
   }
 }

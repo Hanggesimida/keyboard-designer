@@ -103,7 +103,7 @@ export function HomeHeader() {
                     <Button
                       asChild
                       className={cn(isScrolled && "lg:hidden")}>
-                      <Link href="/register">
+                      <Link href="/login">
                         <span>注册</span>
                       </Link>
                     </Button>

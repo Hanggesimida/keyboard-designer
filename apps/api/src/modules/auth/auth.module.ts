@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { ConfigService, ConfigModule } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 import { UsersModule } from '@modules/users/users.module';
 import { AuthController } from '@modules/auth/auth.controller';
 import { AuthService } from '@modules/auth/auth.service';
+import { OtpService } from '@modules/auth/otp.service';
 import { JwtStrategy } from '@modules/auth/strategies/jwt.strategy';
+import { JwtSetupStrategy } from '@modules/auth/strategies/jwt-setup.strategy';
 import { TurnstileService } from '@modules/auth/turnstile.service';
 
 @Module({
@@ -14,6 +16,7 @@ import { TurnstileService } from '@modules/auth/turnstile.service';
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const secret = config.get<string>('JWT_SECRET');
@@ -33,6 +36,12 @@ import { TurnstileService } from '@modules/auth/turnstile.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TurnstileService],
+  providers: [
+    AuthService,
+    OtpService,
+    JwtStrategy,
+    JwtSetupStrategy,
+    TurnstileService,
+  ],
 })
 export class AuthModule {}
