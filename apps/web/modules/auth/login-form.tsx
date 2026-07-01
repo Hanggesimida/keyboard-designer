@@ -37,7 +37,7 @@ type Tab = "password" | "otp"
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get("redirect") ?? "/design"
+  const redirect = searchParams.get("redirect") ?? "/"
   const reason = searchParams.get("reason")
   const setToken = useUserStore((s) => s.setToken)
 

@@ -26,7 +26,7 @@ const footerLinks: { title: string; links: FooterLink[] }[] = [
 export function HomeFooter() {
   return (
     <footer id="about" className="border-t border-border">
-      <div className="mx-auto max-w-5xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           {/* 品牌区 */}
           <div className="flex flex-col gap-4 md:max-w-xs">

@@ -23,7 +23,7 @@ import {
 export function SetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get("redirect") ?? "/design"
+  const redirect = searchParams.get("redirect") ?? "/"
   const setToken = useUserStore((s) => s.setToken)
 
   const [setupToken, setSetupToken] = useState("")

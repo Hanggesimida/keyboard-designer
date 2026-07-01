@@ -2,19 +2,34 @@
 
 import { Suspense, useRef, useState } from "react"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Button } from "@workspace/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Separator } from "@workspace/ui/components/separator"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useSearchParams, useRouter } from "next/navigation"
-import { ArrowLeft, MapPin, Package } from "lucide-react"
-import Link from "next/link"
+import { ArrowLeft, Package } from "lucide-react"
 import { useDesign } from "@/hooks/queries/designs/useDesigns"
 import { useOrderQuote } from "@/hooks/queries/pricing/usePricing"
 import { AddressSelector } from "@/modules/checkout/components/AddressSelector"
 import { OrderSummary } from "@/modules/checkout/components/OrderSummary"
 import { PaymentConfirmSection } from "@/modules/checkout/components/PaymentConfirmSection"
 import { useMyAddresses } from "@/hooks/queries/addresses/useAddresses"
+import { PageHeader } from "@/components/layouts/PageHeader"
+import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import type { DesignSummary } from "@/lib/api/designs"
+import type { PriceBreakdownItem } from "@/lib/api/pricing"
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<PageShell><div className="flex h-screen items-center justify-center"><Spinner className="size-6 text-muted-foreground" /></div></PageShell>}>
+    <Suspense
+      fallback={
+        <CheckoutShell>
+          <div className="flex h-screen items-center justify-center">
+            <Spinner className="size-6 text-muted-foreground" />
+          </div>
+        </CheckoutShell>
+      }
+    >
       <CheckoutContent />
     </Suspense>
   )
@@ -33,7 +48,6 @@ function CheckoutContent() {
   const [addressRequired, setAddressRequired] = useState(false)
   const addressSectionRef = useRef<HTMLDivElement>(null)
 
-  // 自动选中默认地址（或第一个）
   const resolvedAddressId = (() => {
     if (selectedAddressId) return selectedAddressId
     if (!addresses || addresses.length === 0) return null
@@ -53,143 +67,169 @@ function CheckoutContent() {
 
   if (!designId) {
     return (
-      <PageShell>
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <Package size={36} className="text-white/20" />
-          <p className="text-white/40 text-sm">缺少设计方案参数</p>
-          <Link href="/design" className="text-xs text-white/40 hover:text-white/70 underline underline-offset-2">
-            返回设计器
-          </Link>
-        </div>
-      </PageShell>
+      <CheckoutShell>
+        <ProfileEmptyState
+          icon={Package}
+          title="缺少设计方案参数"
+          description="请从设计器选择方案后再进入结账。"
+          action={{ label: "返回设计器", href: "/design" }}
+        />
+      </CheckoutShell>
     )
   }
 
   if (designError) {
     return (
-      <PageShell>
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <Package size={36} className="text-white/20" />
-          <p className="text-white/40 text-sm">加载设计方案失败</p>
-          <button
+      <CheckoutShell>
+        <ProfileEmptyState
+          icon={Package}
+          title="加载设计方案失败"
+          description="请返回上一页后重试。"
+        />
+        <div className="mt-4 flex justify-center">
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => router.back()}
-            className="text-xs text-white/40 hover:text-white/70 underline underline-offset-2"
+            className="cursor-pointer"
           >
             返回上一页
-          </button>
+          </Button>
         </div>
-      </PageShell>
+      </CheckoutShell>
     )
   }
 
+  const summaryProps = {
+    design: design as DesignSummary,
+    totalAmount: quote?.totalAmount,
+    breakdown: quote?.breakdown as PriceBreakdownItem[] | undefined,
+    isLoading: isQuoteLoading,
+  }
+
   return (
-    <PageShell>
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* 返回 */}
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/70 transition-colors group cursor-pointer"
-        >
-          <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-          返回设计器
-        </button>
+    <CheckoutShell>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => router.back()}
+        className="-ml-2 mb-4 cursor-pointer text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft size={14} />
+        返回设计器
+      </Button>
 
-        <h1 className="text-xl font-bold text-white/90">确认订单</h1>
+      <PageHeader
+        title="确认订单"
+        description="确认商品与收货信息后完成支付"
+      />
 
-        {/* 商品信息 */}
-        <section>
-          <SectionTitle icon={<Package size={14} />} text="商品信息" />
-          {isDesignLoading ? (
-            <div className="h-24 rounded-xl border border-white/[0.07] bg-white/[0.02] animate-pulse" />
-          ) : design ? (
-            <OrderSummary
-              design={design}
-              totalAmount={quote?.totalAmount}
-              breakdown={quote?.breakdown}
-              isLoading={isQuoteLoading}
-            />
-          ) : null}
-        </section>
+      <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="space-y-8">
+          <ProfileSection title="商品信息">
+            {isDesignLoading ? (
+              <Skeleton className="h-24 rounded-xl border border-border" />
+            ) : design ? (
+              <>
+                <div className="lg:hidden">
+                  <OrderSummary {...summaryProps} mode="full" />
+                </div>
+                <div className="hidden lg:block">
+                  <OrderSummary {...summaryProps} mode="compact" />
+                </div>
+              </>
+            ) : null}
+          </ProfileSection>
 
-        {/* 收货地址 */}
-        <section ref={addressSectionRef}>
-          <SectionTitle
-            icon={<MapPin size={14} />}
-            text="收货地址"
-            error={addressRequired ? "请选择或新增收货地址" : undefined}
-          />
-          <AddressSelector
-            selectedId={resolvedAddressId}
-            onSelect={handleAddressSelect}
-          />
-        </section>
+          <ProfileSection
+            title="收货地址"
+            action={
+              addressRequired ? (
+                <p className="text-xs text-destructive">请选择或新增收货地址</p>
+              ) : undefined
+            }
+            className={addressRequired ? "rounded-xl ring-1 ring-destructive/30" : undefined}
+          >
+            <div ref={addressSectionRef}>
+              <AddressSelector
+                selectedId={resolvedAddressId}
+                onSelect={handleAddressSelect}
+              />
+            </div>
+          </ProfileSection>
 
-        {/* 支付 */}
-        <section>
-          <SectionTitle icon={<Package size={14} />} text="支付信息" />
           {design && (
-            <PaymentConfirmSection
+            <div className="lg:hidden">
+              <CheckoutSummaryCard
+                designId={design.id}
+                summaryProps={summaryProps}
+                selectedAddressId={resolvedAddressId}
+                onAddressRequired={handleAddressRequired}
+              />
+            </div>
+          )}
+        </div>
+
+        {design && (
+          <aside className="hidden lg:block lg:sticky lg:top-8 lg:self-start">
+            <CheckoutSummaryCard
               designId={design.id}
+              summaryProps={summaryProps}
               selectedAddressId={resolvedAddressId}
-              totalAmount={quote?.totalAmount}
               onAddressRequired={handleAddressRequired}
             />
-          )}
-        </section>
+          </aside>
+        )}
       </div>
-    </PageShell>
+    </CheckoutShell>
   )
 }
 
-// ─── 子组件 ──────────────────────────────────────────────────────────────────
+interface CheckoutSummaryCardProps {
+  designId: string
+  summaryProps: {
+    design: DesignSummary
+    totalAmount: number | undefined
+    breakdown: PriceBreakdownItem[] | undefined
+    isLoading?: boolean
+  }
+  selectedAddressId: string | null
+  onAddressRequired: () => void
+}
 
-function PageShell({ children }: { children: React.ReactNode }) {
+function CheckoutSummaryCard({
+  designId,
+  summaryProps,
+  selectedAddressId,
+  onAddressRequired,
+}: CheckoutSummaryCardProps) {
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white">
-      {/* 背景装饰 */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-0 left-1/3 w-[500px] h-[400px] rounded-full opacity-[0.06]"
-          style={{
-            background: "radial-gradient(ellipse, rgba(120,80,255,0.8) 0%, rgba(60,130,255,0.4) 50%, transparent 75%)",
-            filter: "blur(100px)",
-          }}
+    <Card className="ring-border/50">
+      <CardHeader className="border-b pb-4">
+        <CardTitle className="text-sm font-semibold text-foreground/80">订单结算</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-4">
+        <OrderSummary {...summaryProps} mode="pricing" />
+        <Separator />
+        <PaymentConfirmSection
+          designId={designId}
+          selectedAddressId={selectedAddressId}
+          totalAmount={summaryProps.totalAmount}
+          onAddressRequired={onAddressRequired}
         />
-        <div
-          className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)`,
-            backgroundSize: "48px 48px",
-          }}
-        />
-      </div>
-      <div className="relative px-4 py-8 sm:px-6 md:px-8 lg:px-12">
+      </CardContent>
+    </Card>
+  )
+}
+
+function CheckoutShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:px-8 lg:py-10">
         {children}
       </div>
-    </div>
-  )
-}
-
-function SectionTitle({
-  icon,
-  text,
-  error,
-}: {
-  icon: React.ReactNode
-  text: string
-  error?: string
-}) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <span className="text-white/40">{icon}</span>
-        <h2 className="text-sm font-semibold text-white/70">{text}</h2>
-      </div>
-      {error && (
-        <p className="text-xs text-red-400/80">{error}</p>
-      )}
     </div>
   )
 }

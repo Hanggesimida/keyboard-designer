@@ -3,6 +3,7 @@ import {
   listAdminOrders,
   getAdminOrder,
   updateOrderStatus,
+  getProductionBoard,
   type QueryAdminOrdersParams,
   type UpdateOrderStatusPayload,
 } from '@/lib/api/admin-orders';
@@ -15,6 +16,7 @@ export const adminOrderKeys = {
   lists: (params?: QueryAdminOrdersParams) =>
     [...adminOrderKeys.all, 'list', params] as const,
   detail: (id: string) => [...adminOrderKeys.all, 'detail', id] as const,
+  productionBoard: () => [...adminOrderKeys.all, 'production-board'] as const,
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -39,6 +41,17 @@ export function useAdminOrder(id: string | null | undefined) {
   });
 }
 
+export function useProductionBoard() {
+  const accessToken = useUserStore((s) => s.accessToken);
+
+  return useQuery({
+    queryKey: adminOrderKeys.productionBoard(),
+    queryFn: () => getProductionBoard(),
+    enabled: !!accessToken,
+    refetchInterval: 30_000,
+  });
+}
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export function useUpdateOrderStatus() {
@@ -50,6 +63,7 @@ export function useUpdateOrderStatus() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: adminOrderKeys.lists() });
       queryClient.invalidateQueries({ queryKey: adminOrderKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: adminOrderKeys.productionBoard() });
     },
   });
 }

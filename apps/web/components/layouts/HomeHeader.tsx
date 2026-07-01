@@ -10,6 +10,7 @@ import { useUserStore } from "@/store/userStore"
 const menuItems = [
   { name: "首页", href: "/" },
   { name: "功能特性", href: "#features" },
+  { name: "常见问题", href: "#faq" },
 ]
 
 export function HomeHeader() {

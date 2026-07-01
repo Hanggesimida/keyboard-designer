@@ -23,7 +23,7 @@ import {
 export function OtpVerifyForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get("redirect") ?? "/design"
+  const redirect = searchParams.get("redirect") ?? "/"
   const setToken = useUserStore((s) => s.setToken)
 
   const [email, setEmail] = useState("")

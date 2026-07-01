@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { MapPin, Plus, Check, Star, Pencil, Loader2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { Badge } from "@workspace/ui/components/badge"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   useMyAddresses,
   useCreateAddress,
@@ -11,6 +14,7 @@ import {
 } from "@/hooks/queries/addresses/useAddresses"
 import type { Address } from "@/lib/api/addresses"
 import { AddressFormDialog, type AddressFormValues } from "@/modules/addresses"
+import { ProfileEmptyState } from "@/modules/profile"
 import { ApiError } from "@/lib/api/request"
 
 interface AddressSelectorProps {
@@ -70,12 +74,9 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-20 rounded-xl border border-white/[0.07] bg-white/[0.02] animate-pulse"
-          />
+          <Skeleton key={i} className="h-20 rounded-xl border border-border" />
         ))}
       </div>
     )
@@ -83,7 +84,6 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
 
   return (
     <div className="space-y-3">
-      {/* 地址列表 */}
       {addresses && addresses.length > 0 ? (
         <div className="space-y-2">
           {addresses.map((addr) => {
@@ -94,63 +94,78 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
                 role="button"
                 tabIndex={0}
                 onClick={() => onSelect(addr.id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(addr.id) } }}
-                className={[
-                  "w-full text-left rounded-xl border px-4 py-3.5 transition-colors cursor-pointer",
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    onSelect(addr.id)
+                  }
+                }}
+                className={cn(
+                  "w-full cursor-pointer rounded-xl border px-4 py-3.5 text-left transition-colors",
                   isSelected
-                    ? "border-white/30 bg-white/[0.06]"
-                    : "border-white/[0.08] bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04]",
-                ].join(" ")}
+                    ? "border-primary/50 bg-primary/5 ring-1 ring-primary/25"
+                    : "border-border bg-muted/30 hover:bg-muted/40",
+                )}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-white/85">{addr.name}</span>
-                      <span className="text-sm text-white/50">{addr.phone}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-foreground/85">{addr.name}</span>
+                      <span className="text-sm text-muted-foreground">{addr.phone}</span>
                       {addr.isDefault && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-400/80 border border-amber-400/25 rounded px-1.5 py-0.5">
+                        <Badge
+                          variant="outline"
+                          className="h-5 gap-0.5 border-amber-400/25 px-1.5 text-[10px] text-amber-400/80"
+                        >
                           <Star size={9} />
                           默认
-                        </span>
+                        </Badge>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-white/40 leading-relaxed">
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground/70">
                       {addr.province}{addr.city}{addr.district} {addr.detail}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* 编辑 */}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); openEdit(addr) }}
-                      className="p-1 rounded text-white/25 hover:text-white/60 hover:bg-white/[0.06] transition-colors"
-                      title="编辑地址"
-                    >
-                      <Pencil size={13} />
-                    </button>
-
-                    {/* 设为默认 */}
+                  <div className="flex shrink-0 items-center gap-1">
                     {!addr.isDefault && (
-                      <button
+                      <Button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); setDefault(addr.id) }}
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDefault(addr.id)
+                        }}
                         disabled={isSettingDefault}
-                        className="p-1 rounded text-white/25 hover:text-amber-400/60 hover:bg-amber-400/[0.06] transition-colors disabled:opacity-40"
                         title="设为默认"
+                        className="text-muted-foreground/55 hover:text-amber-400/70"
                       >
                         {isSettingDefault ? (
                           <Loader2 size={13} className="animate-spin" />
                         ) : (
                           <Star size={13} />
                         )}
-                      </button>
+                      </Button>
                     )}
 
-                    {/* 已选中勾 */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openEdit(addr)
+                      }}
+                      title="编辑地址"
+                      className="text-muted-foreground/55 hover:text-foreground/70"
+                    >
+                      <Pencil size={13} />
+                    </Button>
+
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center">
-                        <Check size={11} className="text-black" />
+                      <div className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Check size={11} />
                       </div>
                     )}
                   </div>
@@ -160,25 +175,24 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-3 py-8 rounded-xl border border-white/[0.06] bg-white/[0.01]">
-          <MapPin size={28} className="text-white/20" />
-          <p className="text-sm text-white/35">还没有收货地址</p>
-        </div>
+        <ProfileEmptyState
+          icon={MapPin}
+          title="还没有收货地址"
+          description="新增收货地址后即可完成下单。"
+        />
       )}
 
-      {/* 新增地址按钮 */}
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={openCreate}
-        className="w-full border-dashed border-white/15 text-white/45 hover:border-white/30 hover:text-white/70 hover:bg-white/[0.03] cursor-pointer"
+        className="w-full cursor-pointer border-dashed"
       >
         <Plus size={14} />
         新增收货地址
       </Button>
 
-      {/* 地址表单弹窗 */}
       <AddressFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

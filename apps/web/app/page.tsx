@@ -1,6 +1,6 @@
 import { HomeHeader } from "@/components/layouts/HomeHeader"
 import { HomeFooter } from "@/components/layouts/HomeFooter"
-import { HeroSection, FeaturesSection, CtaSection } from "@/modules/home"
+import { HeroSection, FeaturesSection, FaqSection, CtaSection } from "@/modules/home"
 
 export default function HomePage() {
   return (
@@ -8,6 +8,7 @@ export default function HomePage() {
       <HomeHeader />
       <HeroSection />
       <FeaturesSection />
+      <FaqSection />
       <CtaSection />
       <HomeFooter />
     </div>

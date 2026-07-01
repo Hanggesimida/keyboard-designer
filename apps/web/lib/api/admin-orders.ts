@@ -65,6 +65,25 @@ export interface UpdateOrderStatusPayload {
   adminNote?: string;
 }
 
+/** 生产看板订单条目 */
+export interface ProductionBoardItem {
+  id: string;
+  orderNo: string;
+  status: 'APPROVED' | 'PROCESSING';
+  totalAmount: string;
+  note: string | null;
+  updatedAt: string;
+  createdAt: string;
+  designSnapshot: unknown;
+  design: AdminOrderDesignSummary;
+  user: AdminOrderUserSummary;
+}
+
+export interface ProductionBoardResult {
+  items: ProductionBoardItem[];
+  total: number;
+}
+
 // ─── 状态机：前端可用流转（与后端保持一致） ────────────────────────────────────
 
 export const ORDER_STATUS_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
@@ -94,4 +113,8 @@ export function updateOrderStatus(id: string, payload: UpdateOrderStatusPayload)
     method: 'PATCH',
     body: payload,
   });
+}
+
+export function getProductionBoard(): Promise<ProductionBoardResult> {
+  return request<ProductionBoardResult>('/admin/orders/production-board');
 }

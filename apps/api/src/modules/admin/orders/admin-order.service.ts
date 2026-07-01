@@ -114,6 +114,33 @@ export class AdminOrderService {
     });
   }
 
+  /** 返回生产看板数据：APPROVED（待生产）+ PROCESSING（生产中）的订单 */
+  async getProductionBoard() {
+    const items = await this.prisma.order.findMany({
+      where: {
+        status: { in: [OrderStatus.APPROVED, OrderStatus.PROCESSING] },
+      },
+      orderBy: [
+        { status: 'asc' },
+        { updatedAt: 'asc' },
+      ],
+      select: {
+        id: true,
+        orderNo: true,
+        status: true,
+        totalAmount: true,
+        note: true,
+        updatedAt: true,
+        createdAt: true,
+        designSnapshot: true,
+        design: { select: { id: true, name: true, previewUrl: true } },
+        user: { select: { id: true, email: true } },
+      },
+    });
+
+    return { items, total: items.length };
+  }
+
   /** 校验状态流转合法性，非法则抛 BadRequestException */
   private validateTransition(from: OrderStatus, to: OrderStatus): void {
     const allowed = VALID_TRANSITIONS[from];

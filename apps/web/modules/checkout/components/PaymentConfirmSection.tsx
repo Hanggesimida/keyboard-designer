@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, ShieldCheck } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import { Alert, AlertDescription } from "@workspace/ui/components/alert"
+import { cn } from "@workspace/ui/lib/utils"
 import { useCreateOrder } from "@/hooks/queries/orders/useOrders"
 import { useInitiatePayment, useMockCallback } from "@/hooks/queries/payments/usePayments"
 import type { PaymentMethod } from "@/lib/api/payments"
@@ -45,7 +48,6 @@ export function PaymentConfirmSection({
     }
     setSubmitError(null)
 
-    // totalAmount 由服务端在 POST /orders 时自行计算，前端不再传入
     createOrder(
       {
         designId,
@@ -57,21 +59,20 @@ export function PaymentConfirmSection({
             { orderId: order.id, method },
             {
               onSuccess: (payment) => {
-                // 开发阶段：立即调用 mock-callback 完成支付
                 mockCallback(payment.paymentId, {
                   onSuccess: () => {
                     router.push(`/profile/orders/${order.id}`)
                   },
                   onError: (err) => {
                     setSubmitError(
-                      err instanceof ApiError ? err.message : "支付回调失败，请联系客服"
+                      err instanceof ApiError ? err.message : "支付回调失败，请联系客服",
                     )
                   },
                 })
               },
               onError: (err) => {
                 setSubmitError(
-                  err instanceof ApiError ? err.message : "发起支付失败，请重试"
+                  err instanceof ApiError ? err.message : "发起支付失败，请重试",
                 )
               },
             },
@@ -79,7 +80,7 @@ export function PaymentConfirmSection({
         },
         onError: (err) => {
           setSubmitError(
-            err instanceof ApiError ? err.message : "创建订单失败，请重试"
+            err instanceof ApiError ? err.message : "创建订单失败，请重试",
           )
         },
       },
@@ -90,9 +91,8 @@ export function PaymentConfirmSection({
 
   return (
     <div className="space-y-4">
-      {/* 支付方式选择 */}
       <div>
-        <p className="text-xs font-medium text-white/50 mb-2">支付方式</p>
+        <p className="mb-2 text-xs font-medium text-muted-foreground/70">支付方式</p>
         <div className="grid grid-cols-2 gap-2">
           {PAYMENT_METHODS.map((m) => {
             const isSelected = method === m.value
@@ -102,52 +102,51 @@ export function PaymentConfirmSection({
                 type="button"
                 onClick={() => setMethod(m.value)}
                 disabled={isProcessing}
-                className={[
-                  "flex items-center gap-2.5 rounded-xl border px-4 py-3 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+                className={cn(
+                  "flex cursor-pointer flex-col items-start gap-0.5 rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                   isSelected
-                    ? "border-white/30 bg-white/[0.06]"
-                    : "border-white/[0.08] bg-white/[0.02] hover:border-white/15",
-                ].join(" ")}
+                    ? "border-primary/50 bg-primary/5 ring-1 ring-primary/25"
+                    : "border-border bg-muted/30 hover:bg-muted/40",
+                )}
               >
-                <span className="text-sm font-medium text-white/80">{m.label}</span>
-                <span className="text-xs text-white/35">{m.desc}</span>
+                <span className="text-sm font-medium text-foreground/80">{m.label}</span>
+                <span className="text-xs text-muted-foreground/60">{m.desc}</span>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* 提交级错误 */}
       {submitError && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5">
-          <p className="text-xs text-red-400/90">{submitError}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{submitError}</AlertDescription>
+        </Alert>
       )}
 
-      {/* 支付按钮 */}
-      <button
+      <Button
         type="button"
+        size="lg"
         disabled={isProcessing || totalAmount == null}
         onClick={handlePay}
-        className="w-full h-11 rounded-xl bg-white text-[#0d0d0d] text-sm font-semibold flex items-center justify-center gap-2 hover:bg-white/92 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_24px_rgba(255,255,255,0.10)] cursor-pointer"
+        className="h-11 w-full cursor-pointer"
       >
         {isProcessing ? (
           <>
-            <Loader2 size={15} className="animate-spin opacity-70" />
+            <Loader2 size={15} className="animate-spin" />
             {isCreatingOrder ? "创建订单..." : isInitiating ? "发起支付..." : "支付中..."}
           </>
         ) : (
           <>
-            <ShieldCheck size={15} className="opacity-60" />
+            <ShieldCheck size={15} className="opacity-70" />
             立即支付 {priceLabel}
           </>
         )}
-      </button>
+      </Button>
 
-      <p className="text-center text-[11px] text-white/20 leading-relaxed">
-        点击"立即支付"即表示同意相关服务协议
+      <p className="text-center text-xs leading-relaxed text-muted-foreground/55">
+        点击「立即支付」即表示同意相关服务协议
         <br />
-        <span className="text-amber-400/40">（当前为开发模式，支付将自动完成）</span>
+        <span className="text-amber-400/70">（当前为开发模式，支付将自动完成）</span>
       </p>
     </div>
   )

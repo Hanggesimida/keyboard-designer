@@ -106,7 +106,7 @@ export function HeroSection() {
                   设计专属键帽
                 </h1>
                 <p className="mx-auto mt-8 max-w-2xl text-balance text-lg">
-                  直观的键帽编辑器，自定义键帽，所见即所得，可导出为图片或 SVG。
+                  直观的键帽编辑器，自定义键帽，所见即所得。
                 </p>
               </AnimatedGroup>
 

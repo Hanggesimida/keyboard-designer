@@ -26,6 +26,11 @@ export class AdminOrderController {
     return this.adminOrderService.findAll(query);
   }
 
+  @Get('production-board')
+  getProductionBoard() {
+    return this.adminOrderService.getProductionBoard();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.adminOrderService.findOne(id);

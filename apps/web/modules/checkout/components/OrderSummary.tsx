@@ -1,71 +1,150 @@
 "use client"
 
 import { Keyboard } from "lucide-react"
+import {
+  Card,
+  CardContent,
+  CardFooter,
+} from "@workspace/ui/components/card"
+import { Separator } from "@workspace/ui/components/separator"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { cn } from "@workspace/ui/lib/utils"
 import type { DesignSummary } from "@/lib/api/designs"
 import type { PriceBreakdownItem } from "@/lib/api/pricing"
+
+type OrderSummaryMode = "compact" | "pricing" | "full"
 
 interface OrderSummaryProps {
   design: DesignSummary
   totalAmount: number | undefined
   breakdown: PriceBreakdownItem[] | undefined
   isLoading?: boolean
+  mode?: OrderSummaryMode
+  className?: string
 }
 
-export function OrderSummary({ design, totalAmount, breakdown, isLoading }: OrderSummaryProps) {
-  return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
-      <div className="flex items-center gap-4 p-4">
-        {/* 设计预览图 */}
-        <div className="w-24 h-16 rounded-lg border border-white/[0.08] bg-white/[0.03] flex items-center justify-center overflow-hidden shrink-0">
-          {design.previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={design.previewUrl}
-              alt={design.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <Keyboard size={20} className="text-white/20" />
-          )}
-        </div>
+export function OrderSummary({
+  design,
+  totalAmount,
+  breakdown,
+  isLoading,
+  mode = "full",
+  className,
+}: OrderSummaryProps) {
+  const showProduct = mode === "compact" || mode === "full"
+  const showPricing = mode === "pricing" || mode === "full"
 
-        {/* 信息 */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white/85 truncate">{design.name}</p>
-          <p className="mt-0.5 text-xs text-white/35">定制键帽 · 1 套</p>
-        </div>
-
-        {/* 价格 */}
-        <div className="text-right shrink-0">
-          {isLoading ? (
-            <div className="h-5 w-16 rounded bg-white/[0.06] animate-pulse" />
-          ) : (
-            <p className="text-base font-semibold text-white/90">
-              {totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "—"}
-            </p>
-          )}
-        </div>
+  if (mode === "pricing") {
+    return (
+      <div className={cn("space-y-3", className)}>
+        <PricingBreakdown
+          breakdown={breakdown}
+          totalAmount={totalAmount}
+          isLoading={isLoading}
+        />
       </div>
+    )
+  }
 
-      {/* 价格明细 */}
+  return (
+    <Card className={cn("py-0 ring-border/50", className)}>
+      {showProduct && (
+        <CardContent className="flex items-center gap-4 py-4">
+          <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/40">
+            {design.previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={design.previewUrl}
+                alt={design.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Keyboard size={20} className="text-muted-foreground/40" />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground/85">{design.name}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/60">定制键帽 · 1 套</p>
+          </div>
+
+          {mode === "full" && (
+            <div className="shrink-0 text-right">
+              {isLoading ? (
+                <Skeleton className="h-5 w-16" />
+              ) : (
+                <p className="text-base font-semibold text-foreground">
+                  {totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "—"}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      )}
+
+      {showPricing && mode === "full" && (
+        <>
+          {!isLoading && breakdown && breakdown.length > 0 && (
+            <>
+              <Separator />
+              <CardContent className="space-y-1 py-3">
+                {breakdown.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground/60">{item.label}</span>
+                    <span className="text-xs text-foreground/70">¥{item.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </>
+          )}
+
+          <Separator />
+          <CardFooter className="flex items-center justify-between border-t-0 bg-transparent px-4 py-3">
+            <span className="text-xs text-muted-foreground/60">商品合计</span>
+            {isLoading ? (
+              <Skeleton className="h-4 w-16" />
+            ) : (
+              <span className="text-sm font-semibold text-foreground/80">
+                {totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "—"}
+              </span>
+            )}
+          </CardFooter>
+        </>
+      )}
+    </Card>
+  )
+}
+
+function PricingBreakdown({
+  breakdown,
+  totalAmount,
+  isLoading,
+}: {
+  breakdown: PriceBreakdownItem[] | undefined
+  totalAmount: number | undefined
+  isLoading?: boolean
+}) {
+  return (
+    <div className="space-y-3">
       {!isLoading && breakdown && breakdown.length > 0 && (
-        <div className="border-t border-white/[0.06] px-4 py-2 space-y-1">
+        <div className="space-y-2">
           {breakdown.map((item) => (
             <div key={item.label} className="flex items-center justify-between">
-              <span className="text-xs text-white/35">{item.label}</span>
-              <span className="text-xs text-white/50">¥{item.amount.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground/60">{item.label}</span>
+              <span className="text-xs text-foreground/70">¥{item.amount.toFixed(2)}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* 合计 */}
-      <div className="border-t border-white/[0.06] px-4 py-3 flex items-center justify-between">
-        <span className="text-xs text-white/35">商品合计</span>
+      <Separator />
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground/70">商品合计</span>
         {isLoading ? (
-          <div className="h-4 w-16 rounded bg-white/[0.06] animate-pulse" />
+          <Skeleton className="h-5 w-20" />
         ) : (
-          <span className="text-sm font-semibold text-white/80">
+          <span className="text-lg font-semibold text-foreground">
             {totalAmount != null ? `¥${totalAmount.toFixed(2)}` : "—"}
           </span>
         )}
