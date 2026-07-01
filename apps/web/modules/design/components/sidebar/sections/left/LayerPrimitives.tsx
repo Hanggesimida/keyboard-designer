@@ -81,7 +81,7 @@ export function LayerControls({
           className={cn(
             "cursor-pointer",
             labelsHidden
-              ? "text-orange-400 hover:text-orange-300"
+              ? "text-chart-4 hover:text-chart-4/80"
               : "text-muted-foreground hover:text-foreground",
           )}
           title={labelsHidden ? "显示文字" : "隐藏文字"}
@@ -106,7 +106,7 @@ export function LayerControls({
         size="icon-xs"
         className={cn(
           "hover:text-foreground cursor-pointer",
-          isLocked ? "text-amber-400" : "text-muted-foreground",
+          isLocked ? "text-chart-4" : "text-muted-foreground",
         )}
         title={isLocked ? "解锁" : "锁定"}
         onClick={onToggleLocked}

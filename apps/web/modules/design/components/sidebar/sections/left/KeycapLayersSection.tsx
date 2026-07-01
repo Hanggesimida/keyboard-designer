@@ -47,7 +47,7 @@ function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect }: 
         // TooltipProvider 已由父级 KeycapLayerTreeNode 提供，无需每行实例化
         <Tooltip>
           <TooltipTrigger asChild>
-            <ImageIcon className="size-2.5 shrink-0 text-sky-400/60" />
+            <ImageIcon className="size-2.5 shrink-0 text-chart-2/70" />
           </TooltipTrigger>
           <TooltipContent side="right" className="text-[11px]">
             该键帽有内嵌图片
@@ -57,7 +57,7 @@ function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect }: 
       {hasOverride && (
         <Badge
           variant="outline"
-          className="h-3.5 border-blue-500/35 bg-blue-500/10 px-1 text-[8px] font-normal text-blue-400"
+          className="h-3.5 border-primary/35 bg-primary/10 px-1 text-[8px] font-normal text-primary"
         >
           已改
         </Badge>
@@ -141,7 +141,7 @@ function KeycapLayerRow({
       {layer.locked && (
         <Badge
           variant="outline"
-          className="h-4 border-amber-500/35 bg-amber-500/10 px-1 text-[9px] font-normal text-amber-400 shrink-0"
+          className="h-4 border-chart-4/35 bg-chart-4/10 px-1 text-[9px] font-normal text-chart-4 shrink-0"
         >
           锁定
         </Badge>

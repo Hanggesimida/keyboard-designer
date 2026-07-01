@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { cn } from "@workspace/ui/lib/utils"
 
 interface PanelChromeProps {
   side: "left" | "right"
@@ -8,13 +9,11 @@ interface PanelChromeProps {
 export function PanelChrome({ side, children }: PanelChromeProps) {
   return (
     <aside
-      className={[
+      className={cn(
         "flex h-full w-full flex-col overflow-y-auto overflow-x-hidden",
-        "bg-[var(--sidebar)] text-[var(--sidebar-foreground)]",
-        side === "left"
-          ? "border-r border-[var(--border)]"
-          : "border-l border-[var(--border)]",
-      ].join(" ")}
+        "bg-sidebar text-sidebar-foreground",
+        side === "left" ? "border-r border-sidebar-border" : "border-l border-sidebar-border",
+      )}
     >
       {children}
     </aside>

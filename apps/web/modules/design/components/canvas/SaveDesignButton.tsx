@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Save, Cloud, CloudOff, Pencil } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import {
   Dialog,
   DialogContent,
@@ -64,15 +65,17 @@ export function SaveDesignButton() {
   // 管理员审阅模式：显示只读提示，不允许保存
   if (fromAdmin) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="xs"
         title="管理员审阅模式，不可保存"
         disabled
-        className="flex cursor-not-allowed items-center justify-center gap-1 rounded px-1 py-0.5 text-white/20"
+        className="text-muted-foreground/40"
       >
         <CloudOff className="size-3.5" />
-        <span className="text-[11px] leading-none">只读</span>
-      </button>
+        只读
+      </Button>
     )
   }
   const [nameDialogOpen, setNameDialogOpen] = useState(false)
@@ -152,50 +155,52 @@ export function SaveDesignButton() {
 
   if (!accessToken) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="xs"
         title="请先登录后再保存设计"
         disabled
-        className="flex cursor-not-allowed items-center justify-center gap-1 rounded px-1 py-0.5 text-white/20"
+        className="text-muted-foreground/40"
       >
         <CloudOff className="size-3.5" />
-        <span className="text-[11px] leading-none">保存</span>
-      </button>
+        保存
+      </Button>
     )
   }
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="xs"
         title={designId ? "保存设计 (Ctrl+S)" : "另存为新设计"}
         disabled={isSaving}
         onClick={handleSaveClick}
-        className="flex cursor-pointer items-center justify-center gap-1 rounded px-1 py-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 text-white/40 hover:bg-white/10 hover:text-emerald-400/80"
+        className={saveSuccess ? "text-primary" : undefined}
       >
         {isSaving ? (
           <Spinner className="size-3.5" />
         ) : saveSuccess ? (
-          <Cloud className="size-3.5 text-emerald-400" />
+          <Cloud className="size-3.5" />
         ) : (
           <Save className="size-3.5" />
         )}
-        <span className="text-[11px] leading-none">
-          {saveSuccess ? "已保存" : "保存"}
-        </span>
-      </button>
+        {saveSuccess ? "已保存" : "保存"}
+      </Button>
 
-      {/* 重命名按钮（仅已保存的设计显示） */}
       {designId && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           title="重命名设计"
           disabled={isSaving}
           onClick={handleRenameClick}
-          className="flex cursor-pointer items-center justify-center rounded p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 text-white/40 hover:bg-white/10 hover:text-white/70"
         >
           <Pencil className="size-3.5" />
-        </button>
+        </Button>
       )}
 
       {/* 命名弹窗（首次保存） */}
@@ -212,7 +217,7 @@ export function SaveDesignButton() {
           </DialogHeader>
 
           <div className="px-1 py-2">
-            <input
+            <Input
               type="text"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
@@ -222,7 +227,6 @@ export function SaveDesignButton() {
               placeholder="例如：无题键盘方案 1"
               maxLength={100}
               autoFocus
-              className="w-full rounded-md border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-0 transition-colors"
             />
           </div>
 
@@ -261,7 +265,7 @@ export function SaveDesignButton() {
           </DialogHeader>
 
           <div className="px-1 py-2">
-            <input
+            <Input
               type="text"
               value={renameInput}
               onChange={(e) => setRenameInput(e.target.value)}
@@ -271,7 +275,6 @@ export function SaveDesignButton() {
               placeholder="请输入设计名称"
               maxLength={100}
               autoFocus
-              className="w-full rounded-md border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-0 transition-colors"
             />
           </div>
 

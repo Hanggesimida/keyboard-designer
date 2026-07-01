@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 interface BoldItalicToggleProps {
@@ -9,9 +10,7 @@ interface BoldItalicToggleProps {
   onToggleBold: () => void
   onToggleItalic: () => void
   disabled?: boolean
-  /** 多选时部分键帽粗体不一致 */
   boldMixed?: boolean
-  /** 多选时部分键帽斜体不一致 */
   italicMixed?: boolean
 }
 
@@ -27,8 +26,10 @@ export function BoldItalicToggle({
 }: BoldItalicToggleProps) {
   return (
     <div className="flex gap-1.5">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="icon-sm"
         title={
           fontCaps.bold
             ? boldMixed
@@ -40,20 +41,18 @@ export function BoldItalicToggle({
         }
         disabled={disabled || !fontCaps.bold}
         className={cn(
-          "flex cursor-pointer h-7 w-7 items-center justify-center rounded border text-xs font-bold transition-colors",
-          "disabled:cursor-not-allowed disabled:opacity-30",
-          boldMixed
-            ? "border-orange-400/50 bg-transparent text-orange-400/70"
-            : isBold && fontCaps.bold
-              ? "border-primary bg-primary/15 text-primary"
-              : "border-border bg-transparent text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+          "text-xs font-bold",
+          boldMixed && "border-chart-4 text-chart-4",
+          !boldMixed && isBold && fontCaps.bold && "border-primary bg-primary/15 text-primary",
         )}
         onClick={onToggleBold}
       >
         B
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="outline"
+        size="icon-sm"
         title={
           fontCaps.italic
             ? italicMixed
@@ -65,18 +64,14 @@ export function BoldItalicToggle({
         }
         disabled={disabled || !fontCaps.italic}
         className={cn(
-          "flex cursor-pointer h-7 w-7 items-center justify-center rounded border text-xs italic transition-colors",
-          "disabled:cursor-not-allowed disabled:opacity-30",
-          italicMixed
-            ? "border-orange-400/50 bg-transparent text-orange-400/70"
-            : isItalic && fontCaps.italic
-              ? "border-primary bg-primary/15 text-primary"
-              : "border-border bg-transparent text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+          "text-xs italic",
+          italicMixed && "border-chart-4 text-chart-4",
+          !italicMixed && isItalic && fontCaps.italic && "border-primary bg-primary/15 text-primary",
         )}
         onClick={onToggleItalic}
       >
         I
-      </button>
+      </Button>
     </div>
   )
 }

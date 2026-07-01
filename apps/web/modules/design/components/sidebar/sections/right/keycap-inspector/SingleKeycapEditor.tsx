@@ -85,7 +85,7 @@ export function SingleKeycapEditor({
           <Button
             variant="ghost"
             size="sm"
-            className="h-5 px-2 text-[11px] text-red-400 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-30"
+            className="h-5 px-2 text-[11px] text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
             disabled={disabled || !e.labelInput}
             onClick={() => e.handleLabelChange("")}
             tabIndex={-1}

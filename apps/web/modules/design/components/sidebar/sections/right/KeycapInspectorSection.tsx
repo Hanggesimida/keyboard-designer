@@ -32,7 +32,7 @@ export function KeycapInspectorSection() {
   if (selectedKeycapIds.length === 0) {
     return (
       <PanelSection title="键帽样式">
-        <p className="py-1 text-center text-[11px] text-[var(--muted-foreground)]">
+        <p className="py-1 text-center text-[11px] text-muted-foreground">
           未选中键帽
         </p>
       </PanelSection>
@@ -83,7 +83,7 @@ export function KeycapInspectorSection() {
   if (!key) {
     return (
       <PanelSection title="键帽样式">
-        <p className="py-1 text-center text-[11px] text-[var(--muted-foreground)]">
+        <p className="py-1 text-center text-[11px] text-muted-foreground">
           未选中键帽
         </p>
       </PanelSection>

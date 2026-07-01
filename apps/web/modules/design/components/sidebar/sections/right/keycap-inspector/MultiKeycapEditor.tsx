@@ -120,7 +120,7 @@ export function MultiKeycapEditor({
         <Label className="text-[11px] font-normal text-muted-foreground">
           字号 (px)
           {e.fontSize.isMixed && (
-            <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+            <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
           )}
         </Label>
         <Input
@@ -147,7 +147,7 @@ export function MultiKeycapEditor({
           <Label className="text-[11px] font-normal text-muted-foreground">
             字间距
             {letterSpacing.isMixed && (
-              <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+              <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
             )}
           </Label>
           <Input
@@ -169,7 +169,7 @@ export function MultiKeycapEditor({
           <Label className="text-[11px] font-normal text-muted-foreground">
             行距
             {lineHeightRatio.isMixed && (
-              <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+              <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
             )}
           </Label>
           <Input

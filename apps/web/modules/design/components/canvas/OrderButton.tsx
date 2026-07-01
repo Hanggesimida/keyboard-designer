@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ShoppingCart } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { useCreateDesign, useUpdateDesign } from "@/hooks/queries/designs/useDesigns"
@@ -51,7 +52,6 @@ export function OrderButton() {
 
   const accessToken = useUserStore((s) => s.accessToken)
 
-  // 管理员审阅模式不显示下单按钮
   if (fromAdmin) return null
   const [isNavigating, setIsNavigating] = useState(false)
 
@@ -65,7 +65,6 @@ export function OrderButton() {
     if (!accessToken || isPending) return
 
     if (designId) {
-      // 先保存最新设计，然后跳转
       setIsNavigating(true)
       updateDesign(
         { id: designId, payload: { data: extractDesignData() } },
@@ -79,8 +78,6 @@ export function OrderButton() {
         },
       )
     } else {
-      // 未保存：先创建设计记录，将 id 写回 URL，再跳转结算页
-      // 写回 URL 后从 checkout 返回时会加载已保存的设计，而非重置为空
       setIsNavigating(true)
       createDesign(
         {
@@ -89,7 +86,6 @@ export function OrderButton() {
         },
         {
           onSuccess: (design) => {
-            // 先同步更新地址栏（不产生新历史记录），让"返回"能落到正确的设计页
             const params = new URLSearchParams(searchParams.toString())
             params.set("id", design.id)
             window.history.replaceState(null, "", `/design?${params.toString()}`)
@@ -105,34 +101,36 @@ export function OrderButton() {
 
   if (!accessToken) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="xs"
         title="请先登录后再下单"
         disabled
-        className="flex cursor-not-allowed items-center justify-center gap-1 rounded px-1 py-0.5 text-white/20"
+        className="text-muted-foreground/40"
       >
         <ShoppingCart className="size-3.5" />
-        <span className="text-[11px] leading-none">下单</span>
-      </button>
+        下单
+      </Button>
     )
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="xs"
       title="保存并下单"
       disabled={isPending}
       onClick={handleOrderClick}
-      className="flex cursor-pointer items-center justify-center gap-1 rounded px-1 py-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 text-white/40 hover:bg-white/10 hover:text-amber-400/80"
+      className="hover:text-primary"
     >
       {isPending ? (
         <Spinner className="size-3.5" />
       ) : (
         <ShoppingCart className="size-3.5" />
       )}
-      <span className="text-[11px] leading-none">
-        {isPending ? "处理中..." : "下单"}
-      </span>
-    </button>
+      {isPending ? "处理中..." : "下单"}
+    </Button>
   )
 }

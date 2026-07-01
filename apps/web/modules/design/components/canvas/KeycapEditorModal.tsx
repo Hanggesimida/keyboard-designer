@@ -27,6 +27,8 @@ import {
 import { KeycapEditorImageElement, MODAL_VIEW_INSET, type KeycapEditorImage } from "./KeycapEditorImageElement"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
+import { Button } from "@workspace/ui/components/button"
+import { DEFAULT_KEYCAP_COLORS } from "@/modules/design/lib/designDefaults"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 import {
   computeLabelAlignPatch,
@@ -131,11 +133,11 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const topH = isIso ? (0.415 - 0.027) * ph : isStepped ? ph - STEPPED_PAD_TOP - STEPPED_PAD_BOTTOM : ph - KEY_PAD_TOP - KEY_PAD_BOTTOM
 
   // 5. 键帽默认样式及覆写样式读取
-  const baseFill = override?.bgColor ?? globalDefaults.bgColor ?? "#3c3c3c"
-  const topFill = override?.topColor ?? globalDefaults.topColor ?? "#4a4a4a"
-  const borderColor = override?.borderColor ?? globalDefaults.borderColor ?? "#222222"
+  const baseFill = override?.bgColor ?? globalDefaults.bgColor ?? DEFAULT_KEYCAP_COLORS.bgColor
+  const topFill = override?.topColor ?? globalDefaults.topColor ?? DEFAULT_KEYCAP_COLORS.topColor
+  const borderColor = override?.borderColor ?? globalDefaults.borderColor ?? DEFAULT_KEYCAP_COLORS.borderColor
   const labelText = override?.labelText ?? keyDef.label
-  const labelColor = override?.labelColor ?? globalDefaults.labelColor ?? "#d0d0d0"
+  const labelColor = override?.labelColor ?? globalDefaults.labelColor ?? DEFAULT_KEYCAP_COLORS.labelColor
   const fontSize = override?.fontSize ?? globalDefaults.fontSize ?? KEY_LABEL_SIZE
   const labelFontFamily = override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif"
   const letterSpacing = override?.letterSpacing ?? 0
@@ -483,35 +485,32 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   // 17. 弹窗 UI 渲染
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0,0,0,0.72)", backdropFilter: "blur(4px)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={onClose}
     >
       {/* 弹窗主体 */}
       <div
-        className="relative flex flex-col rounded-xl shadow-2xl overflow-hidden"
-        style={{
-          backgroundColor: "#141414",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
+        className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部状态栏 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-white/40 select-none">键帽编辑</span>
-            <span className="text-[11px] text-white/20">/</span>
-            <span className="text-[12px] font-medium text-white/80 select-none">
+            <span className="text-[11px] text-muted-foreground select-none">键帽编辑</span>
+            <span className="text-[11px] text-muted-foreground/50">/</span>
+            <span className="text-[12px] font-medium text-foreground select-none">
               {labelText || keyDef.keyId}
             </span>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="rounded p-1 text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors"
             title="关闭 (Esc)"
           >
             <X className="size-3.5" />
-          </button>
+          </Button>
         </div>
 
         {/* 主体区：SVG 预览（左）+ 右侧控制栏 */}
@@ -633,7 +632,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                       <path
                         d={roundedPolygonPath(getIsoTopFacePoints(0, 0, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))}
                         fill="none"
-                        stroke="rgba(255,255,255,0.12)"
+                        stroke="var(--border)"
                         strokeWidth={0.6 / modalScale}
                         style={{ pointerEvents: "none" }}
                       />
@@ -642,7 +641,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                         x={topX} y={topY} width={topW} height={topH}
                         rx={KEY_RADIUS_TOP}
                         fill="none"
-                        stroke="rgba(255,255,255,0.12)"
+                        stroke="var(--border)"
                         strokeWidth={0.6 / modalScale}
                         style={{ pointerEvents: "none" }}
                       />
@@ -683,14 +682,16 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                       <line
                         x1={topX} y1={topY + topH / 2}
                         x2={topX + topW} y2={topY + topH / 2}
-                        stroke="rgba(255,255,255,0.25)"
+                        stroke="var(--muted-foreground)"
+                        strokeOpacity={0.35}
                         strokeWidth={0.8 / modalScale}
                         strokeDasharray={`${3 / modalScale} ${3 / modalScale}`}
                       />
                       <line
                         x1={topX + topW / 2} y1={topY}
                         x2={topX + topW / 2} y2={topY + topH}
-                        stroke="rgba(255,255,255,0.25)"
+                        stroke="var(--muted-foreground)"
+                        strokeOpacity={0.35}
                         strokeWidth={0.8 / modalScale}
                         strokeDasharray={`${3 / modalScale} ${3 / modalScale}`}
                       />
@@ -698,7 +699,8 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                         cx={topX + topW / 2}
                         cy={topY + topH / 2}
                         r={1.5 / modalScale}
-                        fill="rgba(255,255,255,0.4)"
+                        fill="var(--muted-foreground)"
+                        fillOpacity={0.4}
                       />
                     </g>
                   )}
@@ -714,11 +716,12 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                       fill="transparent"
                       stroke={
                         selectedLabel
-                          ? "rgba(99,179,237,0.65)"
+                          ? "var(--design-selection-border)"
                           : isLabelHovered
-                            ? "rgba(255,255,255,0.18)"
+                            ? "var(--border)"
                             : "transparent"
                       }
+                      strokeOpacity={selectedLabel ? 0.65 : isLabelHovered ? 1 : 1}
                       strokeWidth={1.5 / modalScale}
                       strokeDasharray={
                         selectedLabel
@@ -747,14 +750,9 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
             {/* 拖拽上传蒙层 */}
             {isDragOver && (
               <div
-                className="pointer-events-none absolute inset-0 flex items-center justify-center rounded"
-                style={{
-                  border: "2px dashed rgba(59,130,246,0.7)",
-                  backgroundColor: "rgba(59,130,246,0.08)",
-                }}
+                className="pointer-events-none absolute inset-0 flex items-center justify-center rounded border-2 border-dashed border-primary/70 bg-primary/10"
               >
-                <span className="text-xs text-blue-300 rounded px-2 py-1 select-none"
-                  style={{ background: "rgba(0,0,0,0.6)" }}>
+                <span className="rounded border border-border bg-popover/90 px-2 py-1 text-xs text-primary select-none backdrop-blur-sm">
                   释放文件以上传
                 </span>
               </div>
@@ -763,13 +761,12 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
           {/* 右侧文字控制栏 */}
           <div
-            className="flex flex-col gap-4 border-l border-white/8 px-4 py-5 overflow-y-auto"
-            style={{ width: 180 }}
+            className="flex w-[180px] flex-col gap-4 overflow-y-auto border-l border-border px-4 py-5"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 刻字内容 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-white/40 select-none">刻字</span>
+              <span className="text-[11px] text-muted-foreground select-none">刻字</span>
               <Textarea
                 value={labelText}
                 onChange={(e) =>
@@ -783,7 +780,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
             {/* 字间距 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-white/40 select-none">字间距</span>
+              <span className="text-[11px] text-muted-foreground select-none">字间距</span>
               <Input
                 type="number"
                 min={-3}
@@ -799,7 +796,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
             {/* 行距 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-white/40 select-none">行距</span>
+              <span className="text-[11px] text-muted-foreground select-none">行距</span>
               <Input
                 type="number"
                 min={0.8}
@@ -815,18 +812,18 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
             {/* 文字位置九宫格 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-white/40 select-none">文字位置</span>
+              <span className="text-[11px] text-muted-foreground select-none">文字位置</span>
               <LabelAlignmentGrid hideLabel onAlign={handleAlign} />
             </div>
 
             {/* 文字颜色 */}
             <div className="flex flex-col gap-2">
-              <span className="text-[11px] text-white/40 select-none">文字颜色</span>
+              <span className="text-[11px] text-muted-foreground select-none">文字颜色</span>
               <ColorRow
                 label="文字颜色"
                 hideLabel
                 value={override?.labelColor ?? ""}
-                fallback={globalDefaults.labelColor ?? "#d0d0d0"}
+                fallback={globalDefaults.labelColor ?? DEFAULT_KEYCAP_COLORS.labelColor}
                 onChange={(next) => setKeycapOverride(layerId, keyId, { labelColor: next })}
               />
             </div>
@@ -834,48 +831,53 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
         </div>
 
         {/* 底部操作工具栏 */}
-        <div className="flex items-center gap-1 px-4 py-2.5 border-t border-white/8">
-          <button
+        <div className="flex items-center gap-1 border-t border-border px-4 py-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px]"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] text-white/50 hover:text-white hover:bg-white/8 transition-colors select-none"
             title="添加本地图片"
           >
             <ImagePlus className="size-3.5" />
             上传图片
-          </button>
+          </Button>
 
           {!isIso && (
-            <button
+            <Button
+              type="button"
+              variant={showCrosshair ? "secondary" : "ghost"}
+              size="sm"
+              className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px]"
               onClick={() => setShowCrosshair((v) => !v)}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] transition-colors select-none ${
-                showCrosshair
-                  ? "text-white/70 bg-white/10"
-                  : "text-white/30 hover:text-white/60 hover:bg-white/6"
-              }`}
               title="切换十字辅助线"
             >
               <Crosshair className="size-3.5" />
               辅助线
-            </button>
+            </Button>
           )}
 
           {selectedImageId && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px] text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => {
                 removeCanvasElement(selectedImageId)
                 setSelectedImageId(null)
               }}
-              className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-colors select-none"
               title="删除图片 (Del)"
             >
               <Trash2 className="size-3.5" />
               删除图片
-            </button>
+            </Button>
           )}
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-1 text-[11px] text-white/20 select-none">
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60 select-none">
             <Move className="size-3" />
             <span>拖拽调整位置，选中后方向键微调</span>
           </div>

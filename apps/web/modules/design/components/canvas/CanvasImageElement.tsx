@@ -9,6 +9,9 @@ import { type ResizeCorner, type ResizeEdge, type ResizeHandle, computeResizePat
 import { ResetRotationIcon, RestoreAspectIcon, LockAspectIcon } from "./ImageControlIcons"
 
 const _ART_PAD = 28
+const SELECTION_BORDER = "var(--design-selection-border)"
+const SELECTION_SURFACE = "var(--background)"
+const SELECTION_ON = "var(--primary-foreground)"
 
 export interface CanvasImageElementProps {
   element: CanvasImageElementData
@@ -314,7 +317,7 @@ export function CanvasImageElement({
           style={{
             width: "100%",
             height: "100%",
-            border: `${1.5 / zoom}px dashed rgba(99,179,237,0.7)`,
+            border: `${1.5 / zoom}px dashed color-mix(in oklch, ${SELECTION_BORDER} 70%, transparent)`,
             borderRadius: 2 / zoom,
             boxSizing: "border-box",
             pointerEvents: "none",
@@ -330,7 +333,7 @@ export function CanvasImageElement({
             style={{
               position: "absolute",
               inset: 0,
-              border: `${1.5 / zoom}px solid #3b82f6`,
+              border: `${1.5 / zoom}px solid ${SELECTION_BORDER}`,
               pointerEvents: "none",
             }}
           />
@@ -360,11 +363,11 @@ export function CanvasImageElement({
                 style={{
                   width: 24 / zoom, height: 24 / zoom,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: isClippedToAllKeycaps ? "#3b82f6" : "white",
-                  border: `${1 / zoom}px solid #3b82f6`,
+                  background: isClippedToAllKeycaps ? SELECTION_BORDER : SELECTION_SURFACE,
+                  border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                   borderRadius: 4 / zoom,
                   cursor: "pointer", padding: 0,
-                  color: isClippedToAllKeycaps ? "white" : "#3b82f6",
+                  color: isClippedToAllKeycaps ? SELECTION_ON : SELECTION_BORDER,
                   pointerEvents: "auto", flexShrink: 0,
                 }}
               >
@@ -379,7 +382,7 @@ export function CanvasImageElement({
 
             {/* 分隔线 */}
             {!hasKeycapClip && (
-              <div style={{ width: 1 / zoom, height: 14 / zoom, background: "#3b82f6", opacity: 0.3, flexShrink: 0 }} />
+              <div style={{ width: 1 / zoom, height: 14 / zoom, background: SELECTION_BORDER, opacity: 0.3, flexShrink: 0 }} />
             )}
 
             {/* 重置旋转（仅旋转不为 0 时显示） */}
@@ -392,11 +395,11 @@ export function CanvasImageElement({
                 style={{
                   width: 24 / zoom, height: 24 / zoom,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "white",
-                  border: `${1 / zoom}px solid #3b82f6`,
+                  background: SELECTION_SURFACE,
+                  border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                   borderRadius: 4 / zoom,
                   cursor: "pointer", padding: 0,
-                  color: "#3b82f6",
+                  color: SELECTION_BORDER,
                   pointerEvents: "auto", flexShrink: 0,
                 }}
               >
@@ -418,11 +421,11 @@ export function CanvasImageElement({
                 style={{
                   width: 24 / zoom, height: 24 / zoom,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "white",
-                  border: `${1 / zoom}px solid #3b82f6`,
+                  background: SELECTION_SURFACE,
+                  border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                   borderRadius: 4 / zoom,
                   cursor: "pointer", padding: 0,
-                  color: "#3b82f6",
+                  color: SELECTION_BORDER,
                   pointerEvents: "auto", flexShrink: 0,
                 }}
               >
@@ -439,11 +442,11 @@ export function CanvasImageElement({
               style={{
                 width: 24 / zoom, height: 24 / zoom,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: lockAspect ? "#3b82f6" : "white",
-                border: `${1 / zoom}px solid #3b82f6`,
+                background: lockAspect ? SELECTION_BORDER : SELECTION_SURFACE,
+                border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                 borderRadius: 4 / zoom,
                 cursor: "pointer", padding: 0,
-                color: lockAspect ? "white" : "#3b82f6",
+                color: lockAspect ? SELECTION_ON : SELECTION_BORDER,
                 pointerEvents: "auto", flexShrink: 0,
               }}
             >
@@ -461,7 +464,7 @@ export function CanvasImageElement({
                   top: `calc(100% + ${HANDLE_SIZE / 2}px)`,
                   width: 1 / zoom,
                   height: ROTATE_LINE,
-                  background: "#3b82f6",
+                  background: SELECTION_BORDER,
                   transform: "translateX(-50%)",
                   pointerEvents: "none",
                 }}
@@ -478,8 +481,8 @@ export function CanvasImageElement({
                   width: ROTATE_R * 2,
                   height: ROTATE_R * 2,
                   transform: "translate(-50%, -50%)",
-                  background: "white",
-                  border: `${1 / zoom}px solid #3b82f6`,
+                  background: SELECTION_SURFACE,
+                  border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                   borderRadius: "50%",
                   cursor: "grab",
                 }}
@@ -498,8 +501,8 @@ export function CanvasImageElement({
                 position: "absolute",
                 width: HANDLE_SIZE,
                 height: HANDLE_SIZE,
-                background: "white",
-                border: `${1 / zoom}px solid #3b82f6`,
+                background: SELECTION_SURFACE,
+                border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                 borderRadius: 1 / zoom,
                 cursor: corner === "se" || corner === "nw" ? "nwse-resize" : "nesw-resize",
                 ...(corner === "se" && { right: -HANDLE_SIZE / 2, bottom: -HANDLE_SIZE / 2 }),
@@ -523,8 +526,8 @@ export function CanvasImageElement({
                   position: "absolute",
                   width: isHorizontal ? EDGE_THICK : EDGE_LONG,
                   height: isHorizontal ? EDGE_LONG : EDGE_THICK,
-                  background: "white",
-                  border: `${1 / zoom}px solid #3b82f6`,
+                  background: SELECTION_SURFACE,
+                  border: `${1 / zoom}px solid ${SELECTION_BORDER}`,
                   borderRadius: EDGE_THICK / 2,
                   cursor: isHorizontal ? "ew-resize" : "ns-resize",
                   ...(edge === "n" && { top: -EDGE_THICK / 2, left: "50%", transform: "translateX(-50%)" }),

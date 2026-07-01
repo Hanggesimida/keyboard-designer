@@ -20,6 +20,10 @@ export interface KeycapEditorImage {
 // ─── 单键帽模态 viewBox 内边距（与 KeycapEditorModal 保持一致） ──
 export const MODAL_VIEW_INSET = 16
 
+const SELECTION_BORDER = "var(--design-selection-border)"
+const SELECTION_SURFACE = "var(--background)"
+const SELECTION_ON = "var(--primary-foreground)"
+
 // ─── 每张图片的实时变换预览 ────────────────────────────
 interface LivePatch {
   x?: number
@@ -67,12 +71,12 @@ function KeycapImageControlOverlay({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "white",
-    border: "1px solid #3b82f6",
+    background: SELECTION_SURFACE,
+    border: `1px solid ${SELECTION_BORDER}`,
     borderRadius: 4,
     cursor: "pointer",
     padding: 0,
-    color: "#3b82f6",
+    color: SELECTION_BORDER,
     pointerEvents: "auto",
     flexShrink: 0,
   }
@@ -122,7 +126,7 @@ function KeycapImageControlOverlay({
         </button>
 
         {/* 分隔线 */}
-        <div style={{ width: 1, height: 14, background: "#3b82f6", opacity: 0.3, flexShrink: 0 }} />
+        <div style={{ width: 1, height: 14, background: SELECTION_BORDER, opacity: 0.3, flexShrink: 0 }} />
 
         {/* 裁切模式循环 */}
         <button
@@ -136,8 +140,8 @@ function KeycapImageControlOverlay({
           }
           style={{
             ...btnBase,
-            background: clipMode !== "none" ? "#3b82f6" : "white",
-            color: clipMode !== "none" ? "white" : "#3b82f6",
+            background: clipMode !== "none" ? SELECTION_BORDER : SELECTION_SURFACE,
+            color: clipMode !== "none" ? SELECTION_ON : SELECTION_BORDER,
           }}
         >
           {clipMode === "top" ? (
@@ -190,8 +194,8 @@ function KeycapImageControlOverlay({
           title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
           style={{
             ...btnBase,
-            background: lockAspect ? "#3b82f6" : "white",
-            color: lockAspect ? "white" : "#3b82f6",
+            background: lockAspect ? SELECTION_BORDER : SELECTION_SURFACE,
+            color: lockAspect ? SELECTION_ON : SELECTION_BORDER,
           }}
         >
           <LockAspectIcon size={CTRL_ICON} locked={lockAspect} />
@@ -466,7 +470,7 @@ export function KeycapEditorImageElement({
           x={absX} y={absY}
           width={dispW} height={dispH}
           fill="transparent"
-          stroke={isSelected ? "#3b82f6" : "transparent"}
+          stroke={isSelected ? SELECTION_BORDER : "transparent"}
           strokeWidth={SEL_SW}
           strokeDasharray={isSelected ? `${5 / scale} ${3 / scale}` : undefined}
           style={{ cursor: "move", pointerEvents: "all" }}
@@ -480,14 +484,14 @@ export function KeycapEditorImageElement({
             <line
               x1={imgCx} y1={absY + dispH + HS / 2}
               x2={imgCx} y2={absY + dispH + HS / 2 + RL}
-              stroke="#3b82f6" strokeWidth={SW}
+              stroke={SELECTION_BORDER} strokeWidth={SW}
               style={{ pointerEvents: "none" }}
             />
             <circle
               cx={imgCx} cy={absY + dispH + HS / 2 + RL + RR}
               r={RR}
-              fill="white"
-              stroke="#3b82f6" strokeWidth={SW}
+              fill={SELECTION_SURFACE}
+              stroke={SELECTION_BORDER} strokeWidth={SW}
               style={{ cursor: "grab", pointerEvents: "all" }}
               onMouseDown={handleRotateDown}
               onClick={(e) => e.stopPropagation()}
@@ -499,8 +503,8 @@ export function KeycapEditorImageElement({
                 key={h.id}
                 x={h.x} y={h.y}
                 width={HS} height={HS}
-                fill="white"
-                stroke="#3b82f6" strokeWidth={SW}
+                fill={SELECTION_SURFACE}
+                stroke={SELECTION_BORDER} strokeWidth={SW}
                 rx={SW}
                 style={{ cursor: h.cursor, pointerEvents: "all" }}
                 onMouseDown={(e) => handleResizeDown(h.id, e)}
@@ -514,8 +518,8 @@ export function KeycapEditorImageElement({
                 key={h.id}
                 x={h.x} y={h.y}
                 width={h.w} height={h.h}
-                fill="white"
-                stroke="#3b82f6" strokeWidth={SW}
+                fill={SELECTION_SURFACE}
+                stroke={SELECTION_BORDER} strokeWidth={SW}
                 rx={Math.min(h.w, h.h) / 2}
                 style={{ cursor: h.cursor, pointerEvents: "all" }}
                 onMouseDown={(e) => handleResizeDown(h.id, e)}

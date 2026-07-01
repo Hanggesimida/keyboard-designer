@@ -59,7 +59,7 @@ export function ColorRow({
         <Label className="text-[11px] font-normal text-muted-foreground">
           {label}
           {isMixed && (
-            <span className="ml-1.5 text-[10px] text-orange-400/80">混合</span>
+            <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
           )}
         </Label>
       )}

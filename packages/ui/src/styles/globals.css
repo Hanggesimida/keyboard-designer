@@ -40,6 +40,15 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-design-canvas-grid-dot: var(--design-canvas-grid-dot);
+    --color-design-artboard-bg: var(--design-artboard-bg);
+    --color-design-selection-border: var(--design-selection-border);
+    --color-design-selection-fill: var(--design-selection-fill);
+    --color-design-keycap-selected-border: var(--design-keycap-selected-border);
+    --color-design-keycap-fill-base: var(--design-keycap-fill-base);
+    --color-design-keycap-fill-top: var(--design-keycap-fill-top);
+    --color-design-keycap-stroke: var(--design-keycap-stroke);
+    --color-design-keycap-label: var(--design-keycap-label);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -94,12 +103,16 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
-    /* Design canvas: keycap SVG defaults */
+    /* Design canvas tokens */
+    --design-canvas-grid-dot: oklch(0 0 0 / 12%);
+    --design-artboard-bg: oklch(0.97 0 0);
     --design-keycap-selected-border: oklch(0.623 0.214 259.815);
-    --design-keycap-fill-base: #3c3c3c;
-    --design-keycap-fill-top: #4a4a4a;
-    --design-keycap-stroke: #222;
-    --design-keycap-label: #d0d0d0;
+    --design-selection-border: var(--design-keycap-selected-border);
+    --design-selection-fill: oklch(0.623 0.214 259.815 / 0.15);
+    --design-keycap-fill-base: oklch(0.321 0 0);
+    --design-keycap-fill-top: oklch(0.387 0 0);
+    --design-keycap-stroke: oklch(0.222 0 0);
+    --design-keycap-label: oklch(0.855 0 0);
 }
 
 .dark {
@@ -134,11 +147,15 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --design-canvas-grid-dot: oklch(1 0 0 / 12%);
+    --design-artboard-bg: oklch(0.269 0 0);
     --design-keycap-selected-border: oklch(0.623 0.214 259.815);
-    --design-keycap-fill-base: #3c3c3c;
-    --design-keycap-fill-top: #4a4a4a;
-    --design-keycap-stroke: #222;
-    --design-keycap-label: #d0d0d0;
+    --design-selection-border: var(--design-keycap-selected-border);
+    --design-selection-fill: oklch(0.623 0.214 259.815 / 0.15);
+    --design-keycap-fill-base: oklch(0.321 0 0);
+    --design-keycap-fill-top: oklch(0.387 0 0);
+    --design-keycap-stroke: oklch(0.222 0 0);
+    --design-keycap-label: oklch(0.855 0 0);
 }
 
 @layer base {

@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react"
 import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { SaveDesignButton } from "./SaveDesignButton"
 import { OrderButton } from "./OrderButton"
@@ -49,6 +51,10 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   a.click()
   document.body.removeChild(a)
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function ToolbarSeparator() {
+  return <Separator orientation="vertical" />
 }
 
 export function CanvasToolbar({
@@ -117,7 +123,6 @@ export function CanvasToolbar({
         assetMap,
       } = useDesignUIStore.getState()
 
-      // 将运行时格式（assetId 引用）转为服务端所需格式（内联 src）
       const resolvedElements = canvasElements.map((el) => {
         const { assetId, ...rest } = el
         return { ...rest, src: assetMap[assetId] ?? "" }
@@ -168,42 +173,43 @@ export function CanvasToolbar({
     }
   }
 
-  const btnBase =
-    "flex cursor-pointer items-center justify-center gap-1 rounded px-1 py-0.5 transition-colors text-white/40 hover:bg-white/10 hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
-
   return (
-    <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 select-none rounded bg-black/30 px-2 py-0.5 backdrop-blur-sm">
-      <button
+    <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         title="撤销 (Ctrl+Z)"
         disabled={!canUndo}
         onClick={(e) => { e.stopPropagation(); onUndo() }}
-        className="flex items-center justify-center rounded p-0.5 transition-colors text-white/40 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 enabled:hover:bg-white/10 enabled:hover:text-white/70"
       >
-        <Undo2 className="size-3.5" />
-      </button>
-      <button
+        <Undo2 />
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         title="重做 (Ctrl+Y)"
         disabled={!canRedo}
         onClick={(e) => { e.stopPropagation(); onRedo() }}
-        className="flex items-center justify-center rounded p-0.5 transition-colors text-white/40 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 enabled:hover:bg-white/10 enabled:hover:text-white/70"
       >
-        <Redo2 className="size-3.5" />
-      </button>
+        <Redo2 />
+      </Button>
 
-      <span className="mx-0.5 h-3 w-px bg-white/15" />
+      <ToolbarSeparator />
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             title="重置为原始布局"
+            className="hover:text-destructive"
             onClick={(e) => e.stopPropagation()}
-            className="flex cursor-pointer items-center justify-center rounded p-0.5 transition-colors text-white/40 hover:bg-white/10 hover:text-orange-400/80"
           >
-            <RotateCcw className="size-3.5" />
-          </button>
+            <RotateCcw />
+          </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -223,78 +229,83 @@ export function CanvasToolbar({
 
       {isAdmin && (
         <>
-          <span className="mx-0.5 h-3 w-px bg-white/15" />
+          <ToolbarSeparator />
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             title="导出 PNG"
             disabled={exporting !== null}
             onClick={handleExportPng}
-            className={btnBase}
           >
             {exporting === "png" ? <Spinner className="size-3.5" /> : <FileImage className="size-3.5" />}
-            <span className="text-[11px] leading-none">PNG</span>
-          </button>
+            PNG
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             title="导出 SVG（字体转曲）"
             disabled={exporting !== null}
             onClick={handleExportSvg}
-            className={btnBase}
           >
             {exporting === "svg" ? <Spinner className="size-3.5" /> : <FileCode2 className="size-3.5" />}
-            <span className="text-[11px] leading-none">SVG</span>
-          </button>
+            SVG
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             title="导出 JSON"
             onClick={(e) => { e.stopPropagation(); exportArtboardJson() }}
-            className={btnBase}
           >
             <FileJson2 className="size-3.5" />
-            <span className="text-[11px] leading-none">JSON</span>
-          </button>
+            JSON
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             title="导入 JSON"
             onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
-            className={btnBase}
           >
             <FolderOpen className="size-3.5" />
-            <span className="text-[11px] leading-none">导入</span>
-          </button>
+            导入
+          </Button>
         </>
       )}
 
-      <span className="mx-0.5 h-3 w-px bg-white/15" />
+      <ToolbarSeparator />
 
       <SaveDesignButton />
 
-      <span className="mx-0.5 h-3 w-px bg-white/15" />
+      <ToolbarSeparator />
 
       <OrderButton />
 
       {isAdmin && (
         <>
-          <span className="mx-0.5 h-3 w-px bg-white/15" />
+          <ToolbarSeparator />
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             title="生成治具 SVG（字体转曲）"
             disabled={exporting !== null}
+            className="hover:text-chart-2"
             onClick={handleGenerateJig}
-            className={`${btnBase} hover:text-sky-400/80`}
           >
             {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
-            <span className="text-[11px] leading-none">治具</span>
-          </button>
+            治具
+          </Button>
         </>
       )}
 
-      {/* 隐藏的文件输入 */}
       <input
         ref={fileInputRef}
         type="file"
@@ -303,7 +314,6 @@ export function CanvasToolbar({
         onChange={handleFileChange}
       />
 
-      {/* 导入格式错误提示对话框 */}
       <AlertDialog
         open={errorMsg !== null}
         onOpenChange={(open) => { if (!open) setErrorMsg(null) }}
@@ -321,7 +331,6 @@ export function CanvasToolbar({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 导入前确认对话框 */}
       <AlertDialog
         open={pendingImport !== null}
         onOpenChange={(open) => { if (!open) setPendingImport(null) }}

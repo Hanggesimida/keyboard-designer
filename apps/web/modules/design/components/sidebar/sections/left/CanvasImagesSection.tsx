@@ -69,7 +69,7 @@ function CanvasImageRow({
           )}
         />
       ) : (
-        <ImageIcon className="size-3 shrink-0 text-sky-400/70" />
+        <ImageIcon className="size-3 shrink-0 text-chart-2/70" />
       )}
 
       {element.type === "image" && element.clipToKeycapId && (

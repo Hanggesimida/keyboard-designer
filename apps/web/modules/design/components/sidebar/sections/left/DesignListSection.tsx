@@ -13,6 +13,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
+import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import { useMyDesigns } from "@/hooks/queries/designs/useDesigns"
 import { useAdminOrder } from "@/hooks/queries/admin/useAdminOrders"
@@ -29,26 +31,24 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
     <PanelSection title="客户方案" first collapsible defaultOpen>
       {isLoading ? (
         <div className="space-y-2 py-1">
-          <div className="h-3 rounded bg-white/[0.06] animate-pulse w-3/4" />
-          <div className="h-3 rounded bg-white/[0.06] animate-pulse w-1/2" />
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
         </div>
       ) : order ? (
         <div className="space-y-3">
-          {/* 客户信息 */}
-          <div className="flex items-center gap-2 rounded-lg px-2 py-2 bg-white/[0.04] border border-white/[0.07]">
-            <User size={12} className="text-white/40 shrink-0" />
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 py-2">
+            <User size={12} className="shrink-0 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="text-[11px] text-white/35 leading-none mb-0.5">客户</p>
-              <p className="text-xs text-white/70 truncate">{order.user.email}</p>
+              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">客户</p>
+              <p className="truncate text-xs text-foreground">{order.user.email}</p>
             </div>
           </div>
 
-          {/* 订单信息 */}
-          <div className="flex items-center gap-2 rounded-lg px-2 py-2 bg-white/[0.04] border border-white/[0.07]">
-            <Package size={12} className="text-white/40 shrink-0" />
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 py-2">
+            <Package size={12} className="shrink-0 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="text-[11px] text-white/35 leading-none mb-0.5">订单号</p>
-              <p className="text-xs text-white/70 font-mono truncate">{order.orderNo}</p>
+              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">订单号</p>
+              <p className="truncate font-mono text-xs text-foreground">{order.orderNo}</p>
             </div>
           </div>
 
@@ -79,14 +79,14 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
             href={`/admin/orders/${orderId}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-white/35 hover:text-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <ArrowLeft size={11} />
             返回订单详情
           </a>
         </div>
       ) : (
-        <p className="text-[11px] text-white/30 py-1">订单加载失败</p>
+        <p className="py-1 text-[11px] text-muted-foreground">订单加载失败</p>
       )}
     </PanelSection>
   )
@@ -139,14 +139,15 @@ export function DesignListSection() {
         collapsible
         defaultOpen
         action={
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             title="新建设计"
             onClick={() => handleNavigate("/design")}
-            className="flex items-center justify-center w-5 h-5 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <Plus size={12} />
-          </button>
+          </Button>
         }
       >
         <div className="max-h-[280px] overflow-y-auto -mx-0.5 px-0.5 space-y-1 scrollbar-thin">
@@ -194,7 +195,7 @@ export function DesignListSection() {
                         "w-10 h-7 rounded shrink-0 flex items-center justify-center overflow-hidden border",
                         isActive
                           ? "border-accent-foreground/20 bg-background/30"
-                          : "border-white/10 bg-white/[0.04]"
+                          : "border-border bg-muted/30"
                       )}
                     >
                       {design.previewUrl ? (
@@ -208,7 +209,7 @@ export function DesignListSection() {
                         <Keyboard
                           size={12}
                           className={cn(
-                            isActive ? "text-accent-foreground/50" : "text-white/20"
+                            isActive ? "text-accent-foreground/50" : "text-muted-foreground/40"
                           )}
                         />
                       )}
@@ -247,7 +248,7 @@ export function DesignListSection() {
             <AlertDialogCancel>继续编辑</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmLeave}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               放弃并切换
             </AlertDialogAction>
@@ -263,8 +264,8 @@ function DesignListSkeleton() {
     <>
       {Array.from({ length: 3 }).map((_, i) => (
         <div key={i} className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="w-10 h-7 rounded bg-white/[0.06] animate-pulse shrink-0" />
-          <div className="flex-1 h-3 rounded bg-white/[0.06] animate-pulse" />
+          <Skeleton className="h-7 w-10 shrink-0 rounded" />
+          <Skeleton className="h-3 flex-1 rounded" />
         </div>
       ))}
     </>

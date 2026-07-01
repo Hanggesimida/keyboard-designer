@@ -254,7 +254,7 @@ function GradientStopsBar({
             >
               <div
                 className={`size-4 cursor-grab rounded-sm border-2 border-white active:cursor-grabbing ${
-                  isSelected ? "ring-1 ring-offset-[1px] ring-blue-400" : ""
+                  isSelected ? "ring-1 ring-offset-[1px] ring-primary" : ""
                 }`}
                 style={{
                   backgroundColor: stop.color,

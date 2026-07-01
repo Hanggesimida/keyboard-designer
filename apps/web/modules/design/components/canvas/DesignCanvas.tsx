@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { Home } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
@@ -323,7 +324,8 @@ function KeyboardTemplate({
                   x={centerX}
                   y={labelY}
                   fontSize={6}
-                  fill="rgba(255,255,255,0.45)"
+                  fill="var(--muted-foreground)"
+                  fillOpacity={0.45}
                   textAnchor="middle"
                   dominantBaseline="hanging"
                   style={{ userSelect: "none" }}
@@ -674,10 +676,9 @@ export function DesignCanvas() {
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-hidden"
+      className="relative h-full w-full overflow-hidden bg-background"
       style={{
-        backgroundColor: "#1e1e1e",
-        backgroundImage: "radial-gradient(circle, #333 1px, transparent 1px)",
+        backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
         backgroundSize: "24px 24px",
         cursor: isPanning ? "grabbing" : isSpacePressed ? "grab" : "default",
       }}
@@ -732,9 +733,9 @@ export function DesignCanvas() {
         {/* 拖入图片时的高亮遮罩 */}
         {isDragOver && (
           <div
-            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-sm border-2 border-dashed border-blue-400/70 bg-blue-400/10"
+            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-sm border-2 border-dashed border-primary/70 bg-primary/10"
           >
-            <span className="rounded bg-black/60 px-3 py-1.5 text-[13px] text-blue-300 select-none backdrop-blur-sm">
+            <span className="rounded bg-popover/90 px-3 py-1.5 text-[13px] text-primary select-none backdrop-blur-sm border border-border">
               释放以添加图片
             </span>
           </div>
@@ -744,7 +745,7 @@ export function DesignCanvas() {
       {/* 框选矩形 */}
       {marqueeOverlay && (
         <div
-          className="pointer-events-none absolute z-10 border border-blue-400/80 bg-blue-400/10"
+          className="pointer-events-none absolute z-10 border border-primary/80 bg-primary/10"
           style={{
             left: marqueeOverlay.left,
             top: marqueeOverlay.top,
@@ -756,7 +757,7 @@ export function DesignCanvas() {
 
       {/* 多选计数徽标 */}
       {selectedKeycapIds.length > 1 && (
-        <div className="absolute bottom-4 right-4 rounded bg-blue-500/80 px-2 py-0.5 text-[11px] text-white select-none backdrop-blur-sm">
+        <div className="absolute bottom-4 right-4 rounded bg-primary/80 px-2 py-0.5 text-[11px] text-primary-foreground select-none backdrop-blur-sm">
           已选 {selectedKeycapIds.length} 个键帽
         </div>
       )}
@@ -764,29 +765,37 @@ export function DesignCanvas() {
       {/* 缩放比例 + 快捷键提示（单键帽编辑模式打开时隐藏） */}
       {!keycapEditTarget && (
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 select-none rounded bg-black/40 px-2.5 py-1 text-[11px] text-white/40 backdrop-blur-sm"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 select-none rounded bg-popover/90 border border-border px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur-sm"
           title="Ctrl+0 适配  Ctrl+1 实际尺寸"
         >
           <span>{Math.round(viewport.zoom * 100)}%</span>
           <span className="opacity-40">·</span>
-          <button
-            className="hover:text-white/70 transition-colors"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground"
             onClick={(e) => { e.stopPropagation(); fitToScreen() }}
           >
             适配
-          </button>
+          </Button>
         </div>
       )}
 
       {/* 返回首页按钮 */}
-      <Link
-        href="/"
-        title="返回首页"
-        onClick={(e) => e.stopPropagation()}
-        className="absolute top-3 left-3 flex items-center justify-center rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 bg-black/30 backdrop-blur-sm select-none"
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        asChild
+        className="absolute top-3 left-3 bg-popover/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground"
       >
-        <Home className="size-3.5" />
-      </Link>
+        <Link
+          href="/"
+          title="返回首页"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Home className="size-3.5" />
+        </Link>
+      </Button>
 
       {/* 顶部工具栏：撤销/重做 + 重置 + 导出 + 导入 */}
       <CanvasToolbar

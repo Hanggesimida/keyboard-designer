@@ -1,6 +1,7 @@
 import { create, useStore } from "zustand"
 import { temporal } from "zundo"
 import type { TemporalState } from "zundo"
+import { DEFAULT_ARTBOARD_BG, DEFAULT_KEYCAP_COLORS } from "@/modules/design/lib/designDefaults"
 
 export interface Layer {
   id: string
@@ -222,10 +223,10 @@ interface DesignUIActions {
 
 const initialGlobalKeycapStyle: GlobalKeycapStyle = {
   fontSize: 7,
-  labelColor: "#d0d0d0",
-  topColor: "#4a4a4a",
-  bgColor: "#3c3c3c",
-  borderColor: "#222222",
+  labelColor: DEFAULT_KEYCAP_COLORS.labelColor,
+  topColor: DEFAULT_KEYCAP_COLORS.topColor,
+  bgColor: DEFAULT_KEYCAP_COLORS.bgColor,
+  borderColor: DEFAULT_KEYCAP_COLORS.borderColor,
   borderHidden: false,
 }
 
@@ -268,7 +269,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     templateId: "ansi-144",
     layers: initialLayers,
     activeLayerId: null,
-    artboardBackground: "#2c2c2c",
+    artboardBackground: DEFAULT_ARTBOARD_BG,
     fontFamily: "var(--font-ibm-plex-mono)",
     fontWeight: 400,
     fontStyle: "normal",
@@ -287,7 +288,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         layers: initialLayers,
         globalKeycapStyle: initialGlobalKeycapStyle,
         layerKeycapOverrides: {},
-        artboardBackground: "#2c2c2c",
+        artboardBackground: DEFAULT_ARTBOARD_BG,
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,
         fontStyle: "normal",
