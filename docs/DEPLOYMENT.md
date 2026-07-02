@@ -93,10 +93,21 @@ POSTGRES_USER=jw
 POSTGRES_PASSWORD=请替换为强密码
 POSTGRES_DB=jw_keyboard
 
+# ── Redis ───────────────────────────────────────
+REDIS_PASSWORD=请替换为强密码
+
 # ── API ─────────────────────────────────────────
 JWT_SECRET=请替换为 openssl rand -base64 48 的输出
 JWT_EXPIRES_IN=7d
 TURNSTILE_SECRET_KEY=你的 Turnstile Secret Key
+SETUP_TOKEN_SECRET=请替换为 openssl rand -base64 48 的输出（与 JWT_SECRET 不同）
+
+# ── 腾讯云 SES（邮箱 OTP 验证码，缺失时 API 无法启动）──
+TENCENT_SECRET_ID=你的腾讯云 SecretId
+TENCENT_SECRET_KEY=你的腾讯云 SecretKey
+TENCENT_SES_REGION=ap-guangzhou
+TENCENT_SES_FROM=no-reply@你的域名.com
+TENCENT_SES_TEMPLATE_ID=你的邮件模板 ID
 
 # ── Web 构建参数（docker compose build 时使用）──
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=你的 Turnstile Site Key
@@ -107,10 +118,19 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=你的 Turnstile Site Key
 | `POSTGRES_USER` | 是 | 数据库用户名 |
 | `POSTGRES_PASSWORD` | 是 | 数据库密码 |
 | `POSTGRES_DB` | 是 | 数据库名 |
+| `REDIS_PASSWORD` | 是 | Redis 访问密码 |
 | `JWT_SECRET` | 是 | JWT 签名密钥，缺失时 API 无法启动 |
 | `JWT_EXPIRES_IN` | 否 | Token 有效期，默认 `7d` |
 | `TURNSTILE_SECRET_KEY` | 是 | Turnstile 服务端校验密钥 |
+| `SETUP_TOKEN_SECRET` | 是 | 注册后设置密码流程的独立签名密钥 |
+| `TENCENT_SECRET_ID` | 是 | 腾讯云 API 密钥 ID（SES 发信） |
+| `TENCENT_SECRET_KEY` | 是 | 腾讯云 API 密钥 Key |
+| `TENCENT_SES_REGION` | 是 | SES 地域，如 `ap-guangzhou` |
+| `TENCENT_SES_FROM` | 是 | 发信地址（需在腾讯云 SES 验证） |
+| `TENCENT_SES_TEMPLATE_ID` | 是 | OTP 邮件模板 ID |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | 是 | Turnstile 前端 Site Key（构建 web 时使用） |
+
+腾讯云 SES 配置说明见 [`docs/email-otp-auth.md`](email-otp-auth.md)。
 
 容器内 API 的 `DATABASE_URL` 由 Compose 自动拼接，无需手动配置：
 
@@ -297,6 +317,21 @@ cat backup.sql | docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$P
 ### API 启动报 JWT_SECRET 相关错误
 
 确认 `.env` 中 `JWT_SECRET` 已设置，并执行 `docker compose up -d api` 重新创建容器。
+
+### API 启动报 TENCENT_SECRET_ID 不存在
+
+邮箱 OTP 功能要求 API 启动时加载腾讯云 SES 配置。在 `.env` 中补全 `TENCENT_SECRET_ID`、`TENCENT_SECRET_KEY`、`TENCENT_SES_REGION`、`TENCENT_SES_FROM`、`TENCENT_SES_TEMPLATE_ID` 以及 `SETUP_TOKEN_SECRET`，然后重新创建 API 容器：
+
+```bash
+sudo docker compose up -d api
+sudo docker compose logs -f api
+```
+
+### API 不断重启 / 页面 502 Bad Gateway
+
+1. 查看 API 日志：`sudo docker compose logs api`
+2. 常见原因是缺少上述环境变量，或 `REDIS_PASSWORD` 未设置
+3. 修复 `.env` 后执行 `sudo docker compose up -d` 重建相关容器
 
 ### 数据库连接失败
 
