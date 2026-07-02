@@ -21,6 +21,7 @@
     "@workspace/ui": "workspace:*",
     "colord": "^2.9.3",
     "date-fns": "^4.4.0",
+    "input-otp": "^1.4.2",
     "lucide-react": "^1.14.0",
     "motion": "^12.42.0",
     "nanoid": "^5.1.11",

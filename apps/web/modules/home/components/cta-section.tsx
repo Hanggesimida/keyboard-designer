@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import type { Variants } from 'motion/react'
 import { Button } from '@workspace/ui/components/button'
-import { AnimatedGroup } from '@/components/ui/animated-group'
+import { AnimatedGroup } from '@/components/animate/animated-group'
 
 const transitionVariants: { item: Variants } = {
   item: {
