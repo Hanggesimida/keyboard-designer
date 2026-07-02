@@ -200,9 +200,9 @@ docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
 
 ```bash
 git pull
-docker compose build          # 若仅改 API，可：docker compose build api
-docker compose up -d
-docker compose exec api npx prisma migrate deploy   # 若有新迁移
+sudo docker compose build          # 若仅改 API，可：docker compose build api
+sudo docker compose up -d
+sudo docker compose exec api npx prisma migrate deploy   # 若有新迁移
 ```
 
 仅修改 `.env` 中的运行时变量（如 `JWT_SECRET`）：
