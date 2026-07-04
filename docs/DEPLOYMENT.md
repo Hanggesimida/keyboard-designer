@@ -4,11 +4,13 @@
 
 ## 架构概览
 
-生产环境由四个容器组成，通过 Nginx 统一对外暴露 **80 端口**：
+生产环境由四个容器组成，通过 Nginx 统一对外暴露 **80 / 443 端口**（HTTP 自动跳转 HTTPS）：
 
 ```mermaid
 flowchart LR
-    Client[浏览器] --> Nginx[Nginx :80]
+    Client[浏览器] --> Nginx[Nginx :443]
+    Client -->|HTTP :80| Nginx80[Nginx :80]
+    Nginx80 -->|301 重定向| Nginx
     Nginx -->|"/ 页面"| Web[Next.js :3000]
     Nginx -->|"/api/* 大部分"| API[NestJS :3001]
     Nginx -->|"/api/generate-jig 等"| Web
@@ -17,7 +19,7 @@ flowchart LR
 
 | 服务 | 镜像 / 构建 | 内部端口 | 说明 |
 |------|-------------|----------|------|
-| `nginx` | `nginx:alpine` | 80 | 反向代理，按路径分流 |
+| `nginx` | `nginx:alpine` | 80, 443 | 反向代理，TLS 终结，按路径分流 |
 | `web` | `docker/web.Dockerfile` | 3000 | Next.js（standalone 模式） |
 | `api` | `docker/api.Dockerfile` | 3001 | NestJS + Prisma |
 | `postgres` | `postgres:17` | 5432 | PostgreSQL 数据库 |
@@ -42,7 +44,7 @@ Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
 - **操作系统**：Linux（推荐 Ubuntu 22.04+）或任意支持 Docker 的系统
 - **CPU / 内存**：建议 2 核、4 GB RAM 及以上
 - **磁盘**：建议 20 GB 以上（含镜像、数据库、日志）
-- **网络**：开放 **80** 端口（若自行配置 HTTPS，还需 **443**）
+- **网络**：开放 **80**、**443** 端口
 
 ### 软件
 
@@ -60,7 +62,7 @@ Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
 
 1. 将域名 A 记录指向服务器公网 IP。
 2. 修改 [`docker/nginx.conf`](../docker/nginx.conf) 中的 `server_name`（默认为 `jinwenkey.com`）为你的实际域名。
-3. 如需 HTTPS，见下文 [配置 HTTPS](#配置-https)。
+3. 将 SSL 证书放入 [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/)，详见 [配置 HTTPS](#配置-https)。
 
 ### 2. Cloudflare Turnstile
 
@@ -208,7 +210,7 @@ docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
 
 ### 7. 验证
 
-- 浏览器访问 `http://<你的域名>/`，确认前端页面正常加载。
+- 浏览器访问 `https://<你的域名>/`，确认前端页面正常加载；访问 `http://` 应自动跳转到 HTTPS。
 - 尝试注册 / 登录，确认 Turnstile 与 API 正常。
 - 管理员账号登录后访问后台，确认通知 SSE 等管理功能可用。
 
@@ -258,22 +260,42 @@ docker build -f docker/web.Dockerfile \
 
 ## 配置 HTTPS
 
-当前 Compose 配置仅监听 **HTTP 80**。生产环境建议启用 TLS，常见方案：
+Compose 已内置容器内 Nginx 的 TLS 配置：HTTP 80 自动 301 跳转 HTTPS 443，证书由宿主机目录挂载进容器。
 
-### 方案 A：云负载均衡 / CDN 终结 TLS（推荐）
+### 证书文件
 
-在阿里云 SLB、AWS ALB、Cloudflare 等入口配置 HTTPS 证书，后端仍指向服务器 80 端口。需在代理层设置：
+将以下文件放到 [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/)（与 `docker-compose.yml` 中 `./docker/jinwenkey.com_nginx:/etc/nginx/ssl:ro` 对应）：
 
-- `X-Forwarded-For`
-- `X-Forwarded-Proto: https`（若应用后续需要识别 HTTPS）
+| 文件名 | 说明 |
+|--------|------|
+| `jinwenkey.com_bundle.crt` | 站点证书 + 中间证书链（bundle） |
+| `jinwenkey.com.key` | 私钥（**勿提交 Git**，已在 `.gitignore` 中忽略） |
 
-### 方案 B：宿主机 Nginx / Caddy + Certbot
+`nginx.conf` 中的引用路径：
 
-在 Docker 外层再套一层反向代理，由宿主机 Nginx/Caddy 申请 Let's Encrypt 证书并转发到 `127.0.0.1:80`。
+```nginx
+ssl_certificate     /etc/nginx/ssl/jinwenkey.com_bundle.crt;
+ssl_certificate_key /etc/nginx/ssl/jinwenkey.com.key;
+```
 
-### 方案 C：扩展容器内 Nginx
+更换域名时，需同步修改 `server_name` 与证书文件名（或保持文件名不变、仅替换文件内容）。
 
-挂载证书目录、增加 443 `listen` 块，或使用 `nginx-proxy` + `acme-companion` 等方案。需自行修改 `docker-compose.yml` 与 `nginx.conf`，不在默认配置范围内。
+### 部署后验证
+
+```bash
+# 确认 nginx 已监听 443 且配置无误
+sudo docker compose exec nginx nginx -t
+sudo docker compose logs nginx
+```
+
+浏览器访问 `https://jinwenkey.com`，证书应有效且无混合内容警告。
+
+### 其他 TLS 方案（可选）
+
+若更希望在入口层终结 TLS，也可改用以下方案，并相应还原 `docker-compose.yml` / `nginx.conf` 中的 443 配置：
+
+- **云负载均衡 / CDN**：在阿里云 SLB、Cloudflare 等入口配置 HTTPS，后端仍指向服务器 80 端口。
+- **宿主机 Nginx / Caddy + Certbot**：Docker 外层再套一层反向代理，由宿主机申请 Let's Encrypt 并转发到 `127.0.0.1:80`。
 
 ---
 
@@ -365,5 +387,6 @@ sudo docker compose logs -f api
 | [`docker-compose.yml`](../docker-compose.yml) | 服务编排与网络 |
 | [`docker/api.Dockerfile`](../docker/api.Dockerfile) | API 多阶段构建 |
 | [`docker/web.Dockerfile`](../docker/web.Dockerfile) | Web 多阶段构建（Turbo prune + standalone） |
-| [`docker/nginx.conf`](../docker/nginx.conf) | 反向代理路由 |
+| [`docker/nginx.conf`](../docker/nginx.conf) | 反向代理路由与 HTTPS |
+| [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/) | TLS 证书目录（挂载为容器内 `/etc/nginx/ssl`） |
 | [`apps/api/prisma/migrations/`](../apps/api/prisma/migrations/) | 数据库迁移文件 |

@@ -38,3 +38,7 @@ npm-debug.log*
 # Misc
 .DS_Store
 *.pem
+
+# SSL 私钥（证书 bundle 可随部署目录放置，私钥勿提交）
+docker/jinwenkey.com_nginx/*.key
+docker/jinwenkey.com_nginx/*.csr
