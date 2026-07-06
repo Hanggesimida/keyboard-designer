@@ -100,6 +100,13 @@ services:
       ALIPAY_GATEWAY: ${ALIPAY_GATEWAY:-https://openapi.alipay.com/gateway.do}
       ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL}
       ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL}
+      # 微信支付（Native 扫码）
+      WECHAT_APP_ID: ${WECHAT_APP_ID}
+      WECHAT_MCH_ID: ${WECHAT_MCH_ID}
+      WECHAT_MCH_PRIVATE_KEY: ${WECHAT_MCH_PRIVATE_KEY}
+      WECHAT_API_V3_KEY: ${WECHAT_API_V3_KEY}
+      WECHAT_NOTIFY_URL: ${WECHAT_NOTIFY_URL}
+      WECHAT_MCH_SERIAL_NO: ${WECHAT_MCH_SERIAL_NO}
     depends_on:
       postgres:
         condition: service_healthy
