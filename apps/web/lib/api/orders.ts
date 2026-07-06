@@ -21,7 +21,7 @@ export interface OrderDesignSummary {
 
 export interface OrderPaymentSummary {
   method: 'ALIPAY' | 'WECHAT';
-  status: 'UNPAID' | 'PAID' | 'FAILED';
+  status: 'UNPAID' | 'PAID' | 'FAILED' | 'REFUNDED';
 }
 
 export interface AddressSnapshot {

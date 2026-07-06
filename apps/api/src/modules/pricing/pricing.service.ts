@@ -40,14 +40,22 @@ export interface PriceQuote {
  * 当前阶段价格由此处统一管理，未来可替换为查询数据库的动态规则。
  */
 class CustomKeycapRule implements PricingRule {
-  private static readonly BASE_PRICE = 99.00;
+  private static readonly PROD_BASE_PRICE = 99.0;
+  private static readonly DEV_BASE_PRICE = 0.01;
+
+  private static getBasePrice(): number {
+    const env = process.env.NODE_ENV ?? 'development';
+    return env === 'development'
+      ? CustomKeycapRule.DEV_BASE_PRICE
+      : CustomKeycapRule.PROD_BASE_PRICE;
+  }
 
   applies(context: PricingContext): boolean {
     return context.type === 'CUSTOM_KEYCAP';
   }
 
   calculate(_context: PricingContext): PriceQuote {
-    const price = CustomKeycapRule.BASE_PRICE;
+    const price = CustomKeycapRule.getBasePrice();
     return {
       totalAmount: price,
       breakdown: [

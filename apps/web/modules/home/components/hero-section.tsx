@@ -145,7 +145,7 @@ export function HeroSection() {
                   variant="ghost"
                   className="h-10.5 rounded-xl px-5"
                 >
-                  <Link href="#about">
+                  <Link href="#features">
                     <span className="text-nowrap">了解更多</span>
                   </Link>
                 </Button>

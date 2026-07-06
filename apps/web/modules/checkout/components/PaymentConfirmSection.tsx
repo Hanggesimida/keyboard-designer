@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Loader2, ShieldCheck } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Alert, AlertDescription } from "@workspace/ui/components/alert"
 import { cn } from "@workspace/ui/lib/utils"
 import { useCreateOrder } from "@/hooks/queries/orders/useOrders"
-import { useInitiatePayment, useMockCallback } from "@/hooks/queries/payments/usePayments"
+import { usePayOrder } from "@/hooks/queries/payments/usePayOrder"
 import type { PaymentMethod } from "@/lib/api/payments"
 import { ApiError } from "@/lib/api/request"
 
@@ -31,17 +30,16 @@ export function PaymentConfirmSection({
   totalAmount,
   onAddressRequired,
 }: PaymentConfirmSectionProps) {
-  const router = useRouter()
   const [method, setMethod] = useState<PaymentMethod>("ALIPAY")
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isPaying, setIsPaying] = useState(false)
 
   const { mutate: createOrder, isPending: isCreatingOrder } = useCreateOrder()
-  const { mutate: initiatePayment, isPending: isInitiating } = useInitiatePayment()
-  const { mutate: mockCallback, isPending: isMocking } = useMockCallback()
+  const { payOrder } = usePayOrder()
 
-  const isProcessing = isCreatingOrder || isInitiating || isMocking
+  const isProcessing = isCreatingOrder || isPaying
 
-  async function handlePay() {
+  function handlePay() {
     if (!selectedAddressId) {
       onAddressRequired()
       return
@@ -55,28 +53,16 @@ export function PaymentConfirmSection({
       },
       {
         onSuccess: (order) => {
-          initiatePayment(
-            { orderId: order.id, method },
-            {
-              onSuccess: (payment) => {
-                mockCallback(payment.paymentId, {
-                  onSuccess: () => {
-                    router.push(`/profile/orders/${order.id}`)
-                  },
-                  onError: (err) => {
-                    setSubmitError(
-                      err instanceof ApiError ? err.message : "支付回调失败，请联系客服",
-                    )
-                  },
-                })
-              },
-              onError: (err) => {
-                setSubmitError(
-                  err instanceof ApiError ? err.message : "发起支付失败，请重试",
-                )
-              },
+          setIsPaying(true)
+          payOrder({
+            orderId: order.id,
+            method,
+            onError: (message) => {
+              setSubmitError(message)
+              setIsPaying(false)
             },
-          )
+            redirectTo: `/profile/orders/${order.id}`,
+          })
         },
         onError: (err) => {
           setSubmitError(
@@ -133,7 +119,7 @@ export function PaymentConfirmSection({
         {isProcessing ? (
           <>
             <Loader2 size={15} className="animate-spin" />
-            {isCreatingOrder ? "创建订单..." : isInitiating ? "发起支付..." : "支付中..."}
+            {isCreatingOrder ? "创建订单..." : "等待支付中..."}
           </>
         ) : (
           <>
@@ -145,8 +131,6 @@ export function PaymentConfirmSection({
 
       <p className="text-center text-xs leading-relaxed text-muted-foreground/55">
         点击「立即支付」即表示同意相关服务协议
-        <br />
-        <span className="text-amber-400/70">（当前为开发模式，支付将自动完成）</span>
       </p>
     </div>
   )

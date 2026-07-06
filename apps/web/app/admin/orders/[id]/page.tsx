@@ -23,6 +23,7 @@ import { zhCN } from "date-fns/locale"
 import { useAdminOrder, useUpdateOrderStatus } from "@/hooks/queries/admin/useAdminOrders"
 import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { StatusActionButtons } from "@/modules/admin/components/StatusActionButtons"
+import { RefundActionButton } from "@/modules/admin/components/RefundActionButton"
 import type { UpdateOrderStatusPayload } from "@/lib/api/admin-orders"
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -162,12 +163,15 @@ export default function AdminOrderDetailPage({
             )}
           </div>
           <div className="flex flex-col gap-2 w-full sm:w-auto sm:items-end">
-            <StatusActionButtons
-              orderId={order.id}
-              currentStatus={order.status}
-              isPending={isUpdating}
-              onUpdate={handleUpdateStatus}
-            />
+            <div className="flex flex-col gap-2 w-full sm:flex-row sm:flex-wrap sm:justify-end">
+              <StatusActionButtons
+                orderId={order.id}
+                currentStatus={order.status}
+                isPending={isUpdating}
+                onUpdate={handleUpdateStatus}
+              />
+              <RefundActionButton order={order} onError={setStatusError} />
+            </div>
             {statusError && (
               <p className="text-xs text-destructive/80">{statusError}</p>
             )}

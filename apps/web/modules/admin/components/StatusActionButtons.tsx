@@ -5,16 +5,12 @@ import { getAvailableTransitions, type UpdateOrderStatusPayload } from "@/lib/ap
 import { ORDER_STATUS_CONFIG } from "@/modules/orders"
 import type { OrderStatus } from "@/lib/api/orders"
 
-// ─── 每个目标状态的操作按钮样式 ──────────────────────────────────────────────────
-
 const ACTION_CONFIG: Partial<Record<OrderStatus, { label: string; variant: "primary" | "danger" | "warning" | "default" }>> = {
   APPROVED: { label: "接单", variant: "primary" },
   PROCESSING: { label: "开始生产", variant: "primary" },
   SHIPPING: { label: "开始发货", variant: "primary" },
   COMPLETED: { label: "确认完成", variant: "primary" },
   CANCELLED: { label: "拒单", variant: "danger" },
-  REFUNDING: { label: "同意退款", variant: "warning" },
-  REFUNDED: { label: "确认退款完成", variant: "warning" },
 }
 
 const VARIANT_CLS = {

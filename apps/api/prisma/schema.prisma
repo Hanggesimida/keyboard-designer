@@ -39,9 +39,17 @@ enum PaymentMethod {
 
 // 支付状态枚举
 enum PaymentStatus {
-  UNPAID // 未支付
-  PAID   // 已支付
-  FAILED // 支付失败
+  UNPAID   // 未支付
+  PAID     // 已支付
+  FAILED   // 支付失败
+  REFUNDED // 已退款
+}
+
+// 退款状态枚举
+enum RefundStatus {
+  PENDING // 退款处理中
+  SUCCESS // 退款成功
+  FAILED  // 退款失败
 }
 
 // 通知类型枚举
@@ -139,6 +147,7 @@ model Order {
   address Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
 
   payment Payment?
+  refunds Refund[]
 
   @@index([userId])
   @@index([status])
@@ -163,9 +172,31 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds Refund[]
 
   @@index([status])
+}
+
+// 退款记录（支付宝退款幂等与审计）
+model Refund {
+  id             String       @id @default(cuid())
+  orderId        String
+  paymentId      String
+  amount         Decimal      @db.Decimal(10, 2)
+  outRequestNo   String       @unique // 支付宝退款幂等号
+  status         RefundStatus @default(PENDING)
+  reason         String?
+  operatorId     String?      // 操作管理员 userId
+  thirdPartyData Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([paymentId])
 }
 
 // 管理员通知

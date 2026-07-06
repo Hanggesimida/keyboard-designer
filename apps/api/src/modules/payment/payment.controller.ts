@@ -11,6 +11,7 @@ import { PaymentService } from './payment.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { MockCallbackDto } from './dto/mock-callback.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { DevOnlyGuard } from '../../common/guards/dev-only.guard';
 import { CurrentUser } from '@modules/auth/decorators/current-user.decorator';
 
 @Controller('payments')
@@ -30,7 +31,7 @@ export class PaymentController {
    * 伪支付回调（开发/测试专用）。
    * 生产环境部署时，可通过环境变量或 Guard 限制此接口仅在非生产环境可用。
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, DevOnlyGuard)
   @Post('mock-callback')
   @HttpCode(HttpStatus.OK)
   mockCallback(@Body() dto: MockCallbackDto) {

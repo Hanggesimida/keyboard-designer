@@ -11,25 +11,11 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 // ─── 状态机：合法的状态流转表 ──────────────────────────────────────────────────
 
 const VALID_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
-  [OrderStatus.PAID]: [
-    OrderStatus.APPROVED,
-    OrderStatus.CANCELLED,
-    OrderStatus.REFUNDING,
-  ],
-  [OrderStatus.APPROVED]: [
-    OrderStatus.PROCESSING,
-    OrderStatus.REFUNDING,
-  ],
-  [OrderStatus.PROCESSING]: [
-    OrderStatus.SHIPPING,
-    OrderStatus.REFUNDING,
-  ],
-  [OrderStatus.SHIPPING]: [
-    OrderStatus.COMPLETED,
-  ],
-  [OrderStatus.REFUNDING]: [
-    OrderStatus.REFUNDED,
-  ],
+  [OrderStatus.PAID]: [OrderStatus.APPROVED, OrderStatus.CANCELLED],
+  [OrderStatus.APPROVED]: [OrderStatus.PROCESSING],
+  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPING],
+  [OrderStatus.SHIPPING]: [OrderStatus.COMPLETED],
+  [OrderStatus.REFUNDING]: [OrderStatus.REFUNDED],
 };
 
 @Injectable()

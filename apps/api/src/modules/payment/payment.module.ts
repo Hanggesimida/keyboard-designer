@@ -10,5 +10,6 @@ import { NotificationsModule } from '@modules/admin/notifications/notifications.
   imports: [OrderModule, NotificationsModule],
   controllers: [PaymentController],
   providers: [PaymentService, AlipayProvider, WechatProvider],
+  exports: [PaymentService],
 })
 export class PaymentModule {}

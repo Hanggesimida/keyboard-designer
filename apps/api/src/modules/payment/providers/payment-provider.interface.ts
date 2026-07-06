@@ -14,7 +14,19 @@ export interface PaymentResult {
  */
 export interface VerifyResult {
   success: boolean;
-  orderId: string;
+  /** out_trade_no，即 payment.id */
+  paymentId: string;
+}
+
+export interface RefundOptions {
+  amount: string;
+  outRequestNo: string;
+  reason?: string;
+}
+
+export interface RefundResult {
+  success: boolean;
+  rawResponse: Record<string, unknown>;
 }
 
 /**
@@ -35,4 +47,9 @@ export interface IPaymentProvider {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   verifyCallback(rawBody: any): Promise<VerifyResult>;
+
+  /**
+   * 发起退款（全额或部分，由 options.amount 决定）。
+   */
+  refund(payment: Payment, options: RefundOptions): Promise<RefundResult>;
 }

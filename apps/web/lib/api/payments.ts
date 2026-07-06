@@ -12,6 +12,9 @@ export interface InitiatePaymentPayload {
 export interface InitiatePaymentResult {
   paymentId: string;
   method: PaymentMethod;
+  payData?: {
+    formHtml?: string;
+  };
   mockPayUrl?: string;
   tip?: string;
 }

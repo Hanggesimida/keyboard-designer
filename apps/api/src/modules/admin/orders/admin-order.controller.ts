@@ -2,24 +2,31 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Body,
   Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { AdminOrderService } from './admin-order.service';
+import { PaymentService } from '@modules/payment/payment.service';
 import { QueryAdminOrdersDto } from './dto/query-admin-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { RefundOrderDto } from './dto/refund-order.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@modules/auth/guards/roles.guard';
 import { Roles } from '@modules/auth/decorators/roles.decorator';
+import { CurrentUser } from '@modules/auth/decorators/current-user.decorator';
 import { Role } from 'generated/prisma/enums';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @Controller('admin/orders')
 export class AdminOrderController {
-  constructor(private readonly adminOrderService: AdminOrderService) {}
+  constructor(
+    private readonly adminOrderService: AdminOrderService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   @Get()
   findAll(@Query() query: QueryAdminOrdersDto) {
@@ -42,5 +49,14 @@ export class AdminOrderController {
     @Body() dto: UpdateOrderStatusDto,
   ) {
     return this.adminOrderService.updateStatus(id, dto);
+  }
+
+  @Post(':id/refund')
+  refund(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: RefundOrderDto,
+  ) {
+    return this.paymentService.refundByAdmin(id, user.id, dto.reason);
   }
 }

@@ -87,12 +87,24 @@ export interface ProductionBoardResult {
 // ─── 状态机：前端可用流转（与后端保持一致） ────────────────────────────────────
 
 export const ORDER_STATUS_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
-  PAID: ['APPROVED', 'CANCELLED', 'REFUNDING'],
-  APPROVED: ['PROCESSING', 'REFUNDING'],
-  PROCESSING: ['SHIPPING', 'REFUNDING'],
+  PAID: ['APPROVED', 'CANCELLED'],
+  APPROVED: ['PROCESSING'],
+  PROCESSING: ['SHIPPING'],
   SHIPPING: ['COMPLETED'],
   REFUNDING: ['REFUNDED'],
 };
+
+export function canRefundOrder(order: {
+  status: OrderStatus;
+  payment: (OrderPaymentSummary & { id?: string }) | null;
+}): boolean {
+  const refundableStatuses: OrderStatus[] = ['PAID', 'APPROVED', 'PROCESSING'];
+  return (
+    refundableStatuses.includes(order.status) &&
+    order.payment?.method === 'ALIPAY' &&
+    order.payment?.status === 'PAID'
+  );
+}
 
 export function getAvailableTransitions(status: OrderStatus): OrderStatus[] {
   return ORDER_STATUS_TRANSITIONS[status] ?? [];
@@ -112,6 +124,13 @@ export function updateOrderStatus(id: string, payload: UpdateOrderStatusPayload)
   return request<AdminOrder>(`/admin/orders/${id}/status`, {
     method: 'PATCH',
     body: payload,
+  });
+}
+
+export function refundOrder(id: string, reason?: string): Promise<AdminOrder> {
+  return request<AdminOrder>(`/admin/orders/${id}/refund`, {
+    method: 'POST',
+    body: reason ? { reason } : {},
   });
 }
 

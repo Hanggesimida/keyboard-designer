@@ -410,11 +410,34 @@ mockCallback(@Body() dto: MockCallbackDto) {
 | `ALIPAY_PUBLIC_KEY` | `-----BEGIN PUBLIC...` | 支付宝公钥（用于验签）|
 | `ALIPAY_GATEWAY` | `https://openapi.alipay.com/gateway.do` | 生产网关；沙箱替换为 `alipaydev.com` |
 | `ALIPAY_NOTIFY_URL` | `https://your-domain.com/payments/alipay/notify` | 异步通知地址（必须公网可访问）|
-| `ALIPAY_RETURN_URL` | `https://your-domain.com/profile/orders` | 同步返回地址（付款后跳回）|
+| `ALIPAY_RETURN_URL` | `https://your-domain.com/profile/orders` | 同步返回地址基础路径（实际跳转 `{returnUrl}/{orderId}?from=alipay`）|
 
 ---
 
-## 七、接入检查清单
+## 九、管理员退款
+
+### 接口
+
+```
+POST /admin/orders/:id/refund   管理员一键全额退款（需 JWT + ADMIN 角色）
+Body: { reason?: string }
+```
+
+### 流程
+
+1. 校验订单状态为 `PAID` / `APPROVED` / `PROCESSING`
+2. 校验支付方式为支付宝且 `payment.thirdPartyId` 存在
+3. 调用 `alipay.trade.refund`，`out_request_no` 写入 `Refund` 表保证幂等
+4. 成功后：`Payment.status → REFUNDED`，`Order.status → REFUNDED`
+
+### 前端
+
+- 管理后台订单详情页展示「退款」按钮（`RefundActionButton`）
+- 不再通过状态流转手动进入 `REFUNDING` / `REFUNDED`
+
+---
+
+## 十、接入检查清单
 
 完成接入后，按以下顺序逐项验证：
 
@@ -429,18 +452,16 @@ mockCallback(@Body() dto: MockCallbackDto) {
 - [ ] 前端轮询检测到订单变为 `PAID`，自动跳转到订单详情页
 - [ ] 切换生产网关后，真实支付宝账号完成端到端测试
 - [ ] 生产环境 `mock-callback` 接口已禁用或限制访问
+- [ ] 管理员可对已支付订单执行一键退款，订单变为 `REFUNDED`
 
 ---
 
-## 八、相关文件索引
+## 十一、相关文件索引
 
 | 类型 | 文件路径 | 说明 |
 |------|----------|------|
-| Provider 核心 | `apps/api/src/modules/payment/providers/alipay.provider.ts` | 唯一需要完整实现的文件 |
-| Service 回调 | `apps/api/src/modules/payment/payment.service.ts` | 补全 `handleAlipayNotify` TODO |
-| Controller | `apps/api/src/modules/payment/payment.controller.ts` | 路由已就绪，无需修改 |
-| Provider 接口 | `apps/api/src/modules/payment/providers/payment-provider.interface.ts` | 接口约束，无需修改 |
-| 模块注册 | `apps/api/src/modules/payment/payment.module.ts` | 无需修改 |
-| 前端支付 | `apps/web/modules/checkout/components/PaymentConfirmSection.tsx` | 增加 formHtml 处理 + 轮询 |
-| 前端 API 类型 | `apps/web/lib/api/payments.ts` | 新增 `payData` 字段 |
-| 数据库 Schema | `apps/api/prisma/schema.prisma` | 无需变更（字段已预留）|
+| Provider 核心 | `apps/api/src/modules/payment/providers/alipay.provider.ts` | 支付、验签、退款实现 |
+| Service | `apps/api/src/modules/payment/payment.service.ts` | 支付发起、异步回调、退款编排 |
+| Admin 退款 | `apps/api/src/modules/admin/orders/admin-order.controller.ts` | `POST /admin/orders/:id/refund` |
+| 前端退款 | `apps/web/modules/admin/components/RefundActionButton.tsx` | 管理员退款按钮 |
+| 数据库 Schema | `apps/api/prisma/schema.prisma` | `Refund` 模型、`PaymentStatus.REFUNDED` |

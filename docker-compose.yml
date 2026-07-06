@@ -93,6 +93,13 @@ services:
       TENCENT_SES_TEMPLATE_ID: ${TENCENT_SES_TEMPLATE_ID}
       # 容器内通过服务名 redis 访问，密码来自 .env
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      # 支付宝（电脑网站支付）
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID}
+      ALIPAY_PRIVATE_KEY: ${ALIPAY_PRIVATE_KEY}
+      ALIPAY_PUBLIC_KEY: ${ALIPAY_PUBLIC_KEY}
+      ALIPAY_GATEWAY: ${ALIPAY_GATEWAY:-https://openapi.alipay.com/gateway.do}
+      ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL}
+      ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL}
     depends_on:
       postgres:
         condition: service_healthy

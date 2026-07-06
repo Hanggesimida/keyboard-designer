@@ -3,6 +3,7 @@ import {
   listAdminOrders,
   getAdminOrder,
   updateOrderStatus,
+  refundOrder,
   getProductionBoard,
   type QueryAdminOrdersParams,
   type UpdateOrderStatusPayload,
@@ -60,6 +61,20 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateOrderStatusPayload }) =>
       updateOrderStatus(id, payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: adminOrderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: adminOrderKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: adminOrderKeys.productionBoard() });
+    },
+  });
+}
+
+export function useRefundOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      refundOrder(id, reason),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: adminOrderKeys.lists() });
       queryClient.invalidateQueries({ queryKey: adminOrderKeys.detail(data.id) });
