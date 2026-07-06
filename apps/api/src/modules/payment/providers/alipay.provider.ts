@@ -30,8 +30,8 @@ export class AlipayProvider implements IPaymentProvider {
       const alipayConfig = getAlipayConfig(this.config);
       this.sdk = new AlipaySdk({
         appId: alipayConfig.appId,
-        privateKey: alipayConfig.privateKey,
-        alipayPublicKey: alipayConfig.alipayPublicKey,
+        privateKey: alipayConfig.appPrivateKey,
+        alipayPublicKey: alipayConfig.officialPublicKey,
         gateway: alipayConfig.gateway,
       });
     }

@@ -77,7 +77,7 @@ PaymentService：更新 Payment(PAID) + Order(PAID) + 推送管理员通知
 1. 下载 [支付宝密钥工具](https://opendocs.alipay.com/common/02kipg)，生成 2048 位 RSA2 密钥对。
 2. 将**应用公钥**上传到开放平台：「应用详情」→「开发设置」→「接口加签方式」→「上传应用公钥」。
 3. 上传后平台自动生成**支付宝公钥**，复制备用（用于验签）。
-4. 本地保存**应用私钥**（`ALIPAY_PRIVATE_KEY`，永远不要提交到 Git）。
+4. 本地保存**应用私钥**（`ALIPAY_APP_PRIVATE_KEY`，永远不要提交到 Git）。
 
 ### 2.3 配置通知地址
 
@@ -115,8 +115,8 @@ npm install alipay-sdk
 ```env
 # 支付宝
 ALIPAY_APP_ID=2021001234567890
-ALIPAY_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
-ALIPAY_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+ALIPAY_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+ALIPAY_OFFICIAL_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ALIPAY_GATEWAY=https://openapi.alipay.com/gateway.do
 ALIPAY_NOTIFY_URL=https://your-domain.com/payments/alipay/notify
 ALIPAY_RETURN_URL=https://your-domain.com/profile/orders
@@ -148,8 +148,8 @@ export class AlipayProvider implements IPaymentProvider {
 
   constructor(private readonly config: ConfigService) {
     const appId = config.getOrThrow<string>('ALIPAY_APP_ID');
-    const privateKey = config.getOrThrow<string>('ALIPAY_PRIVATE_KEY');
-    const alipayPublicKey = config.getOrThrow<string>('ALIPAY_PUBLIC_KEY');
+    const privateKey = config.getOrThrow<string>('ALIPAY_APP_PRIVATE_KEY');
+    const alipayPublicKey = config.getOrThrow<string>('ALIPAY_OFFICIAL_PUBLIC_KEY');
     const gateway = config.get<string>('ALIPAY_GATEWAY', 'https://openapi.alipay.com/gateway.do');
 
     this.sdk = new AlipaySdk({
@@ -406,8 +406,8 @@ mockCallback(@Body() dto: MockCallbackDto) {
 | 变量名 | 示例值 | 说明 |
 |--------|--------|------|
 | `ALIPAY_APP_ID` | `2021001234567890` | 支付宝应用 ID |
-| `ALIPAY_PRIVATE_KEY` | `-----BEGIN RSA...` | 应用私钥（RSA2）|
-| `ALIPAY_PUBLIC_KEY` | `-----BEGIN PUBLIC...` | 支付宝公钥（用于验签）|
+| `ALIPAY_APP_PRIVATE_KEY` | `-----BEGIN RSA...` | 应用私钥（商户侧，RSA2 签名）|
+| `ALIPAY_OFFICIAL_PUBLIC_KEY` | `-----BEGIN PUBLIC...` | 支付宝公钥（平台侧，验签回调）|
 | `ALIPAY_GATEWAY` | `https://openapi.alipay.com/gateway.do` | 生产网关；沙箱替换为 `alipaydev.com` |
 | `ALIPAY_NOTIFY_URL` | `https://your-domain.com/payments/alipay/notify` | 异步通知地址（必须公网可访问）|
 | `ALIPAY_RETURN_URL` | `https://your-domain.com/profile/orders` | 同步返回地址基础路径（实际跳转 `{returnUrl}/{orderId}?from=alipay`）|
