@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ConflictException,
@@ -30,6 +31,8 @@ const REFUNDABLE_ORDER_STATUSES: OrderStatus[] = [
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
@@ -149,6 +152,10 @@ export class PaymentService {
   }
 
   async refundByAdmin(orderId: string, operatorId: string, reason?: string) {
+    this.logger.log(
+      `管理员发起退款 orderId=${orderId} operatorId=${operatorId} reason=${reason ?? '(无)'}`,
+    );
+
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -159,28 +166,44 @@ export class PaymentService {
     });
 
     if (!order) {
+      this.logger.warn(`退款失败：订单不存在 orderId=${orderId}`);
       throw new NotFoundException(`订单 ${orderId} 不存在`);
     }
 
     if (!REFUNDABLE_ORDER_STATUSES.includes(order.status)) {
+      this.logger.warn(
+        `退款失败：订单状态不允许 orderId=${orderId} orderNo=${order.orderNo} status=${order.status}`,
+      );
       throw new BadRequestException('该订单当前状态不允许退款');
     }
 
     const payment = order.payment;
 
     if (!payment) {
+      this.logger.warn(
+        `退款失败：无支付记录 orderId=${orderId} orderNo=${order.orderNo}`,
+      );
       throw new BadRequestException('该订单没有支付记录');
     }
 
     if (payment.method !== PaymentMethod.ALIPAY) {
+      this.logger.warn(
+        `退款失败：非支付宝支付 orderId=${orderId} paymentMethod=${payment.method}`,
+      );
       throw new BadRequestException('仅支持支付宝支付的订单退款');
     }
 
     if (payment.status !== PaymentStatus.PAID) {
+      this.logger.warn(
+        `退款失败：支付状态不允许 orderId=${orderId} paymentId=${payment.id} paymentStatus=${payment.status}`,
+      );
       throw new BadRequestException('该订单支付状态不允许退款');
     }
 
     if (!payment.thirdPartyId) {
+      this.logger.warn(
+        `退款失败：缺少支付宝交易号 orderId=${orderId} paymentId=${payment.id}`,
+      );
       throw new BadRequestException('缺少支付宝交易号，无法退款');
     }
 
@@ -189,6 +212,9 @@ export class PaymentService {
     });
 
     if (existingRefund) {
+      this.logger.log(
+        `退款跳过：已存在成功退款记录 orderId=${orderId} refundId=${existingRefund.id}`,
+      );
       return this.prisma.order.findUniqueOrThrow({
         where: { id: orderId },
         include: {
@@ -201,6 +227,10 @@ export class PaymentService {
 
     const outRequestNo = `RF-${order.orderNo}-${Date.now()}`;
     const refundAmount = payment.amount.toString();
+
+    this.logger.log(
+      `准备调用支付宝退款 orderId=${orderId} orderNo=${order.orderNo} paymentId=${payment.id} tradeNo=${payment.thirdPartyId} amount=${refundAmount} outRequestNo=${outRequestNo}`,
+    );
 
     const refund = await this.prisma.refund.create({
       data: {
@@ -223,6 +253,10 @@ export class PaymentService {
         reason,
       });
     } catch (err) {
+      this.logger.error(
+        `支付宝退款接口异常 orderId=${orderId} refundId=${refund.id} outRequestNo=${outRequestNo}`,
+        (err as Error).stack,
+      );
       await this.prisma.refund.update({
         where: { id: refund.id },
         data: { status: RefundStatus.FAILED },
@@ -230,7 +264,14 @@ export class PaymentService {
       throw err;
     }
 
+    this.logger.log(
+      `支付宝退款接口返回 orderId=${orderId} refundId=${refund.id} success=${refundResult.success} rawResponse=${JSON.stringify(refundResult.rawResponse)}`,
+    );
+
     if (!refundResult.success) {
+      this.logger.warn(
+        `支付宝退款判定失败 orderId=${orderId} refundId=${refund.id} outRequestNo=${outRequestNo} rawResponse=${JSON.stringify(refundResult.rawResponse)}`,
+      );
       await this.prisma.refund.update({
         where: { id: refund.id },
         data: {
@@ -260,6 +301,10 @@ export class PaymentService {
         data: { status: OrderStatus.REFUNDED },
       }),
     ]);
+
+    this.logger.log(
+      `退款完成 orderId=${orderId} orderNo=${order.orderNo} refundId=${refund.id} outRequestNo=${outRequestNo}`,
+    );
 
     return this.prisma.order.findUniqueOrThrow({
       where: { id: orderId },
