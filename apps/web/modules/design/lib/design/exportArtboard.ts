@@ -321,6 +321,57 @@ export function buildExportSvgString({
   return new XMLSerializer().serializeToString(exportSvg)
 }
 
+/** 将画板 SVG 渲染到 Canvas（含转曲），供 PNG 导出与缩略图生成复用 */
+export async function renderArtboardToCanvas(
+  params: ExportArtboardParams,
+  scale: number,
+): Promise<HTMLCanvasElement | null> {
+  const rawSvgStr = buildExportSvgString(params)
+  if (!rawSvgStr) return null
+
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
+  const { artW, artH } = params
+  const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" })
+  const url = URL.createObjectURL(svgBlob)
+
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      canvas.width = artW * scale
+      canvas.height = artH * scale
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        URL.revokeObjectURL(url)
+        resolve(null)
+        return
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(url)
+      resolve(canvas)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(null)
+    }
+    img.src = url
+  })
+}
+
+/** 生成 480px 宽 WebP 缩略图 Blob，供保存设计时上传 COS 使用 */
+export async function generateThumbnailBlob(
+  params: ExportArtboardParams,
+  targetWidth = 480,
+): Promise<Blob | null> {
+  const scale = Math.min(1, targetWidth / params.artW)
+  const canvas = await renderArtboardToCanvas(params, scale)
+  if (!canvas) return null
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/webp", 0.82)
+  })
+}
+
 export async function exportArtboardSvg(params: ExportArtboardParams) {
   const rawSvgStr = buildExportSvgString(params)
   if (!rawSvgStr) return
@@ -336,34 +387,16 @@ export async function exportArtboardPng(
   params: ExportArtboardParams,
   scale = 2,
 ) {
-  const rawSvgStr = buildExportSvgString(params)
-  if (!rawSvgStr) return
-  // PNG 导出也先转曲，保证字形一致（字体可能不在目标机器上）
-  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
+  const canvas = await renderArtboardToCanvas(params, scale)
+  if (!canvas) return
+
   const { templateId } = useDesignUIStore.getState()
   const filename = buildExportFilename("png", templateId)
-  const { artW, artH } = params
-  const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" })
-  const url = URL.createObjectURL(svgBlob)
-  const img = new Image()
-  img.onload = () => {
-    const canvas = document.createElement("canvas")
-    canvas.width = artW * scale
-    canvas.height = artH * scale
-    const ctx = canvas.getContext("2d")
-    if (!ctx) {
-      URL.revokeObjectURL(url)
-      return
-    }
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-    URL.revokeObjectURL(url)
-    canvas.toBlob((pngBlob) => {
-      if (!pngBlob) return
-      triggerDownload(pngBlob, filename)
-    }, "image/png")
-  }
-  img.onerror = () => URL.revokeObjectURL(url)
-  img.src = url
+
+  canvas.toBlob((pngBlob) => {
+    if (!pngBlob) return
+    triggerDownload(pngBlob, filename)
+  }, "image/png")
 }
 
 // ─── 导入 JSON ─────────────────────────────────────────

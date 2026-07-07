@@ -91,6 +91,10 @@ services:
       TENCENT_SES_REGION: ${TENCENT_SES_REGION}
       TENCENT_SES_FROM: ${TENCENT_SES_FROM}
       TENCENT_SES_TEMPLATE_ID: ${TENCENT_SES_TEMPLATE_ID}
+      # 腾讯云 COS（对象存储）
+      TENCENT_COS_REGION: ${TENCENT_COS_REGION:-ap-guangzhou}
+      TENCENT_COS_BUCKET: ${TENCENT_COS_BUCKET}
+      TENCENT_COS_DOMAIN: ${TENCENT_COS_DOMAIN}
       # 容器内通过服务名 redis 访问，密码来自 .env
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       # 支付宝（电脑网站支付）

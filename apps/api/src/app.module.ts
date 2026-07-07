@@ -12,6 +12,7 @@ import { OrderModule } from '@modules/order/order.module';
 import { PaymentModule } from '@modules/payment/payment.module';
 import { AdminModule } from '@modules/admin/admin.module';
 import { EmailModule } from '@modules/email/email.module';
+import { CosModule } from './common/cos/cos.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { EmailModule } from '@modules/email/email.module';
       isGlobal: true,
       envFilePath: `.env.${process.env.NODE_ENV ?? 'development'}`,
     }),
+    CosModule,
     PrismaModule,
     RedisModule,
     EmailModule,

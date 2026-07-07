@@ -7,12 +7,16 @@ import {
 import { PrismaService } from '@prisma/prisma.service';
 import { Prisma } from 'generated/prisma/client';
 import { Role } from 'generated/prisma/enums';
+import { CosService } from '../../common/cos/cos.service';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { UpdateDesignDto } from './dto/update-design.dto';
 
 @Injectable()
 export class DesignService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cosService: CosService,
+  ) {}
 
   create(userId: string, dto: CreateDesignDto) {
     return this.prisma.design.create({
@@ -74,6 +78,25 @@ export class DesignService {
         ...(dto.previewUrl !== undefined && { previewUrl: dto.previewUrl }),
       },
     });
+  }
+
+  async updatePreview(id: string, userId: string, buffer: Buffer) {
+    await this.findOne(id, userId);
+
+    const key = `designs/${userId}/${id}.webp`;
+    const previewUrl = await this.cosService.uploadBuffer(
+      key,
+      buffer,
+      'image/webp',
+    );
+
+    const design = await this.prisma.design.update({
+      where: { id },
+      data: { previewUrl },
+      select: { previewUrl: true },
+    });
+
+    return { previewUrl: design.previewUrl };
   }
 
   async remove(id: string, userId: string) {

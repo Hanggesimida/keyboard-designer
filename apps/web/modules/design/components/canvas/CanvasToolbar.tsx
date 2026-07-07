@@ -281,7 +281,7 @@ export function CanvasToolbar({
 
       <ToolbarSeparator />
 
-      <SaveDesignButton />
+      <SaveDesignButton getExportParams={getExportParams} />
 
       <ToolbarSeparator />
 

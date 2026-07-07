@@ -15,10 +15,15 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
-import { useCreateDesign, useUpdateDesign, useDesign } from "@/hooks/queries/designs/useDesigns"
+import { useCreateDesign, useUpdateDesign, useDesign, useUploadDesignThumbnail } from "@/hooks/queries/designs/useDesigns"
 import { useUserStore } from "@/store/userStore"
 import type { DesignData } from "@/lib/api/designs"
-import type { ExportCanvasElement } from "@/modules/design/lib/design/exportArtboard"
+import type { ExportArtboardParams, ExportCanvasElement } from "@/modules/design/lib/design/exportArtboard"
+import { generateThumbnailBlob } from "@/modules/design/lib/design/exportArtboard"
+
+interface SaveDesignButtonProps {
+  getExportParams: () => ExportArtboardParams
+}
 
 /** 从 store 当前状态提取可持久化的设计数据（内联 src，自包含） */
 function extractDesignData(): DesignData {
@@ -54,7 +59,7 @@ function extractDesignData(): DesignData {
   }
 }
 
-export function SaveDesignButton() {
+export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const designId = searchParams.get("id")
@@ -86,9 +91,19 @@ export function SaveDesignButton() {
 
   const { mutate: createDesign, isPending: isCreating } = useCreateDesign()
   const { mutate: updateDesign, isPending: isUpdating } = useUpdateDesign()
+  const { mutate: uploadThumbnail } = useUploadDesignThumbnail()
   const { data: currentDesign } = useDesign(designId)
 
   const isSaving = isCreating || isUpdating
+
+  async function saveThumbnail(id: string) {
+    try {
+      const blob = await generateThumbnailBlob(getExportParams())
+      if (blob) uploadThumbnail({ id, blob })
+    } catch (err) {
+      console.error("[SaveDesignButton] 缩略图生成/上传失败:", err)
+    }
+  }
 
   function handleSaveClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -115,6 +130,7 @@ export function SaveDesignButton() {
         onSuccess: () => {
           setSaveSuccess(true)
           setTimeout(() => setSaveSuccess(false), 2000)
+          void saveThumbnail(designId)
         },
       },
     )
@@ -144,6 +160,7 @@ export function SaveDesignButton() {
           setNameDialogOpen(false)
           setSaveSuccess(true)
           setTimeout(() => setSaveSuccess(false), 2000)
+          void saveThumbnail(design.id)
           // 将设计 ID 写入 URL，后续保存直接走更新逻辑
           const params = new URLSearchParams(searchParams.toString())
           params.set("id", design.id)

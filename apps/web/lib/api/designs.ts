@@ -80,3 +80,15 @@ export function updateDesign(id: string, payload: UpdateDesignPayload): Promise<
 export function deleteDesign(id: string): Promise<void> {
   return request<void>(`/designs/${id}`, { method: 'DELETE' });
 }
+
+export function uploadDesignThumbnail(
+  id: string,
+  blob: Blob,
+): Promise<{ previewUrl: string }> {
+  const formData = new FormData();
+  formData.append('file', blob, 'thumbnail.webp');
+  return request<{ previewUrl: string }>(`/designs/${id}/thumbnail`, {
+    method: 'POST',
+    body: formData,
+  });
+}

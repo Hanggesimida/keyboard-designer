@@ -9,7 +9,14 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  FileTypeValidator,
+  MaxFileSizeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { DesignService } from './design.service';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { UpdateDesignDto } from './dto/update-design.dto';
@@ -50,6 +57,29 @@ export class DesignController {
     @Body() dto: UpdateDesignDto,
   ) {
     return this.designService.update(id, user.id, dto);
+  }
+
+  @Post(':id/thumbnail')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 2 * 1024 * 1024 },
+    }),
+  )
+  uploadThumbnail(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({ fileType: 'image/webp' }),
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.designService.updatePreview(id, user.id, file.buffer);
   }
 
   @Delete(':id')
