@@ -13,7 +13,7 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: LoginInput & { turnstileToken?: string }) => login(data),
+    mutationFn: (data: LoginInput) => login(data),
     onSuccess: ({ accessToken }) => {
       queryClient.clear();
       setToken(accessToken);
@@ -23,13 +23,7 @@ export function useLogin() {
 
 export function useSendOtp() {
   return useMutation({
-    mutationFn: ({
-      email,
-      turnstileToken,
-    }: {
-      email: string;
-      turnstileToken: string;
-    }) => sendOtp(email, turnstileToken),
+    mutationFn: ({ email }: { email: string }) => sendOtp(email),
   });
 }
 

@@ -48,10 +48,6 @@ WORKDIR /app
 COPY --from=installer /app/ .
 COPY --from=pruner /pruned/full/ .
 
-# NEXT_PUBLIC_* 变量在构建时写入客户端 bundle，必须通过 ARG/ENV 传入
-ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
-ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
 # Next.js standalone 模式构建
 RUN pnpm --filter web build
 

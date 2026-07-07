@@ -83,7 +83,6 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
       SETUP_TOKEN_SECRET: ${SETUP_TOKEN_SECRET}
       # 腾讯云 SES（邮箱 OTP 验证码）
       TENCENT_SECRET_ID: ${TENCENT_SECRET_ID}
@@ -126,8 +125,6 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
-      args:
-        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
     image: jw-web:latest
     container_name: jw-web
     restart: unless-stopped

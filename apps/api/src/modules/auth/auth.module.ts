@@ -9,7 +9,7 @@ import { AuthService } from '@modules/auth/auth.service';
 import { OtpService } from '@modules/auth/otp.service';
 import { JwtStrategy } from '@modules/auth/strategies/jwt.strategy';
 import { JwtSetupStrategy } from '@modules/auth/strategies/jwt-setup.strategy';
-import { TurnstileService } from '@modules/auth/turnstile.service';
+import { CaptchaService } from '@modules/auth/captcha.service';
 
 @Module({
   imports: [
@@ -41,7 +41,7 @@ import { TurnstileService } from '@modules/auth/turnstile.service';
     OtpService,
     JwtStrategy,
     JwtSetupStrategy,
-    TurnstileService,
+    CaptchaService,
   ],
 })
 export class AuthModule {}

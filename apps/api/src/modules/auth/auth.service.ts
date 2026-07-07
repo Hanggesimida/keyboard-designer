@@ -9,7 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { UsersService } from '@modules/users/users.service';
 import { OtpService } from '@modules/auth/otp.service';
-import { TurnstileService } from '@modules/auth/turnstile.service';
+import { CaptchaService } from '@modules/auth/captcha.service';
 import { RedisService } from '@redis/redis.service';
 import { SendOtpDto } from '@modules/auth/dto/send-otp.dto';
 import { VerifyOtpDto } from '@modules/auth/dto/verify-otp.dto';
@@ -25,12 +25,12 @@ export class AuthService {
     private jwtService: JwtService,
     private config: ConfigService,
     private otpService: OtpService,
-    private turnstileService: TurnstileService,
+    private captchaService: CaptchaService,
     private redis: RedisService,
   ) {}
 
   async sendOtp(dto: SendOtpDto) {
-    await this.turnstileService.verify(dto.turnstileToken);
+    await this.captchaService.verify(dto.captchaToken);
     await this.otpService.sendOtp(dto.email);
     return { message: '验证码已发送，请查收邮件' };
   }
@@ -87,9 +87,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    if (dto.turnstileToken) {
-      await this.turnstileService.verify(dto.turnstileToken);
-    }
+    await this.captchaService.verify(dto.captchaToken);
 
     const user = await this.usersService.findByEmail(dto.email);
     if (!user || !user.password) {

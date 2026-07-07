@@ -64,16 +64,7 @@ Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
 2. 修改 [`docker/nginx.conf`](../docker/nginx.conf) 中的 `server_name`（默认为 `jinwenkey.com`）为你的实际域名。
 3. 将 SSL 证书放入 [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/)，详见 [配置 HTTPS](#配置-https)。
 
-### 2. Cloudflare Turnstile
-
-注册/登录需要人机验证，需提前在 [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) 创建站点：
-
-- **Site Key** → 构建时写入前端（`NEXT_PUBLIC_TURNSTILE_SITE_KEY`）
-- **Secret Key** → 运行时注入 API（`TURNSTILE_SECRET_KEY`）
-
-> **注意**：`NEXT_PUBLIC_*` 变量在 **构建 web 镜像时** 打入客户端 bundle，修改后必须 **重新构建 `web` 镜像**，仅重启容器无效。
-
-### 3. JWT 密钥
+### 2. JWT 密钥
 
 生成足够强度的随机字符串，例如：
 
@@ -101,7 +92,6 @@ REDIS_PASSWORD=请替换为强密码
 # ── API ─────────────────────────────────────────
 JWT_SECRET=请替换为 openssl rand -base64 48 的输出
 JWT_EXPIRES_IN=7d
-TURNSTILE_SECRET_KEY=你的 Turnstile Secret Key
 SETUP_TOKEN_SECRET=请替换为 openssl rand -base64 48 的输出（与 JWT_SECRET 不同）
 
 # ── 腾讯云 SES（邮箱 OTP 验证码，缺失时 API 无法启动）──
@@ -110,9 +100,6 @@ TENCENT_SECRET_KEY=你的腾讯云 SecretKey
 TENCENT_SES_REGION=ap-guangzhou
 TENCENT_SES_FROM=no-reply@你的域名.com
 TENCENT_SES_TEMPLATE_ID=你的邮件模板 ID
-
-# ── Web 构建参数（docker compose build 时使用）──
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=你的 Turnstile Site Key
 ```
 
 | 变量 | 必填 | 说明 |
@@ -123,14 +110,12 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=你的 Turnstile Site Key
 | `REDIS_PASSWORD` | 是 | Redis 访问密码 |
 | `JWT_SECRET` | 是 | JWT 签名密钥，缺失时 API 无法启动 |
 | `JWT_EXPIRES_IN` | 否 | Token 有效期，默认 `7d` |
-| `TURNSTILE_SECRET_KEY` | 是 | Turnstile 服务端校验密钥 |
 | `SETUP_TOKEN_SECRET` | 是 | 注册后设置密码流程的独立签名密钥 |
 | `TENCENT_SECRET_ID` | 是 | 腾讯云 API 密钥 ID（SES 发信） |
 | `TENCENT_SECRET_KEY` | 是 | 腾讯云 API 密钥 Key |
 | `TENCENT_SES_REGION` | 是 | SES 地域，如 `ap-guangzhou` |
 | `TENCENT_SES_FROM` | 是 | 发信地址（需在腾讯云 SES 验证） |
 | `TENCENT_SES_TEMPLATE_ID` | 是 | OTP 邮件模板 ID |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | 是 | Turnstile 前端 Site Key（构建 web 时使用） |
 
 腾讯云 SES 配置说明见 [`docs/email-otp-auth.md`](email-otp-auth.md)。
 
@@ -211,7 +196,7 @@ docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
 ### 7. 验证
 
 - 浏览器访问 `https://<你的域名>/`，确认前端页面正常加载；访问 `http://` 应自动跳转到 HTTPS。
-- 尝试注册 / 登录，确认 Turnstile 与 API 正常。
+- 尝试注册 / 登录，确认 API 正常。
 - 管理员账号登录后访问后台，确认通知 SSE 等管理功能可用。
 
 ---
@@ -233,13 +218,6 @@ sudo docker compose exec api npx prisma migrate deploy   # 若有新迁移
 docker compose up -d
 ```
 
-修改 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` 后必须重新构建 web：
-
-```bash
-docker compose build web
-docker compose up -d web
-```
-
 ---
 
 ## 单独构建镜像
@@ -250,10 +228,8 @@ docker compose up -d web
 # API
 docker build -f docker/api.Dockerfile -t jw-api:latest .
 
-# Web（必须传入构建参数）
-docker build -f docker/web.Dockerfile \
-  --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=你的SiteKey \
-  -t jw-web:latest .
+# Web
+docker build -f docker/web.Dockerfile -t jw-web:latest .
 ```
 
 ---
@@ -331,10 +307,6 @@ cat backup.sql | docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$P
 ---
 
 ## 常见问题
-
-### 构建 web 失败或 Turnstile 不显示
-
-检查 `.env` 中是否设置了 `NEXT_PUBLIC_TURNSTILE_SITE_KEY`，且执行了 `docker compose build web`（不是仅 `up`）。
 
 ### API 启动报 JWT_SECRET 相关错误
 

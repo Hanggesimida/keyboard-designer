@@ -46,22 +46,17 @@ export type VerifyOtpResponse =
 
 // ─── API functions ───────────────────────────────────────────────────────────
 
-export async function login(
-  data: LoginInput & { turnstileToken?: string },
-): Promise<AuthResponse> {
+export async function login(data: LoginInput): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/login', {
     method: 'POST',
     body: data,
   });
 }
 
-export async function sendOtp(
-  email: string,
-  turnstileToken: string,
-): Promise<{ message: string }> {
+export async function sendOtp(email: string): Promise<{ message: string }> {
   return request<{ message: string }>('/auth/send-otp', {
     method: 'POST',
-    body: { email, turnstileToken },
+    body: { email },
   });
 }
 

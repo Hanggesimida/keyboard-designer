@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
-    "@marsidev/react-turnstile": "^1.5.3",
     "@react-spring/web": "^10.0.3",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",

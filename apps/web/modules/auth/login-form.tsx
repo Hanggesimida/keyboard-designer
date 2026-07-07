@@ -18,7 +18,6 @@ import {
 } from "@/lib/api/auth"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
-import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -46,11 +45,8 @@ export function LoginForm() {
 
   // 密码登录状态
   const [failCount, setFailCount] = useState(0)
-  const [turnstileToken, setTurnstileToken] = useState("")
-  const requireTurnstile = failCount >= 3
 
   // 验证码发送状态
-  const [otpTurnstileToken, setOtpTurnstileToken] = useState("")
   const [countdown, setCountdown] = useState(0)
   const [otpSent, setOtpSent] = useState(false)
 
@@ -62,10 +58,7 @@ export function LoginForm() {
   const onPasswordSubmit = async (data: LoginInput) => {
     setServerError(null)
     try {
-      const res = await login({
-        ...data,
-        ...(requireTurnstile ? { turnstileToken } : {}),
-      })
+      const res = await login(data)
       getQueryClient().clear()
       setToken(res.accessToken)
       router.push(redirect)
@@ -73,10 +66,9 @@ export function LoginForm() {
       const next = failCount + 1
       setFailCount(next)
       if (next >= 3) {
-        setTurnstileToken("")
-        setServerError("连续登录失败，请完成人机验证后重试")
+        setServerError("连续登录失败，请稍后重试")
       } else {
-        setServerError(`邮箱或密码错误（还剩 ${3 - next} 次免验证机会）`)
+        setServerError(`邮箱或密码错误（还剩 ${3 - next} 次机会）`)
       }
     }
   }
@@ -99,7 +91,7 @@ export function LoginForm() {
   const onSendOtp = async (data: SendOtpInput) => {
     setServerError(null)
     try {
-      await sendOtp(data.email, otpTurnstileToken)
+      await sendOtp(data.email)
       sessionStorage.setItem("otp_email", data.email)
       setOtpSent(true)
       startCountdown()
@@ -199,21 +191,11 @@ export function LoginForm() {
 
             {serverError && <FieldError>{serverError}</FieldError>}
 
-            {requireTurnstile && (
-              <TurnstileWidget
-                onSuccess={setTurnstileToken}
-                onExpire={() => setTurnstileToken("")}
-              />
-            )}
-
             <Field>
               <Button
                 type="submit"
                 className="w-full"
-                disabled={
-                  passwordForm.formState.isSubmitting ||
-                  (requireTurnstile && !turnstileToken)
-                }
+                disabled={passwordForm.formState.isSubmitting}
                 onClick={passwordForm.handleSubmit(onPasswordSubmit)}
               >
                 {passwordForm.formState.isSubmitting ? (
@@ -251,11 +233,6 @@ export function LoginForm() {
               <FieldError errors={[otpForm.formState.errors.email]} />
             </Field>
 
-            <TurnstileWidget
-              onSuccess={setOtpTurnstileToken}
-              onExpire={() => setOtpTurnstileToken("")}
-            />
-
             {serverError && <FieldError>{serverError}</FieldError>}
 
             <Field>
@@ -264,7 +241,6 @@ export function LoginForm() {
                 className="w-full"
                 disabled={
                   otpForm.formState.isSubmitting ||
-                  !otpTurnstileToken ||
                   countdown > 0
                 }
                 onClick={otpForm.handleSubmit(onSendOtp)}

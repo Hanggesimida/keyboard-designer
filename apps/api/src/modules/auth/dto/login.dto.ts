@@ -9,5 +9,5 @@ export class LoginDto {
 
   @IsOptional()
   @IsString()
-  turnstileToken?: string;
+  captchaToken?: string;
 }
