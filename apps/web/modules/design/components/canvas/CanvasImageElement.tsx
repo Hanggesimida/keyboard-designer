@@ -5,7 +5,12 @@ import type { CanvasImageElement as CanvasImageElementData } from "@/modules/des
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
-import { type ResizeHandle, computeResizePatch, normalizeAngleDeg } from "./imageElementUtils"
+import {
+  type ResizeHandle,
+  computeResizePatch,
+  getImagePointerMode,
+  normalizeAngleDeg,
+} from "./imageElementUtils"
 import { ClippedImagePlaceholder, ImageSelectionChrome } from "./ImageSelectionChrome"
 
 const _ART_PAD = 28
@@ -102,6 +107,8 @@ export function CanvasImageElement({
   const isClippedToAllKeycaps = !!element.clipToKeycaps
   const hasExplicitKeycapRestriction = !!(element.clipToKeycapIds && element.clipToKeycapIds.length > 0)
   const hasKeycapClip = !!element.clipToKeycapId && (element.clipToKeycaps ?? true)
+  const pointerMode = getImagePointerMode(element, isSelected)
+  const isFreePointer = pointerMode === "free"
   let keycapClipPath: string | undefined
   if (hasKeycapClip && element.clipToKeycapId) {
     const bounds = keycapBoundsMap[element.clipToKeycapId]
@@ -256,20 +263,28 @@ export function CanvasImageElement({
         width: dispW,
         height: dispH,
         opacity: isClippedToAllKeycaps ? 1 : element.opacity,
-        cursor: isPanning ? "grabbing" : isSpacePressed ? "grab" : element.locked ? "default" : "move",
+        zIndex: isSelected ? 1 : 0,
+        cursor: isFreePointer
+          ? isPanning ? "grabbing" : isSpacePressed ? "grab" : element.locked ? "default" : "move"
+          : undefined,
         userSelect: "none",
         touchAction: "none",
+        pointerEvents: isFreePointer ? "auto" : "none",
         transform: hasKeycapClip ? undefined : `rotate(${dispRot}deg)`,
         transformOrigin: "center",
       }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onMouseDown={(e) => {
-        if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) return
-        e.stopPropagation()
-      }}
-      onClick={(e) => e.stopPropagation()}
+      {...(isFreePointer
+        ? {
+            onPointerDown: handlePointerDown,
+            onPointerMove: handlePointerMove,
+            onPointerUp: handlePointerUp,
+            onMouseDown: (e: React.MouseEvent) => {
+              if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) return
+              e.stopPropagation()
+            },
+            onClick: (e: React.MouseEvent) => e.stopPropagation(),
+          }
+        : {})}
     >
       {!isClippedToAllKeycaps ? (
         /* eslint-disable-next-line @next/next/no-img-element */

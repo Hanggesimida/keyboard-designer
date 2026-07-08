@@ -52,3 +52,26 @@ export function computeResizePatch(
 export function normalizeAngleDeg(startRot: number, deltaDeg: number): number {
   return Math.round(((startRot + deltaDeg) % 360 + 360) % 360)
 }
+
+/** 裁切到键帽的图片在语义上属于键帽表面，而非浮于键盘上方的独立图层 */
+export function isKeycapSurfaceImage(el: {
+  clipToKeycaps?: boolean
+  clipToKeycapId?: string
+}): boolean {
+  return !!el.clipToKeycaps || !!(el.clipToKeycapId && el.clipToKeycaps !== false)
+}
+
+/**
+ * 画布图片的指针命中策略：
+ * - free：完整外接矩形可交互（自由浮层，或已选中的裁切图）
+ * - passThrough：不拦截，点击落到下方键帽（未选中的裁切图）
+ */
+export type ImagePointerMode = "free" | "passThrough"
+
+export function getImagePointerMode(
+  el: { clipToKeycaps?: boolean; clipToKeycapId?: string },
+  isSelected: boolean,
+): ImagePointerMode {
+  if (!isKeycapSurfaceImage(el)) return "free"
+  return isSelected ? "free" : "passThrough"
+}

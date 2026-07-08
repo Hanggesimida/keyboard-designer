@@ -315,8 +315,7 @@ export function KeycapNode({
     document.addEventListener("mouseup", onUp)
   }
 
-  const handleDoubleClick = (e: React.MouseEvent<SVGRectElement>) => {
-    if (!isSelected) return
+  const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     onEnterLabelEdit?.()
   }
@@ -347,6 +346,7 @@ export function KeycapNode({
       e.stopPropagation()
       onSelect?.(e.shiftKey)
     },
+    onDoubleClick: handleDoubleClick,
   }
 
   // ─── fills 阶段：底座、顶面色块（无文字/边框）

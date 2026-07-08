@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import type { Viewport } from "@/modules/design/hooks/useViewport"
 import { CanvasImageElement } from "./CanvasImageElement"
@@ -88,7 +88,18 @@ export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = fals
     [updateCanvasElement],
   )
 
-  if (canvasElements.length === 0) return null
+  // 已选中的图片置于 HTML 层最顶，便于拖拽编辑裁切图
+  const htmlLayerImages = useMemo(() => {
+    const images = canvasElements.filter(
+      (el) => el.type === "image" && !(el.clipToKeycapId && (el.clipToKeycaps ?? true)),
+    )
+    if (!selectedElementId) return images
+    const selected = images.find((el) => el.id === selectedElementId)
+    if (!selected) return images
+    return [...images.filter((el) => el.id !== selectedElementId), selected]
+  }, [canvasElements, selectedElementId])
+
+  if (htmlLayerImages.length === 0) return null
 
   return (
     <div
@@ -101,29 +112,25 @@ export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = fals
         pointerEvents: "none",
       }}
     >
-      {canvasElements.map((el) => {
-        if (el.type !== "image") return null
-        // clipToKeycapId 且开启裁切时在 SVG 层渲染；关闭裁切后回到 HTML 自由层
-        if (el.clipToKeycapId && (el.clipToKeycaps ?? true)) return null
+      {htmlLayerImages.map((el) => {
         return (
-          <div key={el.id} style={{ pointerEvents: "auto" }}>
-            <CanvasImageElement
-              element={el}
-              isSelected={selectedElementId === el.id}
-              zoom={viewport.zoom}
-              isSpacePressed={isSpacePressed}
-              isPanning={isPanning}
-              onSelect={(shiftKey) => setSelectedElementId(el.id, { additive: shiftKey })}
-              onDragMove={handleDragMove}
-              onResizeCommit={handleResizeCommit}
-              onRestoreAspect={handleRestoreAspect}
-              onRotate={handleRotate}
-              onToggleClipToKeycaps={handleToggleClipToKeycaps}
-              onRestrictToSelectedKeycaps={handleRestrictToSelectedKeycaps}
-              onClearKeycapRestriction={handleClearKeycapRestriction}
-              selectedKeycapCount={selectedKeycapIds.length}
-            />
-          </div>
+          <CanvasImageElement
+            key={el.id}
+            element={el}
+            isSelected={selectedElementId === el.id}
+            zoom={viewport.zoom}
+            isSpacePressed={isSpacePressed}
+            isPanning={isPanning}
+            onSelect={(shiftKey) => setSelectedElementId(el.id, { additive: shiftKey })}
+            onDragMove={handleDragMove}
+            onResizeCommit={handleResizeCommit}
+            onRestoreAspect={handleRestoreAspect}
+            onRotate={handleRotate}
+            onToggleClipToKeycaps={handleToggleClipToKeycaps}
+            onRestrictToSelectedKeycaps={handleRestrictToSelectedKeycaps}
+            onClearKeycapRestriction={handleClearKeycapRestriction}
+            selectedKeycapCount={selectedKeycapIds.length}
+          />
         )
       })}
     </div>
