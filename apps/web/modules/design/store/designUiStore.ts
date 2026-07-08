@@ -49,6 +49,11 @@ export interface CanvasImageElement {
    */
   clipToKeycapId?: string
   /**
+   * 显式限定图片仅在这些键帽内可见，取代基于矩形相交的自动检测。
+   * 与 clipToKeycaps: true 搭配使用；为空/未设置时回退到几何相交检测（向后兼容）。
+   */
+  clipToKeycapIds?: string[]
+  /**
    * 是否将裁剪区域收窄到键帽顶面（top face）而非底座。
    * 仅在 clipToKeycaps 或 clipToKeycapId 生效时有意义。
    */
@@ -157,9 +162,9 @@ interface DesignUIActions {
   /** 将所有设计修改重置为初始默认状态（键帽覆盖、全局样式、画板背景、画布元素等） */
   resetAll: () => void
   setTemplateId: (id: TemplateId) => void
-  /** 将选中集合替换为给定 ID 列表 */
-  setSelectedKeycapIds: (ids: string[]) => void
-  /** 切换单个键帽的选中状态（用于 Shift+点击） */
+  /** 将选中集合替换为给定 ID 列表；additive 为 true 时保留已选中的画布图片 */
+  setSelectedKeycapIds: (ids: string[], options?: { additive?: boolean }) => void
+  /** 切换单个键帽的选中状态（用于 Shift+点击，不清除已选中的画布图片） */
   toggleKeycapSelection: (id: string) => void
   /** 清空键帽与画布元素选中（保留活动图层） */
   clearSelection: () => void
@@ -199,10 +204,12 @@ interface DesignUIActions {
   addCanvasElement: (element: CanvasElement) => void
   /** 更新画布元素的部分属性 */
   updateCanvasElement: (id: string, patch: Partial<Omit<CanvasElement, "id" | "type">>) => void
+  /** 将画布图片限定到指定键位列表，或传 null 清除限定 */
+  setElementKeycapRestriction: (id: string, keyIds: string[] | null) => void
   /** 删除画布元素 */
   removeCanvasElement: (id: string) => void
-  /** 设置选中的画布元素 ID */
-  setSelectedElementId: (id: string | null) => void
+  /** 设置选中的画布元素 ID；additive 为 true 时保留已选中的键帽 */
+  setSelectedElementId: (id: string | null, options?: { additive?: boolean }) => void
   /** 进入/退出单键帽编辑模式 */
   setKeycapEditTarget: (target: { keyId: string; layerId: string } | null) => void
   /** 写入拖拽实时偏移（clip-to-keycaps 图片拖拽时使用） */
@@ -303,15 +310,15 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
 
     setTemplateId: (id) => set({ templateId: id, selectedKeycapIds: [] }),
 
-    setSelectedKeycapIds: (ids) =>
+    setSelectedKeycapIds: (ids, options) =>
       set((s) => {
         if (ids.length === 0) {
           return { selectedKeycapIds: ids }
         }
         return {
           selectedKeycapIds: ids,
-          selectedElementId: null,
           activeLayerId: s.activeLayerId ?? s.layers[0]?.id ?? null,
+          ...(options?.additive ? {} : { selectedElementId: null }),
         }
       }),
 
@@ -324,10 +331,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         return {
           selectedKeycapIds: nextIds,
           ...(!isRemoving
-            ? {
-                selectedElementId: null,
-                activeLayerId: s.activeLayerId ?? s.layers[0]?.id ?? null,
-              }
+            ? { activeLayerId: s.activeLayerId ?? s.layers[0]?.id ?? null }
             : {}),
         }
       }),
@@ -525,19 +529,27 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         ),
       })),
 
+    setElementKeycapRestriction: (id, keyIds) => {
+      if (keyIds && keyIds.length > 0) {
+        get().updateCanvasElement(id, { clipToKeycaps: true, clipToKeycapIds: keyIds })
+      } else {
+        get().updateCanvasElement(id, { clipToKeycaps: false, clipToKeycapIds: undefined })
+      }
+    },
+
     removeCanvasElement: (id) =>
       set((s) => ({
         canvasElements: s.canvasElements.filter((el) => el.id !== id),
         selectedElementId: s.selectedElementId === id ? null : s.selectedElementId,
       })),
 
-    setSelectedElementId: (id) =>
-      set({
+    setSelectedElementId: (id, options) =>
+      set((s) => ({
         selectedElementId: id,
-        ...(id !== null
+        ...(id !== null && !options?.additive
           ? { selectedKeycapIds: [], activeLayerId: null }
           : {}),
-      }),
+      })),
 
     setKeycapEditTarget: (target) => set({ keycapEditTarget: target }),
 

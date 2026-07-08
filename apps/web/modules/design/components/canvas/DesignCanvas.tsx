@@ -76,7 +76,10 @@ function ClippedImagesLayer({
         const imgSvgY = img.y - artPad
 
         let overlappingKeys: KeyDef[]
-        if (img.clipToKeycapId) {
+        if (img.clipToKeycapIds && img.clipToKeycapIds.length > 0) {
+          const idSet = new Set(img.clipToKeycapIds)
+          overlappingKeys = keys.filter((k) => idSet.has(k.keyId))
+        } else if (img.clipToKeycapId) {
           const key = keys.find((k) => k.keyId === img.clipToKeycapId)
           overlappingKeys = key ? [key] : []
         } else {

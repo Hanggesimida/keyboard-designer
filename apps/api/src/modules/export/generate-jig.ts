@@ -86,6 +86,7 @@ interface CanvasElement {
   opacity?: number
   rotation?: number
   clipToKeycapId?: string
+  clipToKeycapIds?: string[]
   clipToTopFace?: boolean
   clipToKeycaps?: boolean
   [key: string]: unknown
@@ -746,15 +747,21 @@ function collectGlobalImagePlacements(
     const imgW = img.width
     const imgH = img.height
 
-    for (const [kid, km] of Object.entries(templateKeys)) {
+    const explicitIds = img.clipToKeycapIds?.length ? img.clipToKeycapIds : null
+    const targetKeyIds = explicitIds ?? Object.keys(templateKeys)
+
+    for (const kid of targetKeyIds) {
+      const km = templateKeys[kid]
       const pos = posByKey.get(kid)
-      if (!pos) continue
+      if (!pos || !km) continue
 
       const designRef = getDesignKeyRect(km, baseUnit)
-      if (
-        imgSvgX + imgW <= designRef.x || imgSvgX >= designRef.x + designRef.w ||
-        imgSvgY + imgH <= designRef.y || imgSvgY >= designRef.y + designRef.h
-      ) continue
+      if (!explicitIds) {
+        if (
+          imgSvgX + imgW <= designRef.x || imgSvgX >= designRef.x + designRef.w ||
+          imgSvgY + imgH <= designRef.y || imgSvgY >= designRef.y + designRef.h
+        ) continue
+      }
 
       const clipShape = resolveGlobalClipShape(pos, ctx.topScale)
       if (!clipShape) continue

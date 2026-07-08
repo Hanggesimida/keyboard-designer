@@ -290,6 +290,11 @@ export function KeycapLayersSection() {
       if (el.type === "image" && el.clipToKeycapId) {
         ids.add(el.clipToKeycapId)
       }
+      if (el.type === "image" && el.clipToKeycapIds) {
+        for (const kid of el.clipToKeycapIds) {
+          ids.add(kid)
+        }
+      }
     }
     return ids
   }, [canvasElements])

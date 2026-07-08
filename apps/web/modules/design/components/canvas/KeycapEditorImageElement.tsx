@@ -21,8 +21,9 @@ export interface KeycapEditorImage {
 export const MODAL_VIEW_INSET = 16
 
 const SELECTION_BORDER = "var(--design-selection-border)"
-const SELECTION_SURFACE = "var(--background)"
-const SELECTION_ON = "var(--primary-foreground)"
+/** 选中控件统一白底，避免暗色主题下 --background 变成近黑色 */
+const SELECTION_SURFACE = "#ffffff"
+const SELECTION_ON = "#ffffff"
 
 // ─── 每张图片的实时变换预览 ────────────────────────────
 interface LivePatch {

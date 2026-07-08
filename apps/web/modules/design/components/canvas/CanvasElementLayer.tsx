@@ -20,8 +20,10 @@ interface Props {
 export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = false, isPanning = false }: Props) {
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
   const selectedElementId = useDesignUIStore((s) => s.selectedElementId)
+  const selectedKeycapIds = useDesignUIStore((s) => s.selectedKeycapIds)
   const setSelectedElementId = useDesignUIStore((s) => s.setSelectedElementId)
   const updateCanvasElement = useDesignUIStore((s) => s.updateCanvasElement)
+  const setElementKeycapRestriction = useDesignUIStore((s) => s.setElementKeycapRestriction)
 
   const handleToggleClipToKeycaps = useCallback(
     (id: string) => {
@@ -30,6 +32,22 @@ export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = fals
       updateCanvasElement(id, { clipToKeycaps: !el.clipToKeycaps })
     },
     [updateCanvasElement],
+  )
+
+  const handleRestrictToSelectedKeycaps = useCallback(
+    (id: string) => {
+      const { selectedKeycapIds: keyIds } = useDesignUIStore.getState()
+      if (keyIds.length === 0) return
+      setElementKeycapRestriction(id, keyIds)
+    },
+    [setElementKeycapRestriction],
+  )
+
+  const handleClearKeycapRestriction = useCallback(
+    (id: string) => {
+      setElementKeycapRestriction(id, null)
+    },
+    [setElementKeycapRestriction],
   )
 
   const handleDragMove = useCallback(
@@ -95,12 +113,15 @@ export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = fals
               zoom={viewport.zoom}
               isSpacePressed={isSpacePressed}
               isPanning={isPanning}
-              onSelect={() => setSelectedElementId(el.id)}
+              onSelect={(shiftKey) => setSelectedElementId(el.id, { additive: shiftKey })}
               onDragMove={handleDragMove}
               onResizeCommit={handleResizeCommit}
               onRestoreAspect={handleRestoreAspect}
               onRotate={handleRotate}
               onToggleClipToKeycaps={handleToggleClipToKeycaps}
+              onRestrictToSelectedKeycaps={handleRestrictToSelectedKeycaps}
+              onClearKeycapRestriction={handleClearKeycapRestriction}
+              selectedKeycapCount={selectedKeycapIds.length}
             />
           </div>
         )

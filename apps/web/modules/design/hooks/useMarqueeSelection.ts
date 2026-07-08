@@ -32,7 +32,7 @@ export interface UseMarqueeSelectionParams {
   isSpacePressed: boolean
   isPanning: boolean
   selectedKeycapIds: string[]
-  setSelectedKeycapIds: (ids: string[]) => void
+  setSelectedKeycapIds: (ids: string[], options?: { additive?: boolean }) => void
   clearSelection: () => void
   panHandlers: MarqueePanHandlers
   /** 禁用框选和所有鼠标交互，模态框打开时传 true */
@@ -157,7 +157,7 @@ export function useMarqueeSelection({
         )
         if (current.additive) {
           const merged = Array.from(new Set([...selectedKeycapIds, ...inRect]))
-          setSelectedKeycapIds(merged)
+          setSelectedKeycapIds(merged, { additive: true })
         } else {
           setSelectedKeycapIds(inRect)
         }

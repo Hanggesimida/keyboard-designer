@@ -72,7 +72,26 @@ function CanvasImageRow({
         <ImageIcon className="size-3 shrink-0 text-chart-2/70" />
       )}
 
-      {element.type === "image" && element.clipToKeycapId && (
+      {element.type === "image" && element.clipToKeycapIds && element.clipToKeycapIds.length > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              variant="outline"
+              className="h-3.5 shrink-0 border-indigo-500/35 bg-indigo-500/10 px-1 text-[8px] font-normal text-indigo-400 cursor-default"
+            >
+              {element.clipToKeycapIds.length} 个键
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="text-[11px] max-w-48">
+            限定到键位：
+            {element.clipToKeycapIds
+              .map((id) => keysById.get(id)?.label ?? id)
+              .join("、")}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {element.type === "image" && element.clipToKeycapId && !element.clipToKeycapIds?.length && (
         // TooltipProvider 已由父级 CanvasImagesSection 提供
         <Tooltip>
           <TooltipTrigger asChild>
