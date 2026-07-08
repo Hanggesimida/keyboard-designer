@@ -93,3 +93,73 @@ export async function request<T = unknown>(
 
   return response.json() as Promise<T>;
 }
+
+/**
+ * 与 request() 相同鉴权/401 处理，但返回 Blob（如治具 SVG 附件）。
+ * 错误响应仍按 JSON 解析 message。
+ */
+export async function requestBlob(
+  path: string,
+  options: RequestOptions = {},
+): Promise<Blob> {
+  const { body, params, headers: customHeaders, ...rest } = options;
+
+  let url = `${BASE_URL}${path}`;
+  if (params) {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value === null || value === undefined) continue;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          searchParams.append(key, String(item));
+        }
+      } else {
+        searchParams.append(key, String(value));
+      }
+    }
+    const qs = searchParams.toString();
+    if (qs) url += (path.includes('?') ? '&' : '?') + qs;
+  }
+
+  const headers: Record<string, string> = {
+    ...(customHeaders as Record<string, string>),
+  };
+
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    ...rest,
+    headers,
+    body:
+      body instanceof FormData
+        ? body
+        : body !== undefined
+          ? JSON.stringify(body)
+          : undefined,
+  });
+
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      useUserStore.getState().logout();
+      const redirect = encodeURIComponent(
+        window.location.pathname + window.location.search,
+      );
+      window.location.href = `/login?redirect=${redirect}&reason=expired`;
+    }
+    throw new ApiError(401, { message: '登录已过期，请重新登录' });
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, errorBody);
+  }
+
+  return response.blob();
+}

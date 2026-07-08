@@ -60,3 +60,6 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# 内置转曲字体由 Docker 从 web/public 注入；本地勿提交大文件
+/assets/fonts/

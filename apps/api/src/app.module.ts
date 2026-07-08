@@ -14,6 +14,7 @@ import { AdminModule } from '@modules/admin/admin.module';
 import { EmailModule } from '@modules/email/email.module';
 import { CosModule } from './common/cos/cos.module';
 import { FontsModule } from '@modules/fonts/fonts.module';
+import { ExportModule } from '@modules/export/export.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { FontsModule } from '@modules/fonts/fonts.module';
     AuthModule,
     DesignModule,
     FontsModule,
+    ExportModule,
     AddressModule,
     PricingModule,
     OrderModule,

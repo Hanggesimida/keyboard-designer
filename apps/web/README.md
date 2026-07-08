@@ -15,9 +15,9 @@
 | **画布贴图** | 拖拽图片到画布，支持自由变换与分层 |
 | **撤销 / 重做** | Zustand + zundo 实现完整的操作历史（`Ctrl/⌘ + Z / Y`） |
 | **PNG 导出** | 客户端直接导出当前画板为 PNG |
-| **SVG 导出** | 服务端 opentype 将文字转曲为 `<path>`；无字体文件时保留 `<text>` |
+| **SVG 导出** | 调用 Nest API（opentype）将文字转曲为 `<path>`；无字体文件时保留 `<text>` |
 | **JSON 导入 / 导出** | 设计数据序列化，方便保存与分享 |
-| **JIG 治具生成** | 根据设计数据调用服务端 API，生成可用于生产的治具 SVG |
+| **JIG 治具生成** | 根据设计数据调用 Nest API，生成可用于生产的治具 SVG |
 
 ---
 
@@ -30,7 +30,7 @@
 | 状态管理 | [Zustand 5](https://zustand-demo.pmnd.rs/) + [zundo](https://github.com/charkour/zundo)（撤销/重做） |
 | 手势交互 | [@use-gesture/react](https://use-gesture.netlify.app/)、[@react-spring/web](https://www.react-spring.dev/) |
 | 颜色处理 | [colord](https://github.com/omgovich/colord) |
-| 字体转曲 | [opentype.js](https://opentype.js.org/)（服务端 API Route） |
+| 字体转曲 / 治具 | NestJS Export 模块（opentype.js，见 `apps/api`） |
 | 图标 | [lucide-react](https://lucide.dev/) |
 | 共享组件 | `@workspace/ui`（基于 [shadcn/ui](https://ui.shadcn.com/)） |
 
@@ -43,22 +43,19 @@ apps/web/
 ├── app/
 │   ├── layout.tsx              # 根布局（字体注册、dark 模式）
 │   ├── page.tsx                # / 营销首页
-│   ├── design/
-│   │   └── page.tsx            # /design 设计编辑器
-│   └── api/
-│       ├── generate-jig/       # POST — 生成 JIG 治具 SVG
-│       └── texts-to-paths/     # POST — 批量文字转 SVG path
+│   └── design/
+│       └── page.tsx            # /design 设计编辑器
 ├── modules/
 │   └── design/
 │       ├── components/         # 工作区、画布、侧边栏等 UI 组件
 │       ├── hooks/              # 视口、框选、平移、键帽编辑等 hooks
 │       ├── store/              # Zustand store（designUiStore）
 │       ├── lib/                # 导出、SVG 工具、渐变、几何计算
-│       └── data/               # 布局 JSON、JIG 模板、示例设计
+│       └── data/               # 布局 JSON、JIG 模板、示例设计（生产转曲读 api/assets）
 ├── lib/
-│   ├── fontAssets.ts           # 字体资源映射
-│   └── jig/                    # JIG 生成与字体转 path 工具
-└── public/fonts/               # woff2 供页面显示；ttf 供服务端转曲（Noto SC 仅 ttf）
+│   ├── api/export.ts           # texts-to-paths / generate-jig 客户端
+│   └── fontAssets.ts           # 字体资源映射（显示 + fallback）
+└── public/fonts/               # woff2 供页面显示；ttf 供本地 api 转曲回退
 ```
 
 ---
@@ -125,8 +122,8 @@ pnpm format      # Prettier 格式化
 |------|------|------|
 | `/` | 页面 | 产品落地页：Hero、功能介绍、87 键实时预览 |
 | `/design` | 页面 | 键帽设计工作区（左侧栏 / 画布 / 右侧栏三栏布局） |
-| `/api/generate-jig` | API Route | 接收设计 JSON，返回 JIG 治具 SVG 文件 |
-| `/api/texts-to-paths` | API Route | 批量将键帽文字转为 SVG `<path>`，供 SVG 导出使用 |
+
+转曲与治具由 Nest 提供（经 `/api` 反向代理）：`POST /api/texts-to-paths`、`POST /api/generate-jig`。
 
 > 设计器为桌面端优先（≥ 768px），移动端会提示切换到大屏设备。
 

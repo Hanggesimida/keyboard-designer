@@ -23,7 +23,7 @@ import { usePanInteraction } from "@/modules/design/hooks/usePanInteraction"
 import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 import { useAutoExport } from "@/modules/design/hooks/useAutoExport"
-import { getCachedUserFontAssets } from "@/hooks/queries/fonts/useFonts"
+import { generateJig } from "@/lib/api/export"
 
 // ─── 常量 ──────────────────────────────────────────────
 const ART_PAD = 28                    // 画板内边距
@@ -633,19 +633,7 @@ export function DesignCanvas() {
       canvasElements: resolvedElements,
     }
 
-    const res = await fetch("/api/generate-jig", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        design,
-        fontAssets: getCachedUserFontAssets(),
-      }),
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: "未知错误" }))
-      throw new Error(`治具 SVG 生成失败：${err.error ?? res.statusText}`)
-    }
+    const blob = await generateJig(design)
 
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, "0")
@@ -658,7 +646,6 @@ export function DesignCanvas() {
       `${pad(now.getSeconds())}`
     const filename = `jig-${tid ?? "custom"}-${ts}.svg`
 
-    const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url

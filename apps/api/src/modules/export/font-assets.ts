@@ -1,10 +1,10 @@
 /**
  * 字体资产映射表 — CSS var → 字体文件路径 + 族名
  *
- * file: 相对 public/ 的 TTF 路径（页面预览资产；服务端转曲以 api ExportModule 为准）。
+ * file: 相对 fonts/ 根的 TTF 路径，供服务端 opentype.js 转曲使用。
  * null 表示该字体未提供转曲文件，导出时保留 <text>。
  *
- * 与 apps/api/src/modules/export/font-assets.ts、Python scripts/generate_jig_svg.py 保持同步。
+ * 与 web/lib/fontAssets.ts、Python scripts/generate_jig_svg.py 保持同步。
  */
 
 export interface FontAsset {

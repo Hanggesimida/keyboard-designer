@@ -2,7 +2,7 @@
  * 治具键帽几何解析与画布→治具坐标映射。
  */
 
-import { roundedPolygonPath, getIsoTopFaceRadii } from "@/modules/design/lib/design/keycapGeometry"
+import { roundedPolygonPath, getIsoTopFaceRadii } from './keycap-geometry';
 
 export const KEY_RADIUS_BASE_ISO = 1.5
 export const KEY_RADIUS_TOP = 4

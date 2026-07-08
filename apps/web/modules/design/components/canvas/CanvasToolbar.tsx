@@ -29,7 +29,8 @@ import {
 } from "@/modules/design/lib/design/exportArtboard"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { useUserStore } from "@/store/userStore"
-import { getCachedUserFontAssets } from "@/hooks/queries/fonts/useFonts"
+import { generateJig } from "@/lib/api/export"
+import { ApiError } from "@/lib/api/request"
 
 interface CanvasToolbarProps {
   canUndo: boolean
@@ -140,21 +141,7 @@ export function CanvasToolbar({
         canvasElements: resolvedElements,
       }
 
-      const res = await fetch("/api/generate-jig", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          design,
-          fontAssets: getCachedUserFontAssets(),
-        }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "未知错误" }))
-        console.error("[CanvasToolbar] 治具 SVG 生成失败:", err)
-        setErrorMsg(`治具 SVG 生成失败：${err.error ?? res.statusText}`)
-        return
-      }
+      const blob = await generateJig(design)
 
       const now = new Date()
       const pad = (n: number) => String(n).padStart(2, "0")
@@ -167,11 +154,16 @@ export function CanvasToolbar({
         `${pad(now.getSeconds())}`
       const filename = `jig-${templateId ?? "custom"}-${ts}.svg`
 
-      const blob = await res.blob()
       triggerBlobDownload(blob, filename)
     } catch (err) {
       console.error("[CanvasToolbar] 治具 SVG 生成异常:", err)
-      setErrorMsg("治具 SVG 生成时发生错误，请检查控制台。")
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : "治具 SVG 生成时发生错误，请检查控制台。"
+      setErrorMsg(
+        err instanceof ApiError ? `治具 SVG 生成失败：${msg}` : msg,
+      )
     } finally {
       setExporting(null)
     }

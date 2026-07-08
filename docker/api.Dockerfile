@@ -72,5 +72,10 @@ COPY --from=builder /app/apps/api/generated      ./generated
 COPY --from=builder /app/apps/api/prisma         ./prisma
 COPY --from=builder /app/apps/api/prisma.config.ts ./prisma.config.ts
 
+# 转曲内置字体（来自 web public；turbo prune 不含 web，故从构建上下文直接 COPY）
+# 治具/布局数据（随 api 仓库 assets 维护）
+COPY apps/web/public/fonts                       ./assets/fonts
+COPY apps/api/assets/design-data                 ./assets/design-data
+
 EXPOSE 3001
 CMD ["node", "dist/main"]

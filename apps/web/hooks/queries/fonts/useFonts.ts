@@ -15,38 +15,11 @@ export const fontKeys = {
   list: () => [...fontKeys.all, 'list'] as const,
 };
 
-/** 导出 / 治具生成读取的最新用户字体 map（由 useUserFonts / resolve 维护） */
-let cachedUserFontAssets: Record<string, { url: string }> = {};
-
-export function getCachedUserFontAssets(): Record<string, { url: string }> {
-  return cachedUserFontAssets;
-}
-
-function mergeFontAssetsCache(fonts: UserFont[]) {
-  const next = { ...cachedUserFontAssets };
-  for (const f of fonts) {
-    next[`uf:${f.id}`] = { url: f.url };
-  }
-  cachedUserFontAssets = next;
-}
-
-export function buildUserFontAssetsMap(
-  fonts: UserFont[] | undefined,
-): Record<string, { url: string }> {
-  const map: Record<string, { url: string }> = {};
-  if (!fonts) return map;
-  for (const f of fonts) {
-    map[`uf:${f.id}`] = { url: f.url };
-  }
-  return map;
-}
-
-/** 解析并缓存指定 UserFont id（用于打开含软删/他人字体的设计） */
+/** 解析并注入 FontFace（打开含软删字体的设计时用） */
 export async function resolveAndCacheUserFonts(ids: string[]): Promise<void> {
   const unique = [...new Set(ids.filter(Boolean))];
   if (unique.length === 0) return;
   const fonts = await resolveUserFonts(unique);
-  mergeFontAssetsCache(fonts);
   await loadUserFonts(fonts.map((f) => ({ id: f.id, url: f.url })));
 }
 
@@ -61,10 +34,6 @@ export function useUserFonts() {
 
   useEffect(() => {
     if (query.data) {
-      cachedUserFontAssets = {
-        ...cachedUserFontAssets,
-        ...buildUserFontAssetsMap(query.data),
-      };
       void loadUserFonts(query.data.map((f) => ({ id: f.id, url: f.url })));
     }
   }, [query.data]);
@@ -79,7 +48,6 @@ export function useUploadUserFont() {
     mutationFn: ({ file, displayName }: { file: File; displayName?: string }) =>
       uploadUserFont(file, displayName),
     onSuccess: async (font: UserFont) => {
-      mergeFontAssetsCache([font]);
       await loadUserFonts([{ id: font.id, url: font.url }]);
       queryClient.invalidateQueries({ queryKey: fontKeys.list() });
     },

@@ -6,16 +6,15 @@
  *   - 数据文件通过 fs 读取（服务端 Node.js）
  */
 
-import fs from "fs"
-import path from "path"
-import { resolveFontFamily } from "@/lib/fontAssets"
+import fs from 'fs';
+import { resolveFontFamily } from './font-assets';
 import {
   canOutlineFont,
   textDescriptorsToPathResults,
   type TextDescriptor,
   type UserFontAssetMap,
-} from "@/lib/jig/fontToPath"
-import { toCssFontFamily, isUserFontRef } from "@/lib/fonts/fontRef"
+} from './font-to-path';
+import { toCssFontFamily, isUserFontRef } from './font-ref';
 import {
   type JigPosition,
   type LayoutKey,
@@ -31,8 +30,7 @@ import {
   resolvePerKeyClipShape,
   resolveTopFace,
   resolveTopFaceMappingRect,
-  shapeToBBox,
-} from "@/lib/jig/jigGeometry"
+} from './jig-geometry';
 import {
   decodeSvgSrc,
   ensureSvgSymbol,
@@ -40,8 +38,9 @@ import {
   injectIntoDefs,
   injectLayers,
   isSvgDataUrl,
-} from "@/lib/jig/svgInline"
-import { getTopFaceRects } from "@/modules/design/lib/design/keycapGeometry"
+} from './svg-inline';
+import { getTopFaceRects } from './keycap-geometry';
+import { resolveDesignDataPath } from './asset-paths';
 
 // ─── 几何常量（与 keycapGeometry.ts 保持同步）───────────────────────────────
 const KEYCAP_GAP = 2
@@ -356,13 +355,9 @@ function parseDesign(design: DesignPayload): ParsedDesign {
 }
 
 function loadTemplateLayout(templateId: string): Layout {
-  const layoutPath = path.join(
-    process.cwd(),
-    "modules/design/data/layouts",
-    `${templateId}.json`,
-  )
-  if (!fs.existsSync(layoutPath)) {
-    return { keys: {}, baseUnit: 54 }
+  const layoutPath = resolveDesignDataPath('layouts', `${templateId}.json`);
+  if (!layoutPath || !fs.existsSync(layoutPath)) {
+    return { keys: {}, baseUnit: 54 };
   }
 
   const layout = JSON.parse(fs.readFileSync(layoutPath, "utf-8").replace(/^\uFEFF/, ""))
@@ -872,28 +867,25 @@ export async function generateJigSvg(
     ? loadTemplateLayout(parsedDesign.templateId)
     : { keys: {}, baseUnit: 54 }
 
-  const positionsPath = path.join(
-    process.cwd(),
-    "modules/design/data/jig/keycap_jig_positions.json",
-  )
-  if (!fs.existsSync(positionsPath)) {
-    throw new Error(`治具位置文件不存在: ${positionsPath}`)
+  const positionsPath = resolveDesignDataPath(
+    'jig',
+    'keycap_jig_positions.json',
+  );
+  if (!positionsPath || !fs.existsSync(positionsPath)) {
+    throw new Error(`治具位置文件不存在: ${positionsPath ?? 'jig/keycap_jig_positions.json'}`);
   }
   const positions: JigPosition[] = JSON.parse(
-    fs.readFileSync(positionsPath, "utf-8").replace(/^\uFEFF/, ""),
-  )
+    fs.readFileSync(positionsPath, 'utf-8').replace(/^\uFEFF/, ''),
+  );
 
-  const topScale = computeJigTopScale(positions, layout.baseUnit)
-  const ctx = buildJigRenderContext(positions, layout, topScale)
+  const topScale = computeJigTopScale(positions, layout.baseUnit);
+  const ctx = buildJigRenderContext(positions, layout, topScale);
 
-  const jigSvgPath = path.join(
-    process.cwd(),
-    "modules/design/data/jig/keycap_jig.svg",
-  )
-  if (!fs.existsSync(jigSvgPath)) {
-    throw new Error(`治具 SVG 文件不存在: ${jigSvgPath}`)
+  const jigSvgPath = resolveDesignDataPath('jig', 'keycap_jig.svg');
+  if (!jigSvgPath || !fs.existsSync(jigSvgPath)) {
+    throw new Error(`治具 SVG 文件不存在: ${jigSvgPath ?? 'jig/keycap_jig.svg'}`);
   }
-  let svgText = fs.readFileSync(jigSvgPath, "utf-8")
+  let svgText = fs.readFileSync(jigSvgPath, 'utf-8');
 
   const intermediate = buildDesignLayersIntermediate(ctx, parsedDesign, userAssets)
   const labelLayer = anyLabelsHidden

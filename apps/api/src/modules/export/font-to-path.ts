@@ -4,14 +4,11 @@
  * 流程：FontSource → Buffer → opentype.parse → Font → SVG path
  */
 
-import fs from "fs"
-import path from "path"
-import * as opentype from "opentype.js"
-import { resolveFontFile } from "@/lib/fontAssets"
-import {
-  isUserFontRef,
-  normalizeFontFamilyRef,
-} from "@/lib/fonts/fontRef"
+import fs from 'fs';
+import * as opentype from 'opentype.js';
+import { resolveFontFile } from './font-assets';
+import { isUserFontRef, normalizeFontFamilyRef } from './font-ref';
+import { resolveBundledFontPath } from './asset-paths';
 
 // ─── 字体缓存（进程级别，避免重复 IO/解析）────────────────────────────────
 const fontCache = new Map<string, opentype.Font>()
@@ -40,16 +37,16 @@ async function loadFont(source: FontSource): Promise<opentype.Font | null> {
     return fontCache.get(source.cacheKey)!
   }
 
-  if (source.kind === "bundled") {
-    const absPath = path.join(process.cwd(), "public", source.relativePath)
-    if (!fs.existsSync(absPath)) {
-      console.warn(`[fontToPath] 字体文件不存在: ${absPath}`)
-      return null
+  if (source.kind === 'bundled') {
+    const absPath = resolveBundledFontPath(source.relativePath);
+    if (!absPath || !fs.existsSync(absPath)) {
+      console.warn(`[fontToPath] 字体文件不存在: ${source.relativePath}`);
+      return null;
     }
-    const buf = fs.readFileSync(absPath)
-    const font = parseFontBuffer(buf, absPath)
-    if (font) fontCache.set(source.cacheKey, font)
-    return font
+    const buf = fs.readFileSync(absPath);
+    const font = parseFontBuffer(buf, absPath);
+    if (font) fontCache.set(source.cacheKey, font);
+    return font;
   }
 
   try {
@@ -160,42 +157,37 @@ function renderCenteredLine(
   fontSize: number,
   letterSpacing: number,
 ): opentype.Path {
-  const scale = fontSize / font.unitsPerEm
-  const baselineY = centerY + (font.ascender * scale) / 2
+  const scale = fontSize / font.unitsPerEm;
+  const baselineY = centerY + (font.ascender * scale) / 2;
 
-  // 计算行宽（用于水平居中）
-  let lineWidth = 0
-  const chars = Array.from(text)
+  const chars = Array.from(text);
+  let lineWidth = 0;
   for (let i = 0; i < chars.length; i++) {
-    const ch = chars[i]
-    if (!ch) continue
-    const glyph = font.charToGlyph(ch)
-    if (!glyph) continue
-    lineWidth += (glyph.advanceWidth ?? 0) * scale
-    if (i < chars.length - 1) lineWidth += letterSpacing
+    const ch = chars[i];
+    if (!ch) continue;
+    const glyph = font.charToGlyph(ch);
+    if (!glyph) continue;
+    lineWidth += (glyph.advanceWidth ?? 0) * scale;
+    if (i < chars.length - 1) lineWidth += letterSpacing;
   }
 
-  const startX = centerX - lineWidth / 2
-  const combined = new opentype.Path()
+  const startX = centerX - lineWidth / 2;
+  const combined = new opentype.Path();
 
-  if (letterSpacing === 0) {
-    const p = font.getPath(text, startX, baselineY, fontSize, { kerning: true })
-    combined.commands = p.commands
-  } else {
-    let curX = startX
-    for (let i = 0; i < chars.length; i++) {
-      const ch = chars[i]
-      if (!ch) continue
-      const glyph = font.charToGlyph(ch)
-      if (!glyph) continue
-      const p = glyph.getPath(curX, baselineY, fontSize)
-      combined.commands.push(...p.commands)
-      const advance = (glyph.advanceWidth ?? 0) * scale
-      curX += advance + (i < chars.length - 1 ? letterSpacing : 0)
-    }
+  // 逐字形绘制，避免 font.getPath 走 GSUB/ccmp 时对部分字体抛不支持查询错误
+  let curX = startX;
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    if (!ch) continue;
+    const glyph = font.charToGlyph(ch);
+    if (!glyph) continue;
+    const p = glyph.getPath(curX, baselineY, fontSize);
+    combined.commands.push(...p.commands);
+    const advance = (glyph.advanceWidth ?? 0) * scale;
+    curX += advance + (i < chars.length - 1 ? letterSpacing : 0);
   }
 
-  return combined
+  return combined;
 }
 
 // ─── 批量转曲入口 ─────────────────────────────────────────────────────────
@@ -245,22 +237,33 @@ export async function textDescriptorsToPathResults(
       continue
     }
 
-    const { x, y, fontSize, letterSpacing, lineHeightRatio, lines } = desc
-    const lineHeight = fontSize * lineHeightRatio
-    const n = lines.length
+    const { x, y, fontSize, letterSpacing, lineHeightRatio, lines } = desc;
+    const lineHeight = fontSize * lineHeightRatio;
+    const n = lines.length;
 
     // 多行垂直居中：第一行 centerY 上移 (n-1)*lh/2
-    const firstLineCenterY = y - ((n - 1) * lineHeight) / 2
+    const firstLineCenterY = y - ((n - 1) * lineHeight) / 2;
 
-    const combined = new opentype.Path()
-    for (let i = 0; i < n; i++) {
-      const line = lines[i] || "\u00A0"
-      const lineCenterY = firstLineCenterY + i * lineHeight
-      const linePath = renderCenteredLine(font, line, x, lineCenterY, fontSize, letterSpacing)
-      combined.commands.push(...linePath.commands)
+    try {
+      const combined = new opentype.Path();
+      for (let i = 0; i < n; i++) {
+        const line = lines[i] || '\u00A0';
+        const lineCenterY = firstLineCenterY + i * lineHeight;
+        const linePath = renderCenteredLine(
+          font,
+          line,
+          x,
+          lineCenterY,
+          fontSize,
+          letterSpacing,
+        );
+        combined.commands.push(...linePath.commands);
+      }
+      results.push({ id: desc.id, pathD: combined.toPathData(4) });
+    } catch (err) {
+      console.error(`[fontToPath] 转曲失败 id=${desc.id}:`, err);
+      results.push({ id: desc.id, pathD: null });
     }
-
-    results.push({ id: desc.id, pathD: combined.toPathData(4) })
   }
 
   return results

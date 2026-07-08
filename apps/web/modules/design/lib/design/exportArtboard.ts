@@ -10,9 +10,11 @@
 import type { TemplateId } from "@/modules/design/store/designUiStore"
 import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "@/modules/design/components/canvas/KeycapNode"
 import { FONT_ASSETS } from "@/lib/fontAssets"
-import type { TextDescriptor } from "@/lib/jig/fontToPath"
 import { normalizeFontFamilyRef } from "@/lib/fonts/fontRef"
-import { getCachedUserFontAssets } from "@/hooks/queries/fonts/useFonts"
+import {
+  textsToPaths,
+  type TextDescriptor,
+} from "@/lib/api/export"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -23,8 +25,6 @@ export interface ExportArtboardParams {
   artPad: number
   unit: number
   keys: KeyDef[]
-  /** 用户字体 `uf:{id}` → url；缺省时用当前缓存 */
-  fontAssets?: Record<string, { url: string }>
 }
 
 // ─── 转曲辅助工具 ──────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ function extractTextDescriptors(doc: Document): {
  * 流程：
  *  1. DOMParser 解析 SVG 字符串
  *  2. 提取 <text> 元素 → 构建 TextDescriptor[]
- *  3. POST /api/texts-to-paths → 获取 path data
+ *  3. POST Nest /api/texts-to-paths → 获取 path data（用户字体由后端 resolve）
  *  4. pathD 有值：替换为 <path>
  *  5. pathD=null：将 font-family 从 CSS var 更新为 fallback 族名，保留 <text>
  *  6. 移除 <style> 字体嵌入块（字体已转曲，不再需要）
@@ -133,10 +133,7 @@ function extractTextDescriptors(doc: Document): {
  *
  * 失败时（网络错误等）返回原始 SVG 字符串。
  */
-async function replaceSvgTextsWithPaths(
-  svgStr: string,
-  fontAssets?: Record<string, { url: string }>,
-): Promise<string> {
+async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
   const parser = new DOMParser()
   const doc = parser.parseFromString(svgStr, "image/svg+xml")
 
@@ -145,21 +142,7 @@ async function replaceSvgTextsWithPaths(
 
   let results: Array<{ id: string; pathD: string | null }>
   try {
-    const res = await fetch("/api/texts-to-paths", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        texts: descriptors,
-        fontAssets: fontAssets ?? getCachedUserFontAssets(),
-      }),
-    })
-    if (!res.ok) {
-      console.error("[exportArtboard] /api/texts-to-paths 返回错误:", res.status)
-      return svgStr
-    }
-    ;({ results } = (await res.json()) as {
-      results: Array<{ id: string; pathD: string | null }>
-    })
+    ;({ results } = await textsToPaths(descriptors))
   } catch (err) {
     console.error("[exportArtboard] 调用 /api/texts-to-paths 失败:", err)
     return svgStr
@@ -341,7 +324,7 @@ export async function renderArtboardToCanvas(
   const rawSvgStr = buildExportSvgString(params)
   if (!rawSvgStr) return null
 
-  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr, params.fontAssets)
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
   const { artW, artH } = params
   const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" })
   const url = URL.createObjectURL(svgBlob)
@@ -387,7 +370,7 @@ export async function generateThumbnailBlob(
 export async function exportArtboardSvg(params: ExportArtboardParams) {
   const rawSvgStr = buildExportSvgString(params)
   if (!rawSvgStr) return
-  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr, params.fontAssets)
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
   const { templateId } = useDesignUIStore.getState()
   triggerDownload(
     new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" }),

@@ -12,8 +12,7 @@ flowchart LR
     Client -->|HTTP :80| Nginx80[Nginx :80]
     Nginx80 -->|301 重定向| Nginx
     Nginx -->|"/ 页面"| Web[Next.js :3000]
-    Nginx -->|"/api/* 大部分"| API[NestJS :3001]
-    Nginx -->|"/api/generate-jig 等"| Web
+    Nginx -->|"/api/*"| API[NestJS :3001]
     API --> PG[(PostgreSQL :5432)]
 ```
 
@@ -28,9 +27,8 @@ flowchart LR
 
 Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
 
-- `/api/generate-jig`、`/api/texts-to-paths` → Next.js（设计器本地 API Route）
 - `/api/admin/notifications/stream` → NestJS SSE 长连接（关闭缓冲，超时 3600s）
-- 其余 `/api/*` → NestJS（去掉 `/api` 前缀后转发）
+- 其余 `/api/*` → NestJS（去掉 `/api` 前缀后转发；含 `texts-to-paths`、`generate-jig`、`fonts` 等）
 - 其余路径 → Next.js 前端
 
 生产环境下前端通过相对路径 `/api` 访问后端，无需配置跨域；开发环境才使用 Next.js rewrite 直连 `localhost:3001`。
