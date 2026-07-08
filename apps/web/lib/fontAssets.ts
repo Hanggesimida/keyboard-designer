@@ -1,7 +1,8 @@
 /**
  * 字体资产映射表 — CSS var → 字体文件路径 + 族名
  *
- * file: 相对 public/ 目录的路径（null 表示 CJK 分块字体，暂不支持转曲）
+ * file: 相对 public/ 的 TTF 路径，供服务端 opentype.js 转曲使用。
+ * null 表示该字体未提供转曲文件，导出时保留 <text>。
  *
  * 与 Python scripts/generate_jig_svg.py _FONT_ASSETS 保持同步。
  */
@@ -11,7 +12,7 @@ export interface FontAsset {
   family: string
   /** 未转曲时的完整 fallback 栈 */
   fallback: string
-  /** 相对 public/ 的字体文件路径（400-normal）；null = CJK 分块字体，跳过转曲 */
+  /** 相对 public/ 的 TTF 路径（400-normal）；null = 跳过转曲 */
   file: string | null
   /** 700-normal 粗体文件；undefined 表示无粗体变体 */
   fileBold?: string | null
@@ -121,7 +122,7 @@ function pickVariantFile(asset: FontAsset, fontWeight: number, fontStyle: string
  *
  * - `"var(--font-ibm-plex-mono)"` → `"fonts/ibm-plex-mono/..."`
  * - `"IBM Plex Mono"` 或 `"IBM Plex Mono, Courier New, monospace"` → 同上
- * - CJK 字体 / 未知字体 → `null`
+ * - 未登记字体 → `null`
  *
  * @param fontWeight 字重（400 = 常规，700 = 加粗），默认 400
  * @param fontStyle  字形（'normal' / 'italic'），默认 'normal'

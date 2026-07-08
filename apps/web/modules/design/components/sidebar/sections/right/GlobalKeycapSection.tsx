@@ -12,6 +12,7 @@ import { BoldItalicToggle } from "./keycap-inspector/BoldItalicToggle"
 import { ColorLinkDivider } from "./keycap-inspector/ColorLinkDivider"
 import { ColorRow } from "./keycap-inspector/ColorRow"
 import { FontFamilySelect } from "./keycap-inspector/FontFamilySelect"
+import { toCssFontFamily } from "@/lib/fonts/fontRef"
 
 const FONT_SIZE_MIN = 6
 const FONT_SIZE_MAX = 32
@@ -66,12 +67,19 @@ export function GlobalKeycapSection() {
             onOpenChange={setFontFamilyOpen}
             onPick={(family) => {
               setFontFamily(family)
+              const caps = getFontCapabilities(family)
+              if (!caps.bold && fontWeight === 700) setFontWeight(400)
+              if (!caps.italic && fontStyle === "italic") setFontStyle("normal")
               setFontFamilyOpen(false)
             }}
           />
           <div
             className="rounded-md border border-border bg-sidebar-accent/30 px-2 py-1.5 text-[13px] text-sidebar-foreground"
-            style={{ fontFamily, fontWeight, fontStyle }}
+            style={{
+              fontFamily: toCssFontFamily(fontFamily),
+              fontWeight,
+              fontStyle,
+            }}
           >
             AaBbCc 键帽文字
           </div>

@@ -16,6 +16,7 @@ import {
 } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
+import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
 
 export function useSingleKeycapEditor({
   layerId,
@@ -153,11 +154,18 @@ export function useSingleKeycapEditor({
 
   const handleFontFamilyPick = useCallback(
     (family: string) => {
-      if (family === globalFontFamily) {
-        patchOverride({ fontFamily: undefined })
-      } else {
-        patchOverride({ fontFamily: family })
+      const caps = getFontCapabilities(family)
+      const patch: {
+        fontFamily?: string
+        fontWeight?: number
+        fontStyle?: string
+      } = {
+        fontFamily: family === globalFontFamily ? undefined : family,
       }
+      // 用户字体无粗/斜：强制常规，避免仍套用全局 700/italic
+      if (!caps.bold) patch.fontWeight = 400
+      if (!caps.italic) patch.fontStyle = "normal"
+      patchOverride(patch)
       setFontPopoverOpen(false)
     },
     [globalFontFamily, patchOverride],

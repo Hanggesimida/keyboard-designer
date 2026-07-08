@@ -132,6 +132,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
+      # 转曲 SSRF 白名单：允许拉取用户字体 COS URL
+      TENCENT_COS_DOMAIN: ${TENCENT_COS_DOMAIN}
     depends_on:
       - api
     networks:

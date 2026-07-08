@@ -11,6 +11,8 @@ import type { TemplateId } from "@/modules/design/store/designUiStore"
 import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "@/modules/design/components/canvas/KeycapNode"
 import { FONT_ASSETS } from "@/lib/fontAssets"
 import type { TextDescriptor } from "@/lib/jig/fontToPath"
+import { normalizeFontFamilyRef } from "@/lib/fonts/fontRef"
+import { getCachedUserFontAssets } from "@/hooks/queries/fonts/useFonts"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -21,6 +23,8 @@ export interface ExportArtboardParams {
   artPad: number
   unit: number
   keys: KeyDef[]
+  /** 用户字体 `uf:{id}` → url；缺省时用当前缓存 */
+  fontAssets?: Record<string, { url: string }>
 }
 
 // ─── 转曲辅助工具 ──────────────────────────────────────────────────────────
@@ -75,7 +79,9 @@ function extractTextDescriptors(doc: Document): {
     const fontSize = parseFloat(textEl.getAttribute("font-size") ?? "12")
 
     const styleAttr = textEl.getAttribute("style") ?? ""
-    const fontFamily = parseStyleProp(styleAttr, "font-family") ?? "var(--font-ibm-plex-mono)"
+    const fontFamily = normalizeFontFamilyRef(
+      parseStyleProp(styleAttr, "font-family") ?? "var(--font-ibm-plex-mono)",
+    )
     const fontWeightRaw = parseStyleProp(styleAttr, "font-weight") ?? "400"
     const fontWeight = parseInt(fontWeightRaw, 10) || 400
     const fontStyle = parseStyleProp(styleAttr, "font-style") ?? "normal"
@@ -120,14 +126,17 @@ function extractTextDescriptors(doc: Document): {
  *  1. DOMParser 解析 SVG 字符串
  *  2. 提取 <text> 元素 → 构建 TextDescriptor[]
  *  3. POST /api/texts-to-paths → 获取 path data
- *  4. 非 CJK：替换为 <path>
- *  5. CJK（pathD=null）：将 font-family 从 CSS var 更新为 fallback 族名
+ *  4. pathD 有值：替换为 <path>
+ *  5. pathD=null：将 font-family 从 CSS var 更新为 fallback 族名，保留 <text>
  *  6. 移除 <style> 字体嵌入块（字体已转曲，不再需要）
  *  7. XMLSerializer 序列化返回
  *
  * 失败时（网络错误等）返回原始 SVG 字符串。
  */
-async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
+async function replaceSvgTextsWithPaths(
+  svgStr: string,
+  fontAssets?: Record<string, { url: string }>,
+): Promise<string> {
   const parser = new DOMParser()
   const doc = parser.parseFromString(svgStr, "image/svg+xml")
 
@@ -139,7 +148,10 @@ async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
     const res = await fetch("/api/texts-to-paths", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texts: descriptors }),
+      body: JSON.stringify({
+        texts: descriptors,
+        fontAssets: fontAssets ?? getCachedUserFontAssets(),
+      }),
     })
     if (!res.ok) {
       console.error("[exportArtboard] /api/texts-to-paths 返回错误:", res.status)
@@ -153,14 +165,14 @@ async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
     return svgStr
   }
 
-  // 替换 <text> 为 <path>，CJK 更新 font-family 为 fallback
+  // 替换 <text> 为 <path>；无法转曲时更新 font-family 为 fallback
   for (let i = 0; i < elements.length; i++) {
     const r = results[i]
     const textEl = elements[i]
     if (!r || !textEl) continue
 
     if (r.pathD === null) {
-      // CJK 降级：将 font-family CSS var 替换为 fallback 族名
+      // 无法转曲：将 font-family CSS var 替换为 fallback 族名，保留 <text>
       const styleAttr = textEl.getAttribute("style") ?? ""
       const fontFamilyVal = parseStyleProp(styleAttr, "font-family") ?? ""
       if (fontFamilyVal.startsWith("var(")) {
@@ -177,7 +189,7 @@ async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
       continue
     }
 
-    // 非 CJK：替换为 <path>
+    // 转曲成功：替换为 <path>
     const pathEl = doc.createElementNS(SVG_NS, "path")
     pathEl.setAttribute("d", r.pathD)
     const fill = resolvedFills[i] ?? "currentColor"
@@ -329,7 +341,7 @@ export async function renderArtboardToCanvas(
   const rawSvgStr = buildExportSvgString(params)
   if (!rawSvgStr) return null
 
-  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr, params.fontAssets)
   const { artW, artH } = params
   const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" })
   const url = URL.createObjectURL(svgBlob)
@@ -375,7 +387,7 @@ export async function generateThumbnailBlob(
 export async function exportArtboardSvg(params: ExportArtboardParams) {
   const rawSvgStr = buildExportSvgString(params)
   if (!rawSvgStr) return
-  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr)
+  const svgStr = await replaceSvgTextsWithPaths(rawSvgStr, params.fontAssets)
   const { templateId } = useDesignUIStore.getState()
   triggerDownload(
     new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" }),

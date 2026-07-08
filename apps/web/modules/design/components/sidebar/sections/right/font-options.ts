@@ -1,4 +1,4 @@
-export type FontCategory = "sans" | "mono" | "serif" | "cjk"
+export type FontCategory = "sans" | "mono" | "serif" | "cjk" | "custom"
 
 export interface FontOption {
   value: string
@@ -11,6 +11,7 @@ export interface FontOption {
 }
 
 export const FONT_CATEGORIES: { key: FontCategory; label: string }[] = [
+  { key: "custom", label: "我的字体" },
   { key: "sans", label: "无衬线" },
   { key: "mono", label: "等宽" },
   { key: "serif", label: "衬线" },
@@ -36,9 +37,13 @@ export const FONT_OPTIONS: FontOption[] = [
 
 /**
  * 根据当前字体 CSS 值返回其支持的 bold/italic 能力。
+ * 用户字体 V1：无粗/斜变体。
  * 未在 FONT_OPTIONS 中找到的字体默认两者均支持（宽松策略）。
  */
 export function getFontCapabilities(fontCssValue: string): { bold: boolean; italic: boolean } {
+  if (fontCssValue.startsWith("uf:")) {
+    return { bold: false, italic: false }
+  }
   const opt = FONT_OPTIONS.find((f) => f.value === fontCssValue)
   return opt ? { bold: opt.bold, italic: opt.italic } : { bold: true, italic: true }
 }

@@ -3,20 +3,24 @@ import {
   textDescriptorsToPathResults,
   type TextDescriptor,
 } from "@/lib/jig/fontToPath"
+import { filterAllowedUserFontAssets } from "@/lib/fonts/fontAssetUrlGuard"
 
 export const runtime = "nodejs"
 
 /**
  * POST /api/texts-to-paths
  *
- * Body:  { texts: TextDescriptor[] }
+ * Body:  { texts: TextDescriptor[]; fontAssets?: Record<string, { url: string }> }
  * Response: { results: Array<{ id: string; pathD: string | null }> }
  *
  * 将一组文字描述符批量转换为 SVG path d 字符串。
- * pathD=null 表示 CJK 或不支持的字体，调用方应保留原 <text> 元素。
+ * pathD=null 表示无法转曲（无字体文件 / 加载失败），调用方应保留原 <text> 元素。
  */
 export async function POST(req: NextRequest) {
-  let body: { texts: TextDescriptor[] }
+  let body: {
+    texts: TextDescriptor[]
+    fontAssets?: Record<string, { url: string }>
+  }
   try {
     body = await req.json()
   } catch {
@@ -28,7 +32,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const results = await textDescriptorsToPathResults(body.texts)
+    const userAssets = filterAllowedUserFontAssets(body.fontAssets)
+    const results = await textDescriptorsToPathResults(body.texts, userAssets)
     return NextResponse.json({ results })
   } catch (err) {
     console.error("[texts-to-paths] 转曲失败:", err)

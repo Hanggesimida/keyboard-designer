@@ -7,6 +7,8 @@ import { useUserStore } from "@/store/userStore"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import type { DesignData } from "@/lib/api/designs"
 import type { CanvasElement } from "@/modules/design/store/designUiStore"
+import { parseUserFontId } from "@/lib/fonts/fontRef"
+import { resolveAndCacheUserFonts } from "@/hooks/queries/fonts/useFonts"
 
 /**
  * 将后端持久化格式（内联 src）转换为运行时格式（assetId + assetMap），
@@ -46,6 +48,21 @@ function applyDesignData(data: DesignData) {
   useDesignUIStore.temporal.getState().clear()
 }
 
+function collectUserFontIds(data: DesignData): string[] {
+  const ids = new Set<string>()
+  const push = (ref?: string) => {
+    const id = ref ? parseUserFontId(ref) : null
+    if (id) ids.add(id)
+  }
+  push(data.fontFamily)
+  for (const layerMap of Object.values(data.layerKeycapOverrides ?? {})) {
+    for (const ov of Object.values(layerMap ?? {})) {
+      push(ov.fontFamily)
+    }
+  }
+  return [...ids]
+}
+
 /**
  * 读取 URL query `?id=xxx`：
  * - 若存在 id，则从后端加载对应设计数据并应用到 store（只触发一次）；
@@ -74,8 +91,16 @@ export function useLoadDesignFromUrl() {
     loadedIdRef.current = designId
 
     getDesign(designId)
-      .then((design) => {
+      .then(async (design) => {
         applyDesignData(design.data)
+        const fontIds = collectUserFontIds(design.data)
+        if (fontIds.length > 0) {
+          try {
+            await resolveAndCacheUserFonts(fontIds)
+          } catch (err) {
+            console.warn("[useLoadDesignFromUrl] 用户字体解析失败:", err)
+          }
+        }
       })
       .catch((err) => {
         console.error("[useLoadDesignFromUrl] 加载设计失败:", err)

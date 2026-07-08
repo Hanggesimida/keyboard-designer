@@ -29,6 +29,7 @@ import {
 } from "@/modules/design/lib/design/exportArtboard"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { useUserStore } from "@/store/userStore"
+import { getCachedUserFontAssets } from "@/hooks/queries/fonts/useFonts"
 
 interface CanvasToolbarProps {
   canUndo: boolean
@@ -142,7 +143,10 @@ export function CanvasToolbar({
       const res = await fetch("/api/generate-jig", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ design }),
+        body: JSON.stringify({
+          design,
+          fontAssets: getCachedUserFontAssets(),
+        }),
       })
 
       if (!res.ok) {

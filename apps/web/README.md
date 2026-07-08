@@ -15,7 +15,7 @@
 | **画布贴图** | 拖拽图片到画布，支持自由变换与分层 |
 | **撤销 / 重做** | Zustand + zundo 实现完整的操作历史（`Ctrl/⌘ + Z / Y`） |
 | **PNG 导出** | 客户端直接导出当前画板为 PNG |
-| **SVG 导出** | 拉丁文字经服务端 opentype 转曲，CJK 保留 `<text>` 标签 |
+| **SVG 导出** | 服务端 opentype 将文字转曲为 `<path>`；无字体文件时保留 `<text>` |
 | **JSON 导入 / 导出** | 设计数据序列化，方便保存与分享 |
 | **JIG 治具生成** | 根据设计数据调用服务端 API，生成可用于生产的治具 SVG |
 
@@ -58,7 +58,7 @@ apps/web/
 ├── lib/
 │   ├── fontAssets.ts           # 字体资源映射
 │   └── jig/                    # JIG 生成与字体转 path 工具
-└── public/fonts/               # 本地 woff2/ttf（含 Noto SC，用于转曲）
+└── public/fonts/               # woff2 供页面显示；ttf 供服务端转曲（Noto SC 仅 ttf）
 ```
 
 ---

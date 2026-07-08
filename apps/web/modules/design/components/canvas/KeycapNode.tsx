@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react"
 import type { GlobalKeycapStyle, KeycapOverride } from "@/modules/design/store/designUiStore"
 import { resolveEffectiveBorderHidden } from "@/modules/design/lib/keycap-inspector/border"
 import { registerTextMetrics } from "@/modules/design/store/textMetricsRegistry"
+import { toCssFontFamily } from "@/lib/fonts/fontRef"
 import {
   KEYCAP_GAP as _GAP,
   KEY_PAD_LEFT,
@@ -182,8 +183,9 @@ export function KeycapNode({
     "var(--design-keycap-label)"
   const fontSize =
     override?.fontSize ?? globalDefaults?.fontSize ?? KEY_LABEL_SIZE
-  const labelFontFamily =
-    override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif"
+  const labelFontFamily = toCssFontFamily(
+    override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif",
+  )
   const labelFontWeight = override?.fontWeight ?? fontWeight ?? 400
   const labelFontStyle = override?.fontStyle ?? fontStyle ?? "normal"
   const letterSpacing = override?.letterSpacing ?? 0

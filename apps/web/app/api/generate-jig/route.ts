@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { generateJigSvg, type DesignPayload } from "@/lib/jig/generateJig"
+import { filterAllowedUserFontAssets } from "@/lib/fonts/fontAssetUrlGuard"
 
 export const runtime = "nodejs"
 
 export async function POST(req: NextRequest) {
-  let body: { design: DesignPayload }
+  let body: {
+    design: DesignPayload
+    fontAssets?: Record<string, { url: string }>
+  }
   try {
     body = await req.json()
   } catch {
@@ -16,7 +20,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const svgString = await generateJigSvg(body.design)
+    const userAssets = filterAllowedUserFontAssets(body.fontAssets)
+    const svgString = await generateJigSvg(body.design, userAssets)
 
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, "0")

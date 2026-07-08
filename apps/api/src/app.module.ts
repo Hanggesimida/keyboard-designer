@@ -13,6 +13,7 @@ import { PaymentModule } from '@modules/payment/payment.module';
 import { AdminModule } from '@modules/admin/admin.module';
 import { EmailModule } from '@modules/email/email.module';
 import { CosModule } from './common/cos/cos.module';
+import { FontsModule } from '@modules/fonts/fonts.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CosModule } from './common/cos/cos.module';
     EmailModule,
     AuthModule,
     DesignModule,
+    FontsModule,
     AddressModule,
     PricingModule,
     OrderModule,

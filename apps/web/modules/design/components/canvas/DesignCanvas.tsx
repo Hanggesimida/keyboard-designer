@@ -23,6 +23,7 @@ import { usePanInteraction } from "@/modules/design/hooks/usePanInteraction"
 import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 import { useAutoExport } from "@/modules/design/hooks/useAutoExport"
+import { getCachedUserFontAssets } from "@/hooks/queries/fonts/useFonts"
 
 // ─── 常量 ──────────────────────────────────────────────
 const ART_PAD = 28                    // 画板内边距
@@ -635,7 +636,10 @@ export function DesignCanvas() {
     const res = await fetch("/api/generate-jig", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ design }),
+      body: JSON.stringify({
+        design,
+        fontAssets: getCachedUserFontAssets(),
+      }),
     })
 
     if (!res.ok) {

@@ -24,11 +24,21 @@ export class CosService {
     this.domain = this.config.getOrThrow<string>('TENCENT_COS_DOMAIN');
   }
 
-  /** 上传 Buffer 到 COS，返回带缓存穿透参数的公网 URL */
+  /** 根据 key 拼公网 URL；cacheBust 为缩略图等可变对象加时间戳 */
+  buildPublicUrl(key: string, cacheBust = false): string {
+    const baseUrl = this.domain.endsWith('/')
+      ? this.domain.slice(0, -1)
+      : this.domain;
+    const url = `${baseUrl}/${key}`;
+    return cacheBust ? `${url}?t=${Date.now()}` : url;
+  }
+
+  /** 上传 Buffer 到 COS，返回公网 URL */
   async uploadBuffer(
     key: string,
     buffer: Buffer,
     contentType: string,
+    options?: { cacheBust?: boolean },
   ): Promise<string> {
     try {
       await new Promise<void>((resolve, reject) => {
@@ -47,11 +57,7 @@ export class CosService {
         );
       });
 
-      const baseUrl = this.domain.endsWith('/')
-        ? this.domain.slice(0, -1)
-        : this.domain;
-
-      return `${baseUrl}/${key}?t=${Date.now()}`;
+      return this.buildPublicUrl(key, options?.cacheBust ?? true);
     } catch (err) {
       throw new InternalServerErrorException(
         `COS 上传失败：${(err as Error).message}`,

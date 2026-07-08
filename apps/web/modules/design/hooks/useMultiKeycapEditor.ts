@@ -15,6 +15,7 @@ import {
   getMixedFontFamily,
   getMixedFontSize,
 } from "@/modules/design/lib/keycap-inspector/mixed"
+import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
 import {
   useDesignUIStore,
   type KeycapOverride,
@@ -221,9 +222,13 @@ export function useMultiKeycapEditor({
 
   const handleFontFamilyPick = useCallback(
     (family: string) => {
-      applyPatch({
+      const caps = getFontCapabilities(family)
+      const patch: KeycapOverride = {
         fontFamily: family === globalFontFamily ? undefined : family,
-      })
+      }
+      if (!caps.bold) patch.fontWeight = 400
+      if (!caps.italic) patch.fontStyle = "normal"
+      applyPatch(patch)
       setFontPopoverOpen(false)
     },
     [applyPatch, globalFontFamily],

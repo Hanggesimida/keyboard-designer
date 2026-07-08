@@ -76,10 +76,42 @@ model User {
   designs   Design[]
   addresses Address[]
   orders    Order[]
+  fonts     UserFont[]
 
   // 索引优化：高频查询的字段建议加索引（例如按激活状态、创建时间筛选）
   @@index([role])
   @@index([createdAt])
+}
+
+/// 全局唯一的字体二进制（内容寻址，SHA-256 去重）
+model FontBlob {
+  id          String   @id @default(cuid())
+  contentHash String   @unique // sha256 hex
+  cosKey      String // fonts/blobs/{hash}.{ext}
+  url         String // 稳定公网 URL
+  format      String // ttf | otf
+  fileSize    Int
+  familyName  String?
+  createdAt   DateTime @default(now())
+
+  userFonts UserFont[]
+}
+
+/// 用户字体库条目（指向共享 FontBlob）
+model UserFont {
+  id          String    @id @default(cuid())
+  userId      String
+  blobId      String
+  displayName String
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blob FontBlob @relation(fields: [blobId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, blobId])
+  @@index([userId, deletedAt])
 }
 
 // 键盘设计方案

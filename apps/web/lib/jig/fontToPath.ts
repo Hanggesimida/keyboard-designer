@@ -1,47 +1,105 @@
 /**
  * 服务端字体转曲工具（Node.js only）
  *
- * 流程：ttf 文件 → opentype.parse → Font
- *
- * CJK 字体使用完整 TTF，支持转曲。
+ * 流程：FontSource → Buffer → opentype.parse → Font → SVG path
  */
 
 import fs from "fs"
 import path from "path"
 import * as opentype from "opentype.js"
 import { resolveFontFile } from "@/lib/fontAssets"
+import {
+  isUserFontRef,
+  normalizeFontFamilyRef,
+} from "@/lib/fonts/fontRef"
 
 // ─── 字体缓存（进程级别，避免重复 IO/解析）────────────────────────────────
 const fontCache = new Map<string, opentype.Font>()
 
-/**
- * 从 public/ 目录加载并解析字体文件（ttf/otf/woff，opentype.js 直接支持）。
- * 失败时返回 null（不抛异常）。
- */
-function loadFont(publicRelPath: string): opentype.Font | null {
-  if (fontCache.has(publicRelPath)) {
-    return fontCache.get(publicRelPath)!
-  }
+type FontSource =
+  | { kind: "bundled"; cacheKey: string; relativePath: string }
+  | { kind: "remote"; cacheKey: string; url: string }
 
-  const absPath = path.join(process.cwd(), "public", publicRelPath)
-  if (!fs.existsSync(absPath)) {
-    console.warn(`[fontToPath] 字体文件不存在: ${absPath}`)
-    return null
-  }
+export type UserFontAssetMap = Record<string /* uf:id */, { url: string }>
 
+function parseFontBuffer(buf: Buffer, label: string): opentype.Font | null {
   try {
-    const buf = fs.readFileSync(absPath)
     const arrayBuf = buf.buffer.slice(
       buf.byteOffset,
       buf.byteOffset + buf.byteLength,
     ) as ArrayBuffer
-    const font = opentype.parse(arrayBuf)
-    fontCache.set(publicRelPath, font)
-    return font
+    return opentype.parse(arrayBuf)
   } catch (err) {
-    console.error(`[fontToPath] 字体解析失败: ${absPath}`, err)
+    console.error(`[fontToPath] 字体解析失败: ${label}`, err)
     return null
   }
+}
+
+async function loadFont(source: FontSource): Promise<opentype.Font | null> {
+  if (fontCache.has(source.cacheKey)) {
+    return fontCache.get(source.cacheKey)!
+  }
+
+  if (source.kind === "bundled") {
+    const absPath = path.join(process.cwd(), "public", source.relativePath)
+    if (!fs.existsSync(absPath)) {
+      console.warn(`[fontToPath] 字体文件不存在: ${absPath}`)
+      return null
+    }
+    const buf = fs.readFileSync(absPath)
+    const font = parseFontBuffer(buf, absPath)
+    if (font) fontCache.set(source.cacheKey, font)
+    return font
+  }
+
+  try {
+    const res = await fetch(source.url)
+    if (!res.ok) {
+      console.warn(`[fontToPath] 远程字体下载失败 ${res.status}: ${source.url}`)
+      return null
+    }
+    const ab = await res.arrayBuffer()
+    const buf = Buffer.from(ab)
+    const font = parseFontBuffer(buf, source.url)
+    if (font) fontCache.set(source.cacheKey, font)
+    return font
+  } catch (err) {
+    console.error(`[fontToPath] 远程字体加载异常: ${source.url}`, err)
+    return null
+  }
+}
+
+function resolveFontSource(
+  fontFamily: string,
+  fontWeight: number | undefined,
+  fontStyle: string | undefined,
+  userAssets?: UserFontAssetMap,
+): FontSource | null {
+  const ref = normalizeFontFamilyRef(fontFamily)
+
+  if (isUserFontRef(ref)) {
+    const asset = userAssets?.[ref]
+    if (!asset?.url) return null
+    return { kind: "remote", cacheKey: `remote:${ref}`, url: asset.url }
+  }
+
+  const relativePath = resolveFontFile(ref, fontWeight, fontStyle)
+  if (!relativePath) return null
+  return {
+    kind: "bundled",
+    cacheKey: `bundled:${relativePath}`,
+    relativePath,
+  }
+}
+
+/** 供治具层判断：内置有文件，或用户字体有 url */
+export function canOutlineFont(
+  fontFamily: string,
+  userAssets?: UserFontAssetMap,
+  fontWeight?: number,
+  fontStyle?: string,
+): boolean {
+  return resolveFontSource(fontFamily, fontWeight, fontStyle, userAssets) != null
 }
 
 // ─── TextDescriptor ────────────────────────────────────────────────────────
@@ -61,7 +119,7 @@ export interface TextDescriptor {
    */
   y: number
   fontSize: number
-  /** CSS var 形式（"var(--font-xxx)"）或裸族名（"IBM Plex Mono"） */
+  /** CSS var / 裸族名 / uf:{id} */
   fontFamily: string
   /** 字重：400 = 常规，700 = 加粗；默认 400 */
   fontWeight?: number
@@ -79,7 +137,7 @@ export interface TextDescriptor {
 
 export interface PathResult {
   id: string
-  /** SVG path d 字符串；null 表示 CJK/不支持，调用方应保留原 <text> */
+  /** SVG path d 字符串；null 表示无法转曲（无字体文件 / 加载失败），调用方应保留原 <text> */
   pathD: string | null
 }
 
@@ -147,28 +205,41 @@ function renderCenteredLine(
  */
 export async function textDescriptorsToPathResults(
   descriptors: TextDescriptor[],
+  userAssets?: UserFontAssetMap,
 ): Promise<PathResult[]> {
-  // 预加载本次用到的所有字体（去重）
-  const fontFileMap = new Map<string, opentype.Font | null>()
+  const sourceByDesc = new Map<string, FontSource | null>()
+  const uniqueSources = new Map<string, FontSource>()
+
   for (const desc of descriptors) {
-    const fontFile = resolveFontFile(desc.fontFamily, desc.fontWeight, desc.fontStyle)
-    if (fontFile && !fontFileMap.has(fontFile)) {
-      fontFileMap.set(fontFile, loadFont(fontFile))
+    const source = resolveFontSource(
+      desc.fontFamily,
+      desc.fontWeight,
+      desc.fontStyle,
+      userAssets,
+    )
+    sourceByDesc.set(desc.id, source)
+    if (source && !uniqueSources.has(source.cacheKey)) {
+      uniqueSources.set(source.cacheKey, source)
     }
   }
+
+  const fontMap = new Map<string, opentype.Font | null>()
+  await Promise.all(
+    [...uniqueSources.values()].map(async (source) => {
+      fontMap.set(source.cacheKey, await loadFont(source))
+    }),
+  )
 
   const results: PathResult[] = []
 
   for (const desc of descriptors) {
-    const fontFile = resolveFontFile(desc.fontFamily, desc.fontWeight, desc.fontStyle)
-
-    if (!fontFile) {
-      // CJK 或未知字体 → 保留 <text>
+    const source = sourceByDesc.get(desc.id) ?? null
+    if (!source) {
       results.push({ id: desc.id, pathD: null })
       continue
     }
 
-    const font = fontFileMap.get(fontFile) ?? null
+    const font = fontMap.get(source.cacheKey) ?? null
     if (!font) {
       results.push({ id: desc.id, pathD: null })
       continue

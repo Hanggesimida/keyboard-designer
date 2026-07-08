@@ -37,6 +37,7 @@ import {
   type AlignV,
 } from "@/modules/design/lib/keycap-inspector/align"
 import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
+import { toCssFontFamily } from "@/lib/fonts/fontRef"
 import { LabelAlignmentGrid } from "@/modules/design/components/sidebar/sections/right/keycap-inspector/AlignmentGrid"
 import { ColorRow } from "@/modules/design/components/sidebar/sections/right/keycap-inspector/ColorRow"
 
@@ -139,7 +140,9 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const labelText = override?.labelText ?? keyDef.label
   const labelColor = override?.labelColor ?? globalDefaults.labelColor ?? DEFAULT_KEYCAP_COLORS.labelColor
   const fontSize = override?.fontSize ?? globalDefaults.fontSize ?? KEY_LABEL_SIZE
-  const labelFontFamily = override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif"
+  const labelFontFamily = toCssFontFamily(
+    override?.fontFamily ?? fontFamily ?? "Inter, system-ui, sans-serif",
+  )
   const letterSpacing = override?.letterSpacing ?? 0
   const lineHeightRatio = override?.lineHeightRatio ?? 1.2
 

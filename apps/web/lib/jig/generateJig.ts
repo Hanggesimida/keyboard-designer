@@ -2,17 +2,20 @@
  * 治具 SVG 生成核心逻辑
  *
  * 主要差异（相对旧 Python 脚本）：
- *   - 字体转曲（opentype.js <path>），CJK 降级保留 <text>
+ *   - 字体转曲（opentype.js <path>）；无字体文件时保留 <text>
  *   - 数据文件通过 fs 读取（服务端 Node.js）
  */
 
 import fs from "fs"
 import path from "path"
-import { resolveFontFamily, resolveFontFile } from "@/lib/fontAssets"
+import { resolveFontFamily } from "@/lib/fontAssets"
 import {
+  canOutlineFont,
   textDescriptorsToPathResults,
   type TextDescriptor,
+  type UserFontAssetMap,
 } from "@/lib/jig/fontToPath"
+import { toCssFontFamily, isUserFontRef } from "@/lib/fonts/fontRef"
 import {
   type JigPosition,
   type LayoutKey,
@@ -455,6 +458,7 @@ function makeOpDkAttrs(opacity: number, kidAttr: string): [string, string] {
 function buildDesignLayersIntermediate(
   ctx: JigRenderContext,
   design: ParsedDesign,
+  userAssets?: UserFontAssetMap,
 ): DesignLayersIntermediate {
   const { assignment, templateKeys, topScale } = ctx
   const colorLines: string[] = ['<g id="jig-color-layer">']
@@ -517,8 +521,10 @@ function buildDesignLayersIntermediate(
       ? ` transform="rotate(-90,${rotCx.toFixed(4)},${rotCy.toFixed(4)})"`
       : ""
 
-    if (resolveFontFile(st.fontFamily) === null) {
-      const ff = resolveFontFamily(st.fontFamily)
+    if (!canOutlineFont(st.fontFamily, userAssets)) {
+      const ff = isUserFontRef(st.fontFamily)
+        ? toCssFontFamily(st.fontFamily)
+        : resolveFontFamily(st.fontFamily)
       const lsAttr = ls ? ` letter-spacing="${ls.toFixed(4)}"` : ""
       const tAttrs =
         `x="${cx.toFixed(4)}" y="${cy.toFixed(4)}" ` +
@@ -573,12 +579,18 @@ function buildDesignLayersIntermediate(
   }
 }
 
-async function buildLabelLayer(intermediate: DesignLayersIntermediate): Promise<string> {
+async function buildLabelLayer(
+  intermediate: DesignLayersIntermediate,
+  userAssets?: UserFontAssetMap,
+): Promise<string> {
   const lines: string[] = ['<g id="jig-label-layer">']
 
   if (intermediate.textDescriptors.length > 0) {
     const fillById = new Map(intermediate.textDescriptors.map(d => [d.id, d.fill]))
-    const results = await textDescriptorsToPathResults(intermediate.textDescriptors)
+    const results = await textDescriptorsToPathResults(
+      intermediate.textDescriptors,
+      userAssets,
+    )
     for (const r of results) {
       if (r.pathD === null) continue
       const extra = intermediate.textExtraAttrs[r.id] ?? ""
@@ -847,9 +859,12 @@ function buildCanvasImageLayers(
 
 /**
  * 根据设计 JSON 生成治具 SVG 字符串。
- * 文字使用 opentype.js 转曲为 <path>，CJK 字体降级保留 <text>。
+ * 文字使用 opentype.js 转曲为 <path>；无法转曲时保留 <text>。
  */
-export async function generateJigSvg(design: DesignPayload): Promise<string> {
+export async function generateJigSvg(
+  design: DesignPayload,
+  userAssets?: UserFontAssetMap,
+): Promise<string> {
   const parsedDesign = parseDesign(design)
   const anyLabelsHidden = (design.layers ?? []).some(l => l.labelsHidden === true)
 
@@ -880,8 +895,10 @@ export async function generateJigSvg(design: DesignPayload): Promise<string> {
   }
   let svgText = fs.readFileSync(jigSvgPath, "utf-8")
 
-  const intermediate = buildDesignLayersIntermediate(ctx, parsedDesign)
-  const labelLayer = anyLabelsHidden ? "" : await buildLabelLayer(intermediate)
+  const intermediate = buildDesignLayersIntermediate(ctx, parsedDesign, userAssets)
+  const labelLayer = anyLabelsHidden
+    ? ""
+    : await buildLabelLayer(intermediate, userAssets)
 
   const imageCache = new Map<string, string>()
   const svgCache = new Map<string, string>()
