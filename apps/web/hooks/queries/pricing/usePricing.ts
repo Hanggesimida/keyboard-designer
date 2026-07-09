@@ -5,7 +5,8 @@ import { useUserStore } from '@/store/userStore';
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
 export const pricingKeys = {
-  quote: (designId: string) => ['pricing', 'quote', designId] as const,
+  quote: (designId: string, quantity: number) =>
+    ['pricing', 'quote', designId, quantity] as const,
 };
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
@@ -14,12 +15,12 @@ export const pricingKeys = {
  * 获取服务端报价，供结账页展示价格明细。
  * designId 为 null 时自动禁用查询。
  */
-export function useOrderQuote(designId: string | null) {
+export function useOrderQuote(designId: string | null, quantity = 1) {
   const accessToken = useUserStore((s) => s.accessToken);
 
   return useQuery<PriceQuote>({
-    queryKey: pricingKeys.quote(designId ?? ''),
-    queryFn: () => getOrderQuote(designId!),
+    queryKey: pricingKeys.quote(designId ?? '', quantity),
+    queryFn: () => getOrderQuote(designId!, quantity),
     enabled: !!accessToken && !!designId,
     staleTime: 5 * 60 * 1000, // 5 分钟内报价不重复请求
   });

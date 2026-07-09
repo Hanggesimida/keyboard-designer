@@ -2,8 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   listAdminUsers,
   updateUserRole,
+  updateUserAccountType,
   type QueryAdminUsersParams,
   type UpdateUserRolePayload,
+  type UpdateAccountTypePayload,
 } from '@/lib/api/admin-users';
 import { useUserStore } from '@/store/userStore';
 
@@ -35,6 +37,23 @@ export function useUpdateUserRole() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateUserRolePayload }) =>
       updateUserRole(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
+    },
+  });
+}
+
+export function useUpdateUserAccountType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdateAccountTypePayload;
+    }) => updateUserAccountType(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
     },

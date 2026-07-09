@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService, ConfigModule } from '@nestjs/config';
@@ -9,8 +9,11 @@ import { AuthService } from '@modules/auth/auth.service';
 import { OtpService } from '@modules/auth/otp.service';
 import { JwtStrategy } from '@modules/auth/strategies/jwt.strategy';
 import { JwtSetupStrategy } from '@modules/auth/strategies/jwt-setup.strategy';
+import { JwtChangePasswordStrategy } from '@modules/auth/strategies/jwt-change-password.strategy';
 import { CaptchaService } from '@modules/auth/captcha.service';
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 
+@Global()
 @Module({
   imports: [
     UsersModule,
@@ -41,7 +44,10 @@ import { CaptchaService } from '@modules/auth/captcha.service';
     OtpService,
     JwtStrategy,
     JwtSetupStrategy,
+    JwtChangePasswordStrategy,
     CaptchaService,
+    JwtAuthGuard,
   ],
+  exports: [JwtAuthGuard],
 })
 export class AuthModule {}

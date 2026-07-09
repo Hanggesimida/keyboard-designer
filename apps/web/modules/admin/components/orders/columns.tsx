@@ -134,6 +134,13 @@ export const columns: ColumnDef<AdminOrderSummary>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "quantity",
+    header: "数量",
+    cell: ({ row }) => (
+      <span className="text-sm text-foreground/75">{row.getValue("quantity")} 套</span>
+    ),
+  },
+  {
     accessorKey: "totalAmount",
     header: "金额",
     cell: ({ row }) => {

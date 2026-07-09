@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-// import { PrismaClient, Prisma } from "@prisma/client";
+import {
+  ORDER_QUANTITY_MAX,
+  ORDER_QUANTITY_MIN,
+} from '@modules/order/order.constants';
 
 // ─── Context & Rule 接口 ─────────────────────────────────────────────────────
 
@@ -8,7 +11,7 @@ import { Injectable } from '@nestjs/common';
  * 未来扩展商城商品时，在 union type 中增加新的 type 分支即可。
  */
 export type PricingContext =
-  | { type: 'CUSTOM_KEYCAP'; designId: string };
+  | { type: 'CUSTOM_KEYCAP'; designId: string; quantity?: number };
 
 /**
  * 定价规则策略接口。
@@ -29,11 +32,20 @@ export interface PriceBreakdownItem {
 export interface PriceQuote {
   /** 合计金额（分解项之和，精确到两位小数） */
   totalAmount: number;
+  /** 购买套数 */
+  quantity: number;
+  /** 单套单价 */
+  unitPrice: number;
   /** 价格分解明细，供前端展示 */
   breakdown: PriceBreakdownItem[];
 }
 
 // ─── 内置规则：定制键帽 ──────────────────────────────────────────────────────
+
+function clampQuantity(quantity?: number): number {
+  const value = quantity ?? ORDER_QUANTITY_MIN;
+  return Math.min(ORDER_QUANTITY_MAX, Math.max(ORDER_QUANTITY_MIN, value));
+}
 
 /**
  * 定制键帽固定定价规则。
@@ -54,12 +66,17 @@ class CustomKeycapRule implements PricingRule {
     return context.type === 'CUSTOM_KEYCAP';
   }
 
-  calculate(_context: PricingContext): PriceQuote {
-    const price = CustomKeycapRule.getBasePrice();
+  calculate(context: PricingContext): PriceQuote {
+    const quantity = clampQuantity(context.quantity);
+    const unitPrice = CustomKeycapRule.getBasePrice();
+    const totalAmount = Number((unitPrice * quantity).toFixed(2));
+
     return {
-      totalAmount: price,
+      totalAmount,
+      quantity,
+      unitPrice,
       breakdown: [
-        { label: '定制键帽（1 套）', amount: price },
+        { label: `定制键帽（${quantity} 套）`, amount: totalAmount },
       ],
     };
   }

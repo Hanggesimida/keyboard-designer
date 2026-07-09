@@ -20,9 +20,15 @@ export interface OrderDesignSummary {
 }
 
 export interface OrderPaymentSummary {
-  method: 'ALIPAY' | 'WECHAT';
+  method: 'ALIPAY' | 'WECHAT' | 'MONTHLY';
   status: 'UNPAID' | 'PAID' | 'FAILED' | 'REFUNDED';
 }
+
+export const PAYMENT_METHOD_LABEL: Record<OrderPaymentSummary['method'], string> = {
+  ALIPAY: '支付宝',
+  WECHAT: '微信支付',
+  MONTHLY: '月结',
+};
 
 export interface AddressSnapshot {
   name: string;
@@ -38,6 +44,7 @@ export interface OrderSummary {
   id: string;
   orderNo: string;
   status: OrderStatus;
+  quantity: number;
   totalAmount: string;
   note: string | null;
   paidAt: string | null;
@@ -66,6 +73,7 @@ export interface Order extends OrderSummary {
 export interface CreateOrderPayload {
   designId: string;
   addressId: string;
+  quantity?: number;
   note?: string;
 }
 
@@ -83,10 +91,29 @@ export interface PaginatedOrders {
   items: OrderSummary[];
 }
 
+export interface BatchCreateOrderPayload {
+  items: CreateOrderPayload[];
+}
+
+export interface BatchCreateOrderResult {
+  success: Order[];
+  failed: { designId: string; reason: string }[];
+}
+
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 export function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return request<Order>('/orders', { method: 'POST', body: payload });
+}
+
+/** 企业主账号批量下单（月结免支付），逐条独立处理，返回每条的成功/失败结果 */
+export function createBatchOrder(
+  payload: BatchCreateOrderPayload,
+): Promise<BatchCreateOrderResult> {
+  return request<BatchCreateOrderResult>('/orders/batch', {
+    method: 'POST',
+    body: payload,
+  });
 }
 
 export function listOrders(params?: QueryOrdersParams): Promise<PaginatedOrders> {

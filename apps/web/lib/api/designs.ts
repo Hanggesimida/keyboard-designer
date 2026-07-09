@@ -32,11 +32,15 @@ export interface DesignData {
 // 供 store 构建保存 payload 时使用的运行时类型（含 assetId）
 export type { CanvasElement };
 
+export type DesignStatus = 'DRAFT' | 'SUBMITTED' | 'ORDERED';
+
 /** 设计列表摘要（不含 data，用于列表页轻量加载） */
 export interface DesignSummary {
   id: string;
   name: string;
   previewUrl: string | null;
+  status: DesignStatus;
+  submittedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +49,7 @@ export interface DesignSummary {
 export interface Design extends DesignSummary {
   data: DesignData;
   userId: string;
+  user?: { id: string; email: string; name: string | null };
 }
 
 export interface CreateDesignPayload {
@@ -79,6 +84,11 @@ export function updateDesign(id: string, payload: UpdateDesignPayload): Promise<
 
 export function deleteDesign(id: string): Promise<void> {
   return request<void>(`/designs/${id}`, { method: 'DELETE' });
+}
+
+/** 提交设计方案，供企业子账号（设计师）向主账号提交审核 */
+export function submitDesign(id: string): Promise<DesignSummary> {
+  return request<DesignSummary>(`/designs/${id}/submit`, { method: 'PATCH' });
 }
 
 export function uploadDesignThumbnail(

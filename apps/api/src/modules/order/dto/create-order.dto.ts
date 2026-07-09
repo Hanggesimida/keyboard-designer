@@ -1,4 +1,8 @@
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  ORDER_QUANTITY_MAX,
+  ORDER_QUANTITY_MIN,
+} from '../order.constants';
 
 export class CreateOrderDto {
   @IsString()
@@ -6,6 +10,12 @@ export class CreateOrderDto {
 
   @IsString()
   addressId: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(ORDER_QUANTITY_MIN)
+  @Max(ORDER_QUANTITY_MAX)
+  quantity?: number;
 
   @IsString()
   @IsOptional()

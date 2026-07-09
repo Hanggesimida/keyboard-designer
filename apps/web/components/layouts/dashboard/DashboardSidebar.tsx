@@ -31,7 +31,7 @@ export function DashboardSidebar({ navGroups, title = "烬炆外设", headerIcon
 
   function isActive(href: string, exact?: boolean) {
     if (exact || href === "/profile") return pathname === href
-    return pathname.startsWith(href)
+    return pathname === href || pathname.startsWith(href + "/")
   }
 
   return (

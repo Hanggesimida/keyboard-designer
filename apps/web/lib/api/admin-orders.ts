@@ -19,6 +19,7 @@ export interface AdminOrderSummary {
   id: string;
   orderNo: string;
   status: OrderStatus;
+  quantity: number;
   totalAmount: string;
   note: string | null;
   paidAt: string | null;
@@ -70,6 +71,7 @@ export interface ProductionBoardItem {
   id: string;
   orderNo: string;
   status: 'APPROVED' | 'PROCESSING';
+  quantity: number;
   totalAmount: string;
   note: string | null;
   updatedAt: string;

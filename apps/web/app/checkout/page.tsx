@@ -12,10 +12,12 @@ import { useDesign } from "@/hooks/queries/designs/useDesigns"
 import { useOrderQuote } from "@/hooks/queries/pricing/usePricing"
 import { AddressSelector } from "@/modules/checkout/components/AddressSelector"
 import { OrderSummary } from "@/modules/checkout/components/OrderSummary"
+import { QuantitySelector } from "@/modules/checkout/components/QuantitySelector"
 import { PaymentConfirmSection } from "@/modules/checkout/components/PaymentConfirmSection"
 import { useMyAddresses } from "@/hooks/queries/addresses/useAddresses"
 import { PageHeader } from "@/components/layouts/PageHeader"
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
+import { useUserStore } from "@/store/userStore"
 import type { DesignSummary } from "@/lib/api/designs"
 import type { PriceBreakdownItem } from "@/lib/api/pricing"
 
@@ -39,10 +41,12 @@ function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const designId = searchParams.get("designId")
+  const accountType = useUserStore((s) => s.user?.accountType)
 
   const { data: design, isLoading: isDesignLoading, error: designError } = useDesign(designId)
   const { data: addresses } = useMyAddresses()
-  const { data: quote, isLoading: isQuoteLoading } = useOrderQuote(designId)
+  const [quantity, setQuantity] = useState(1)
+  const { data: quote, isLoading: isQuoteLoading } = useOrderQuote(designId, quantity)
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [addressRequired, setAddressRequired] = useState(false)
@@ -78,6 +82,19 @@ function CheckoutContent() {
     )
   }
 
+  if (accountType === "ENTERPRISE_SUB") {
+    return (
+      <CheckoutShell>
+        <ProfileEmptyState
+          icon={Package}
+          title="企业子账号无法下单"
+          description="请先提交该设计方案，由主账号审核并统一下单。"
+          action={{ label: "返回设计器", href: `/design?id=${designId}` }}
+        />
+      </CheckoutShell>
+    )
+  }
+
   if (designError) {
     return (
       <CheckoutShell>
@@ -103,6 +120,7 @@ function CheckoutContent() {
 
   const summaryProps = {
     design: design as DesignSummary,
+    quantity: quote?.quantity ?? quantity,
     totalAmount: quote?.totalAmount,
     breakdown: quote?.breakdown as PriceBreakdownItem[] | undefined,
     isLoading: isQuoteLoading,
@@ -123,7 +141,11 @@ function CheckoutContent() {
 
       <PageHeader
         title="确认订单"
-        description="确认商品与收货信息后完成支付"
+        description={
+          accountType === "ENTERPRISE_MAIN"
+            ? "确认商品与收货信息后下单（月结免支付）"
+            : "确认商品与收货信息后完成支付"
+        }
       />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -132,14 +154,26 @@ function CheckoutContent() {
             {isDesignLoading ? (
               <Skeleton className="h-24 rounded-xl border border-border" />
             ) : design ? (
-              <>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-xl border border-border bg-muted/20 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground/80">购买数量</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground/60">每套包含完整定制键帽</p>
+                  </div>
+                  <QuantitySelector
+                    value={quantity}
+                    onChange={setQuantity}
+                    disabled={isQuoteLoading}
+                  />
+                </div>
+
                 <div className="lg:hidden">
                   <OrderSummary {...summaryProps} mode="full" />
                 </div>
                 <div className="hidden lg:block">
                   <OrderSummary {...summaryProps} mode="compact" />
                 </div>
-              </>
+              </div>
             ) : null}
           </ProfileSection>
 
@@ -164,6 +198,7 @@ function CheckoutContent() {
             <div className="lg:hidden">
               <CheckoutSummaryCard
                 designId={design.id}
+                quantity={quantity}
                 summaryProps={summaryProps}
                 selectedAddressId={resolvedAddressId}
                 onAddressRequired={handleAddressRequired}
@@ -176,6 +211,7 @@ function CheckoutContent() {
           <aside className="hidden lg:block lg:sticky lg:top-8 lg:self-start">
             <CheckoutSummaryCard
               designId={design.id}
+              quantity={quantity}
               summaryProps={summaryProps}
               selectedAddressId={resolvedAddressId}
               onAddressRequired={handleAddressRequired}
@@ -189,8 +225,10 @@ function CheckoutContent() {
 
 interface CheckoutSummaryCardProps {
   designId: string
+  quantity: number
   summaryProps: {
     design: DesignSummary
+    quantity: number
     totalAmount: number | undefined
     breakdown: PriceBreakdownItem[] | undefined
     isLoading?: boolean
@@ -201,6 +239,7 @@ interface CheckoutSummaryCardProps {
 
 function CheckoutSummaryCard({
   designId,
+  quantity,
   summaryProps,
   selectedAddressId,
   onAddressRequired,
@@ -216,6 +255,7 @@ function CheckoutSummaryCard({
         <PaymentConfirmSection
           designId={designId}
           selectedAddressId={selectedAddressId}
+          quantity={quantity}
           totalAmount={summaryProps.totalAmount}
           onAddressRequired={onAddressRequired}
         />

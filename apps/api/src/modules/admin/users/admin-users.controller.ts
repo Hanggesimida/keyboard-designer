@@ -10,6 +10,7 @@ import {
 import { AdminUsersService } from './admin-users.service';
 import { QueryAdminUsersDto } from './dto/query-admin-users.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { UpdateAccountTypeDto } from './dto/update-account-type.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@modules/auth/guards/roles.guard';
 import { Roles } from '@modules/auth/decorators/roles.decorator';
@@ -34,5 +35,13 @@ export class AdminUsersController {
     @CurrentUser() user: { id: string },
   ) {
     return this.adminUsersService.updateRole(id, dto, user.id);
+  }
+
+  @Patch(':id/account-type')
+  updateAccountType(
+    @Param('id') id: string,
+    @Body() dto: UpdateAccountTypeDto,
+  ) {
+    return this.adminUsersService.updateAccountType(id, dto);
   }
 }

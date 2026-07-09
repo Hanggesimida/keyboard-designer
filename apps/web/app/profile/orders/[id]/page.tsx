@@ -20,7 +20,7 @@ import { ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { useOrder, useCancelOrder } from "@/hooks/queries/orders/useOrders"
 import { usePayOrder } from "@/hooks/queries/payments/usePayOrder"
 import { pollOrderUntilPaid } from "@/lib/payment/alipay"
-import { getOrder } from "@/lib/api/orders"
+import { getOrder, PAYMENT_METHOD_LABEL } from "@/lib/api/orders"
 import { Alert, AlertDescription } from "@workspace/ui/components/alert"
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ export default function OrderDetailPage({
     setIsPaying(true)
     payOrder({
       orderId: id,
-      method: order.payment?.method ?? "ALIPAY",
+      method: order.payment?.method === "WECHAT" ? "WECHAT" : "ALIPAY",
       onError: (message) => {
         setPayError(message)
         setIsPaying(false)
@@ -206,6 +206,9 @@ export default function OrderDetailPage({
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground/80 truncate">{order.design.name}</p>
+              <p className="text-xs text-muted-foreground/55 mt-0.5">
+                定制键帽 · {order.quantity} 套
+              </p>
               <p className="text-xs text-muted-foreground/55 mt-0.5 font-mono">{order.orderNo}</p>
             </div>
             <p className="ml-auto text-base font-semibold text-foreground shrink-0">
@@ -238,7 +241,7 @@ export default function OrderDetailPage({
             <div className="rounded-xl border border-border bg-muted/30 px-4 py-3.5 space-y-2">
               <InfoRow
                 label="支付方式"
-                value={order.payment.method === "ALIPAY" ? "支付宝" : "微信支付"}
+                value={PAYMENT_METHOD_LABEL[order.payment.method]}
               />
               <InfoRow
                 label="支付状态"

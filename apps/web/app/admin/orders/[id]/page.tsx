@@ -25,6 +25,7 @@ import { OrderStatusBadge, ORDER_STATUS_CONFIG } from "@/modules/orders"
 import { StatusActionButtons } from "@/modules/admin/components/StatusActionButtons"
 import { RefundActionButton } from "@/modules/admin/components/RefundActionButton"
 import type { UpdateOrderStatusPayload } from "@/lib/api/admin-orders"
+import { PAYMENT_METHOD_LABEL } from "@/lib/api/orders"
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -206,6 +207,9 @@ export default function AdminOrderDetailPage({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground/80 truncate">{order.design.name}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/60">
+              定制键帽 · {order.quantity} 套
+            </p>
             <p className="mt-0.5 text-xs text-muted-foreground/60 font-mono">{order.design.id}</p>
             {order.note && (
               <p className="mt-1 text-xs text-muted-foreground/55">备注：{order.note}</p>
@@ -256,7 +260,7 @@ export default function AdminOrderDetailPage({
           <div className="rounded-xl border border-border bg-muted/30 px-4 py-3.5 space-y-2">
             <InfoRow
               label="支付方式"
-              value={order.payment.method === "ALIPAY" ? "支付宝" : "微信支付"}
+              value={PAYMENT_METHOD_LABEL[order.payment.method]}
             />
             <InfoRow
               label="支付状态"

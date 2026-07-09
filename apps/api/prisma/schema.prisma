@@ -18,6 +18,20 @@ enum Role {
   ADMIN // 管理员
 }
 
+// 账号类型枚举：与 Role（后台权限）正交的业务角色维度
+enum AccountType {
+  NORMAL          // 普通用户（默认，下单需在线支付）
+  ENTERPRISE_MAIN // 企业主账号：可创建/管理子账号，可审核并批量下单（月结免支付）
+  ENTERPRISE_SUB  // 企业子账号（设计师）：仅能设计并提交，无法下单
+}
+
+// 设计方案状态枚举
+enum DesignStatus {
+  DRAFT     // 草稿
+  SUBMITTED // 已提交，等待企业主账号审核/下单
+  ORDERED   // 已下单（可重复下单）
+}
+
 // 订单状态枚举
 enum OrderStatus {
   PENDING    // 待支付
@@ -33,8 +47,9 @@ enum OrderStatus {
 
 // 支付方式枚举
 enum PaymentMethod {
-  ALIPAY // 支付宝
-  WECHAT // 微信支付
+  ALIPAY  // 支付宝
+  WECHAT  // 微信支付
+  MONTHLY // 月结（企业主账号下单免支付）
 }
 
 // 支付状态枚举
@@ -64,13 +79,27 @@ model User {
   id        String   @id @default(uuid()) // 使用 UUID 作为主键，比自增 Int 更安全（防爬虫遍历 ID）
   email     String   @unique             // 邮箱，唯一索引，作为登录账号
   password  String?                      // 哈希加密后的密码；OTP 注册时初始为 null，set-password 后填入
+  name      String?                      // 显示名称；企业子账号创建时由主账号填写，其余场景可选
   
   // 角色字段：默认为普通用户
   role      Role     @default(USER)
 
+  // 账号类型：企业主/子账号体系，与 role 正交
+  accountType AccountType @default(NORMAL)
+  isActive    Boolean     @default(true) // 企业主账号可禁用子账号登录；对普通用户/主账号无实际限制
+
+  // 密码管理：子账号首登或主账号重置后须改密
+  mustChangePassword Boolean   @default(false)
+  passwordChangedAt  DateTime?
+
   // 审计字段（生产环境必备）
   createdAt DateTime @default(now())    // 创建时间，默认当前时间
   updatedAt DateTime @updatedAt          // 更新时间，每次修改记录时 Prisma 会自动更新此时间
+
+  // 企业主/子账号自关联：子账号的 parentId 指向所属主账号
+  parentId    String?
+  parent      User?  @relation("EnterpriseTeam", fields: [parentId], references: [id], onDelete: SetNull)
+  subAccounts User[] @relation("EnterpriseTeam")
 
   // 关联
   designs   Design[]
@@ -81,6 +110,8 @@ model User {
   // 索引优化：高频查询的字段建议加索引（例如按激活状态、创建时间筛选）
   @@index([role])
   @@index([createdAt])
+  @@index([accountType])
+  @@index([parentId])
 }
 
 /// 全局唯一的字体二进制（内容寻址，SHA-256 去重）
@@ -122,6 +153,10 @@ model Design {
   data       Json
   userId     String
 
+  // 提交状态：企业子账号设计师用于向主账号提交审核；普通用户默认保持 DRAFT
+  status      DesignStatus @default(DRAFT)
+  submittedAt DateTime?
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -130,6 +165,7 @@ model Design {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([status])
 }
 
 // 收货地址
@@ -167,6 +203,7 @@ model Order {
   addressSnapshot Json // 下单时固化的地址信息快照
 
   status      OrderStatus @default(PENDING)
+  quantity    Int         @default(1) // 购买套数
   totalAmount Decimal     @db.Decimal(10, 2)
   note        String?     // 买家备注
 

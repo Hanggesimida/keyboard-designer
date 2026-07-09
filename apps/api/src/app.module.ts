@@ -11,6 +11,7 @@ import { PricingModule } from '@modules/pricing/pricing.module';
 import { OrderModule } from '@modules/order/order.module';
 import { PaymentModule } from '@modules/payment/payment.module';
 import { AdminModule } from '@modules/admin/admin.module';
+import { EnterpriseModule } from '@modules/enterprise/enterprise.module';
 import { EmailModule } from '@modules/email/email.module';
 import { CosModule } from './common/cos/cos.module';
 import { FontsModule } from '@modules/fonts/fonts.module';
@@ -35,6 +36,7 @@ import { ExportModule } from '@modules/export/export.module';
     OrderModule,
     PaymentModule,
     AdminModule,
+    EnterpriseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

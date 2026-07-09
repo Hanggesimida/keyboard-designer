@@ -3,13 +3,47 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import { Prisma } from 'generated/prisma/client';
-import { Role } from 'generated/prisma/enums';
+import { Role, AccountType, DesignStatus } from 'generated/prisma/enums';
 import { CosService } from '../../common/cos/cos.service';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { UpdateDesignDto } from './dto/update-design.dto';
+
+/** 当前请求用户的最小上下文，用于权限判断 */
+export interface RequestUserContext {
+  id: string;
+  role?: Role;
+  accountType?: AccountType;
+}
+
+type DesignWithOwner = Prisma.DesignGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        parentId: true;
+        accountType: true;
+        email: true;
+        name: true;
+      };
+    };
+  };
+}>;
+
+const OWNER_SELECT = {
+  user: {
+    select: {
+      id: true,
+      parentId: true,
+      accountType: true,
+      email: true,
+      name: true,
+    },
+  },
+} as const;
 
 @Injectable()
 export class DesignService {
@@ -29,13 +63,15 @@ export class DesignService {
     });
   }
 
-  findAllByUser(userId: string) {
+  findAllByUser(userId: string, status?: DesignStatus) {
     return this.prisma.design.findMany({
-      where: { userId },
+      where: { userId, ...(status && { status }) },
       select: {
         id: true,
         name: true,
         previewUrl: true,
+        status: true,
+        submittedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -43,32 +79,76 @@ export class DesignService {
     });
   }
 
-  private assertDesignAccess(
-    design: { userId: string },
-    userId: string,
-    role?: Role,
+  /** 企业主账号查看团队（自己 + 所有子账号）设计，可选按子账号 ID 过滤 */
+  findAllByOwner(
+    mainUserId: string,
+    subUserId?: string,
+    status?: DesignStatus,
   ) {
-    if (role === Role.ADMIN || design.userId === userId) {
+    return this.prisma.design.findMany({
+      where: {
+        user: subUserId
+          ? { id: subUserId, parentId: mainUserId }
+          : { parentId: mainUserId },
+        ...(status && { status }),
+      },
+      select: {
+        id: true,
+        name: true,
+        previewUrl: true,
+        status: true,
+        submittedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, email: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  /**
+   * 权限判断：
+   * - ADMIN 或本人：可读写
+   * - 企业主账号访问其子账号的设计：可读写（子账号无需先提交才能被主账号编辑）
+   */
+  private assertDesignAccess(
+    design: { userId: string; user?: { parentId: string | null } },
+    user: RequestUserContext,
+  ) {
+    if (user.role === Role.ADMIN || design.userId === user.id) {
+      return;
+    }
+
+    if (
+      user.accountType === AccountType.ENTERPRISE_MAIN &&
+      design.user?.parentId === user.id
+    ) {
       return;
     }
 
     throw new ForbiddenException('无权访问该设计方案');
   }
 
-  async findOne(id: string, userId: string, role?: Role) {
-    const design = await this.prisma.design.findUnique({ where: { id } });
+  async findOne(
+    id: string,
+    user: RequestUserContext,
+  ): Promise<DesignWithOwner> {
+    const design = await this.prisma.design.findUnique({
+      where: { id },
+      include: OWNER_SELECT,
+    });
 
     if (!design) {
       throw new NotFoundException(`设计方案 ${id} 不存在`);
     }
 
-    this.assertDesignAccess(design, userId, role);
+    this.assertDesignAccess(design, user);
 
     return design;
   }
 
-  async update(id: string, userId: string, dto: UpdateDesignDto) {
-    await this.findOne(id, userId);
+  async update(id: string, user: RequestUserContext, dto: UpdateDesignDto) {
+    await this.findOne(id, user);
 
     return this.prisma.design.update({
       where: { id },
@@ -80,27 +160,45 @@ export class DesignService {
     });
   }
 
-  async updatePreview(id: string, userId: string, buffer: Buffer) {
-    await this.findOne(id, userId);
+  async updatePreview(id: string, user: RequestUserContext, buffer: Buffer) {
+    const design = await this.findOne(id, user);
 
-    const key = `designs/${userId}/${id}.webp`;
+    const key = `designs/${design.userId}/${id}.webp`;
     const previewUrl = await this.cosService.uploadBuffer(
       key,
       buffer,
       'image/webp',
     );
 
-    const design = await this.prisma.design.update({
+    const updated = await this.prisma.design.update({
       where: { id },
       data: { previewUrl },
       select: { previewUrl: true },
     });
 
-    return { previewUrl: design.previewUrl };
+    return { previewUrl: updated.previewUrl };
   }
 
-  async remove(id: string, userId: string) {
-    await this.findOne(id, userId);
+  /** 设计所有者（子账号或普通用户）本人提交设计，等待企业主账号审核/下单 */
+  async submit(id: string, userId: string) {
+    const design = await this.prisma.design.findUnique({ where: { id } });
+
+    if (!design) {
+      throw new NotFoundException(`设计方案 ${id} 不存在`);
+    }
+
+    if (design.userId !== userId) {
+      throw new ForbiddenException('只能提交本人的设计方案');
+    }
+
+    return this.prisma.design.update({
+      where: { id },
+      data: { status: DesignStatus.SUBMITTED, submittedAt: new Date() },
+    });
+  }
+
+  async remove(id: string, user: RequestUserContext) {
+    await this.findOne(id, user);
 
     try {
       await this.prisma.design.delete({ where: { id } });

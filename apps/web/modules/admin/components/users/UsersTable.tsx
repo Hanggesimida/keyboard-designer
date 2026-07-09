@@ -11,7 +11,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers"
-import type { UserRole } from "@/lib/api/admin-users"
+import type { UserRole, AccountType } from "@/lib/api/admin-users"
 import { createUserColumns } from "./columns"
 
 const DEFAULT_PAGE_SIZE = 20
@@ -21,9 +21,16 @@ const roleOptions: FacetedFilterOption[] = [
   { value: "USER", label: "普通用户" },
 ]
 
+const accountTypeOptions: FacetedFilterOption[] = [
+  { value: "NORMAL", label: "普通账号" },
+  { value: "ENTERPRISE_MAIN", label: "企业主账号" },
+  { value: "ENTERPRISE_SUB", label: "企业子账号" },
+]
+
 export function UsersTable() {
   const [page, setPage] = React.useState(1)
   const [roles, setRoles] = React.useState<UserRole[]>([])
+  const [accountTypes, setAccountTypes] = React.useState<AccountType[]>([])
   const [searchInput, setSearchInput] = React.useState("")
   const [search, setSearch] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
@@ -45,11 +52,13 @@ export function UsersTable() {
   }, [])
 
   const roleFilter = roles.length === 1 ? roles[0] : undefined
+  const accountTypeFilter = accountTypes.length === 1 ? accountTypes[0] : undefined
 
   const { data, isLoading, isFetching } = useAdminUsers({
     page,
     limit: DEFAULT_PAGE_SIZE,
     role: roleFilter,
+    accountType: accountTypeFilter,
     search: search || undefined,
   })
 
@@ -84,8 +93,12 @@ export function UsersTable() {
   React.useEffect(() => {
     const filters: typeof tableFilters = JSON.parse(tableFiltersKey)
     const roleColFilter = filters.find((f) => f.id === "role")
-    const values = (roleColFilter?.value as string[] | undefined) ?? []
-    setRoles(values as UserRole[])
+    const roleValues = (roleColFilter?.value as string[] | undefined) ?? []
+    setRoles(roleValues as UserRole[])
+    const accountTypeColFilter = filters.find((f) => f.id === "accountType")
+    const accountTypeValues =
+      (accountTypeColFilter?.value as string[] | undefined) ?? []
+    setAccountTypes(accountTypeValues as AccountType[])
     setPage(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableFiltersKey])
@@ -124,6 +137,11 @@ export function UsersTable() {
               column={table.getColumn("role")}
               title="角色"
               options={roleOptions}
+            />
+            <DataTableFacetedFilter
+              column={table.getColumn("accountType")}
+              title="账号类型"
+              options={accountTypeOptions}
             />
             {(isFiltered || search) && (
               <Button

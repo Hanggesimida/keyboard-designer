@@ -1,6 +1,6 @@
 import { IsEnum, IsInt, IsOptional, IsString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Role } from 'generated/prisma/enums';
+import { Role, AccountType } from 'generated/prisma/enums';
 
 export class QueryAdminUsersDto {
   @IsInt()
@@ -24,4 +24,8 @@ export class QueryAdminUsersDto {
   @IsEnum(Role)
   @IsOptional()
   role?: Role;
+
+  @IsEnum(AccountType)
+  @IsOptional()
+  accountType?: AccountType;
 }

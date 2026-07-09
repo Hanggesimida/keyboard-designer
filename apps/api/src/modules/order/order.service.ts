@@ -9,7 +9,24 @@ import { PricingService } from '@modules/pricing/pricing.service';
 import { NotificationsService } from '@modules/admin/notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
-import { NotificationType, OrderStatus } from 'generated/prisma/client';
+import { BatchCreateOrderDto } from './dto/batch-create-order.dto';
+import {
+  ORDER_QUANTITY_MAX,
+  ORDER_QUANTITY_MIN,
+} from './order.constants';
+import {
+  AccountType,
+  DesignStatus,
+  NotificationType,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from 'generated/prisma/client';
+
+export interface OrderRequestUser {
+  id: string;
+  accountType: AccountType;
+}
 
 @Injectable()
 export class OrderService {
@@ -19,67 +36,44 @@ export class OrderService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async create(userId: string, dto: CreateOrderDto) {
-    // 1. 验证设计方案归属
-    const design = await this.prisma.design.findUnique({
-      where: { id: dto.designId },
-    });
-
-    if (!design) {
-      throw new NotFoundException(`设计方案 ${dto.designId} 不存在`);
+  async create(user: OrderRequestUser, dto: CreateOrderDto) {
+    if (user.accountType === AccountType.ENTERPRISE_SUB) {
+      throw new ForbiddenException(
+        '企业子账号不能下单，请将设计方案提交给主账号处理',
+      );
     }
 
-    if (design.userId !== userId) {
-      throw new ForbiddenException('无权使用该设计方案下单');
+    if (user.accountType === AccountType.ENTERPRISE_MAIN) {
+      return this.createEnterpriseOrder(user.id, dto);
     }
 
-    // 2. 验证收货地址归属
-    const address = await this.prisma.address.findUnique({
-      where: { id: dto.addressId },
-    });
+    return this.createPaidOrder(user.id, dto);
+  }
 
-    if (!address) {
-      throw new NotFoundException(`收货地址 ${dto.addressId} 不存在`);
+  /** 企业主账号批量下单：逐条独立处理，互不阻塞 */
+  async createBatch(user: OrderRequestUser, dto: BatchCreateOrderDto) {
+    if (user.accountType !== AccountType.ENTERPRISE_MAIN) {
+      throw new ForbiddenException('仅企业主账号可批量下单');
     }
 
-    if (address.userId !== userId) {
-      throw new ForbiddenException('无权使用该收货地址');
-    }
+    const results = await Promise.allSettled(
+      dto.items.map((item) => this.createEnterpriseOrder(user.id, item)),
+    );
 
-    // 3. 服务端计算价格，前端不可传入金额
-    const quote = this.pricingService.quote({
-      type: 'CUSTOM_KEYCAP',
-      designId: dto.designId,
+    const success: unknown[] = [];
+    const failed: { designId: string; reason: string }[] = [];
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        success.push(result.value);
+      } else {
+        const reason =
+          result.reason instanceof Error ? result.reason.message : '下单失败';
+        failed.push({ designId: dto.items[index].designId, reason });
+      }
     });
 
-    // 4. 生成订单号并创建订单（含双快照）
-    const orderNo = this.generateOrderNo();
-
-    return this.prisma.order.create({
-      data: {
-        orderNo,
-        userId,
-        designId: dto.designId,
-        addressId: dto.addressId,
-        totalAmount: quote.totalAmount,
-        note: dto.note,
-        // 固化设计快照，防止设计后续修改影响历史订单
-        designSnapshot: design.data as object,
-        // 固化地址快照，防止地址被修改或删除后影响历史订单
-        addressSnapshot: {
-          name: address.name,
-          phone: address.phone,
-          province: address.province,
-          city: address.city,
-          district: address.district,
-          detail: address.detail,
-        },
-      },
-      include: {
-        design: { select: { id: true, name: true, previewUrl: true } },
-        address: true,
-      },
-    });
+    return { success, failed };
   }
 
   async findAllByUser(userId: string, query: QueryOrdersDto) {
@@ -105,6 +99,7 @@ export class OrderService {
           id: true,
           orderNo: true,
           status: true,
+          quantity: true,
           totalAmount: true,
           note: true,
           paidAt: true,
@@ -178,16 +173,181 @@ export class OrderService {
     });
   }
 
+  /** 普通用户下单：走 PENDING → 在线支付流程 */
+  private async createPaidOrder(userId: string, dto: CreateOrderDto) {
+    const design = await this.prisma.design.findUnique({
+      where: { id: dto.designId },
+    });
+
+    if (!design) {
+      throw new NotFoundException(`设计方案 ${dto.designId} 不存在`);
+    }
+
+    if (design.userId !== userId) {
+      throw new ForbiddenException('无权使用该设计方案下单');
+    }
+
+    const address = await this.prisma.address.findUnique({
+      where: { id: dto.addressId },
+    });
+
+    if (!address) {
+      throw new NotFoundException(`收货地址 ${dto.addressId} 不存在`);
+    }
+
+    if (address.userId !== userId) {
+      throw new ForbiddenException('无权使用该收货地址');
+    }
+
+    const quote = this.buildQuote(dto);
+
+    return this.prisma.order.create({
+      data: {
+        orderNo: this.generateOrderNo(),
+        userId,
+        designId: dto.designId,
+        addressId: dto.addressId,
+        quantity: quote.quantity,
+        totalAmount: quote.totalAmount,
+        note: dto.note,
+        designSnapshot: design.data as object,
+        addressSnapshot: {
+          name: address.name,
+          phone: address.phone,
+          province: address.province,
+          city: address.city,
+          district: address.district,
+          detail: address.detail,
+        },
+      },
+      include: {
+        design: { select: { id: true, name: true, previewUrl: true } },
+        address: true,
+      },
+    });
+  }
+
+  /**
+   * 企业主账号下单：可对自己或已提交/已下单的子账号团队设计下单，支持重复下单。
+   * 免支付（月结），订单直接落地为 PAID，并将设计标记为 ORDERED。
+   */
+  private async createEnterpriseOrder(mainUserId: string, dto: CreateOrderDto) {
+    const design = await this.prisma.design.findUnique({
+      where: { id: dto.designId },
+      include: { user: { select: { id: true, parentId: true } } },
+    });
+
+    if (!design) {
+      throw new NotFoundException(`设计方案 ${dto.designId} 不存在`);
+    }
+
+    const isOwnDesign = design.userId === mainUserId;
+    const isTeamDesign =
+      design.user.parentId === mainUserId &&
+      (design.status === DesignStatus.SUBMITTED ||
+        design.status === DesignStatus.ORDERED);
+
+    if (!isOwnDesign && !isTeamDesign) {
+      throw new ForbiddenException('只能对本人设计或已提交的团队设计下单');
+    }
+
+    const address = await this.prisma.address.findUnique({
+      where: { id: dto.addressId },
+    });
+
+    if (!address) {
+      throw new NotFoundException(`收货地址 ${dto.addressId} 不存在`);
+    }
+
+    if (address.userId !== mainUserId) {
+      throw new ForbiddenException('无权使用该收货地址');
+    }
+
+    const quote = this.buildQuote(dto);
+
+    const orderNo = this.generateOrderNo();
+    const now = new Date();
+
+    const order = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          orderNo,
+          userId: mainUserId,
+          designId: dto.designId,
+          addressId: dto.addressId,
+          quantity: quote.quantity,
+          totalAmount: quote.totalAmount,
+          note: dto.note,
+          status: OrderStatus.PAID,
+          paidAt: now,
+          designSnapshot: design.data as object,
+          addressSnapshot: {
+            name: address.name,
+            phone: address.phone,
+            province: address.province,
+            city: address.city,
+            district: address.district,
+            detail: address.detail,
+          },
+        },
+        include: {
+          design: { select: { id: true, name: true, previewUrl: true } },
+          address: true,
+        },
+      });
+
+      await tx.payment.create({
+        data: {
+          orderId: created.id,
+          method: PaymentMethod.MONTHLY,
+          status: PaymentStatus.PAID,
+          amount: quote.totalAmount,
+          paidAt: now,
+        },
+      });
+
+      await tx.design.update({
+        where: { id: dto.designId },
+        data: { status: DesignStatus.ORDERED },
+      });
+
+      return created;
+    });
+
+    this.notificationsService
+      .create({
+        type: NotificationType.ORDER_PAID,
+        title: '新订单待处理',
+        body: `订单 ${order.orderNo} 已完成下单（月结），等待接单`,
+        data: {
+          orderId: order.id,
+          orderNo: order.orderNo,
+          amount: order.totalAmount.toString(),
+        },
+      })
+      .catch(() => {});
+
+    return order;
+  }
+
   // 生成可读订单号：JW-YYYYMMDD-XXXXX（5位大写字母+数字随机串）
   private generateOrderNo(): string {
-    const date = new Date()
-      .toISOString()
-      .slice(0, 10)
-      .replace(/-/g, '');
-    const suffix = Math.random()
-      .toString(36)
-      .toUpperCase()
-      .slice(2, 7);
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const suffix = Math.random().toString(36).toUpperCase().slice(2, 7);
     return `JW-${date}-${suffix}`;
+  }
+
+  private resolveQuantity(dto: CreateOrderDto): number {
+    const quantity = dto.quantity ?? ORDER_QUANTITY_MIN;
+    return Math.min(ORDER_QUANTITY_MAX, Math.max(ORDER_QUANTITY_MIN, quantity));
+  }
+
+  private buildQuote(dto: CreateOrderDto) {
+    const quantity = this.resolveQuantity(dto);
+    return this.pricingService.quote({
+      type: 'CUSTOM_KEYCAP',
+      designId: dto.designId,
+      quantity,
+    });
   }
 }

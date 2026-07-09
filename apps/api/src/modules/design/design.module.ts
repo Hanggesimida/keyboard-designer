@@ -5,5 +5,6 @@ import { DesignService } from './design.service';
 @Module({
   controllers: [DesignController],
   providers: [DesignService],
+  exports: [DesignService],
 })
 export class DesignModule {}

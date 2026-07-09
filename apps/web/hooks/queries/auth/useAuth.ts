@@ -4,6 +4,11 @@ import {
   sendOtp,
   verifyOtp,
   setPassword,
+  changePassword,
+  changeInitialPassword,
+  forgotPassword,
+  resetPassword,
+  isChangePasswordResponse,
   type LoginInput,
 } from '@/lib/api/auth';
 import { useUserStore } from '@/store/userStore';
@@ -14,9 +19,11 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (data: LoginInput) => login(data),
-    onSuccess: ({ accessToken }) => {
-      queryClient.clear();
-      setToken(accessToken);
+    onSuccess: (res) => {
+      if (!isChangePasswordResponse(res)) {
+        queryClient.clear();
+        setToken(res.accessToken);
+      }
     },
   });
 }
@@ -60,6 +67,70 @@ export function useSetPassword() {
       setToken(accessToken);
       sessionStorage.removeItem('otp_setup_token');
       sessionStorage.removeItem('otp_email');
+    },
+  });
+}
+
+export function useChangeInitialPassword() {
+  const setToken = useUserStore((s) => s.setToken);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      password,
+      changePasswordToken,
+    }: {
+      password: string;
+      changePasswordToken: string;
+    }) => changeInitialPassword(password, changePasswordToken),
+    onSuccess: ({ accessToken }) => {
+      queryClient.clear();
+      setToken(accessToken);
+      sessionStorage.removeItem('change_password_token');
+      sessionStorage.removeItem('otp_email');
+    },
+  });
+}
+
+export function useChangePassword() {
+  const accessToken = useUserStore((s) => s.accessToken);
+  const setToken = useUserStore((s) => s.setToken);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { newPassword: string; currentPassword?: string }) =>
+      changePassword(payload, accessToken ?? undefined),
+    onSuccess: ({ accessToken: newToken }) => {
+      queryClient.clear();
+      setToken(newToken);
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: ({ email }: { email: string }) => forgotPassword(email),
+  });
+}
+
+export function useResetPassword() {
+  const setToken = useUserStore((s) => s.setToken);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      email,
+      otp,
+      password,
+    }: {
+      email: string;
+      otp: string;
+      password: string;
+    }) => resetPassword(email, otp, password),
+    onSuccess: ({ accessToken }) => {
+      queryClient.clear();
+      setToken(accessToken);
+      sessionStorage.removeItem('reset_password_email');
     },
   });
 }

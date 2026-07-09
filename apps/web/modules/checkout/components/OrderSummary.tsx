@@ -16,6 +16,7 @@ type OrderSummaryMode = "compact" | "pricing" | "full"
 
 interface OrderSummaryProps {
   design: DesignSummary
+  quantity: number
   totalAmount: number | undefined
   breakdown: PriceBreakdownItem[] | undefined
   isLoading?: boolean
@@ -25,6 +26,7 @@ interface OrderSummaryProps {
 
 export function OrderSummary({
   design,
+  quantity,
   totalAmount,
   breakdown,
   isLoading,
@@ -65,7 +67,7 @@ export function OrderSummary({
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground/85">{design.name}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground/60">定制键帽 · 1 套</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/60">定制键帽 · {quantity} 套</p>
           </div>
 
           {mode === "full" && (

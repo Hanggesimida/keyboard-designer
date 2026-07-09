@@ -28,10 +28,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+    if (!user.isActive) {
+      throw new UnauthorizedException('账号已被禁用，请联系管理员');
+    }
     return {
       id: user.id,
       email: user.email,
       role: user.role,
+      accountType: user.accountType,
+      parentId: user.parentId,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 }

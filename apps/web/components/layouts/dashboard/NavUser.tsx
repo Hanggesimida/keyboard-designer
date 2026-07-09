@@ -1,9 +1,11 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { UserCircle, Bell, LogOut, MoreVertical, ShieldCheck } from "lucide-react"
+import { UserCircle, LogOut, MoreVertical, ShieldCheck, Building2 } from "lucide-react"
 import { useUserStore } from "@/store/userStore"
+import type { AccountType } from "@/lib/api/users"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
+import { Badge } from "@workspace/ui/components/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,31 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 
+function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
+  if (accountType === "ENTERPRISE_MAIN") {
+    return (
+      <Badge
+        variant="outline"
+        className="h-4 gap-0.5 border-blue-400/30 px-1 py-0 text-[10px] font-normal text-blue-500"
+      >
+        <Building2 size={9} />
+        企业主账号
+      </Badge>
+    )
+  }
+  if (accountType === "ENTERPRISE_SUB") {
+    return (
+      <Badge
+        variant="outline"
+        className="h-4 px-1 py-0 text-[10px] font-normal text-muted-foreground"
+      >
+        企业子账号
+      </Badge>
+    )
+  }
+  return null
+}
+
 export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
@@ -27,6 +54,7 @@ export function NavUser() {
   const logout = useUserStore((s) => s.logout)
 
   const isAdmin = user?.role === "ADMIN"
+  const accountType = user?.accountType
   const displayName = user?.email?.split("@")[0] ?? "用户"
   const email = user?.email ?? ""
   const initials = displayName.slice(0, 2).toUpperCase()
@@ -51,6 +79,11 @@ export function NavUser() {
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{displayName}</span>
                 <span className="truncate text-xs text-muted-foreground">{email}</span>
+                {accountType && (
+                  <span className="mt-0.5">
+                    <AccountTypeBadge accountType={accountType} />
+                  </span>
+                )}
               </div>
               <MoreVertical className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -69,23 +102,30 @@ export function NavUser() {
                 <div className="grid flex-1 text-left text-sm leading-normal">
                   <span className="truncate font-medium text-foreground">{displayName}</span>
                   <span className="truncate text-xs text-muted-foreground">{email}</span>
+                  {accountType && (
+                    <span className="mt-1">
+                      <AccountTypeBadge accountType={accountType} />
+                    </span>
+                  )}
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
-                <UserCircle className="text-muted-foreground" />
-                账号
-              </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
-                  <ShieldCheck className="text-muted-foreground" />
-                  管理员后台
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            {isAdmin && (
+              <>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
+                    <UserCircle className="text-muted-foreground" />
+                    个人页面
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
+                    <ShieldCheck className="text-muted-foreground" />
+                    管理员后台
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <LogOut className="text-muted-foreground" />
               退出登录

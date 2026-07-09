@@ -5,14 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { GalleryVerticalEnd, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
+import { LogoIcon } from "@/components/layouts/Logo"
 
 import {
   login,
   sendOtp,
   loginSchema,
   sendOtpSchema,
+  isChangePasswordResponse,
   type LoginInput,
   type SendOtpInput,
 } from "@/lib/api/auth"
@@ -59,6 +61,11 @@ export function LoginForm() {
     setServerError(null)
     try {
       const res = await login(data)
+      if (isChangePasswordResponse(res)) {
+        sessionStorage.setItem("change_password_token", res.changePasswordToken)
+        router.push(`/login/change-password?redirect=${encodeURIComponent(redirect)}`)
+        return
+      }
       getQueryClient().clear()
       setToken(res.accessToken)
       router.push(redirect)
@@ -113,7 +120,7 @@ export function LoginForm() {
       <div className="flex flex-col items-center gap-2 text-center">
         <Link href="/" className="flex flex-col items-center gap-2 font-medium">
           <div className="flex size-8 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-6" />
+            <LogoIcon className="size-6" />
           </div>
           <span className="sr-only">烬炆外设</span>
         </Link>
@@ -176,7 +183,15 @@ export function LoginForm() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="password">密码</FieldLabel>
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="password">密码</FieldLabel>
+                <Link
+                  href={`/login/forgot-password?redirect=${encodeURIComponent(redirect)}`}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  忘记密码？
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"

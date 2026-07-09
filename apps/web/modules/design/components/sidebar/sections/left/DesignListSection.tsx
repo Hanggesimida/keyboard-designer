@@ -16,7 +16,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
-import { useMyDesigns } from "@/hooks/queries/designs/useDesigns"
+import { useMyDesigns, useDesign } from "@/hooks/queries/designs/useDesigns"
 import { useAdminOrder } from "@/hooks/queries/admin/useAdminOrders"
 import { useUserStore } from "@/store/userStore"
 import { useTemporalDesignStore } from "@/modules/design/store/designUiStore"
@@ -92,6 +92,73 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
   )
 }
 
+// ─── 企业主账号审阅子账号设计上下文面板 ──────────────────────────────────────────
+
+function EnterpriseDesignContextSection({ designId }: { designId: string }) {
+  const { data: design, isLoading } = useDesign(designId)
+  const designerLabel = design?.user?.name ?? design?.user?.email ?? "设计师"
+
+  return (
+    <PanelSection
+      title={`正在查看 ${designerLabel} 的设计`}
+      first
+      collapsible
+      defaultOpen
+    >
+      {isLoading ? (
+        <div className="space-y-2 py-1">
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      ) : design ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 py-2">
+            <User size={12} className="shrink-0 text-muted-foreground" />
+            <div className="min-w-0">
+              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">设计师</p>
+              {design.user?.name ? (
+                <>
+                  <p className="truncate text-xs font-medium text-foreground">{design.user.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">{design.user.email}</p>
+                </>
+              ) : (
+                <p className="truncate text-xs text-foreground">{design.user?.email ?? "—"}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 bg-accent text-accent-foreground">
+            <div className="w-10 h-7 rounded shrink-0 flex items-center justify-center overflow-hidden border border-accent-foreground/20 bg-background/30">
+              {design.previewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={design.previewUrl}
+                  alt={design.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Keyboard size={12} className="text-accent-foreground/50" />
+              )}
+            </div>
+            <span className="flex-1 min-w-0 text-xs truncate font-medium">{design.name}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-foreground/60 shrink-0" />
+          </div>
+
+          <a
+            href="/profile/team-designs"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            <ArrowLeft size={11} />
+            返回团队设计
+          </a>
+        </div>
+      ) : (
+        <p className="py-1 text-[11px] text-muted-foreground">设计加载失败</p>
+      )}
+    </PanelSection>
+  )
+}
+
 // ─── 普通用户设计列表面板 ──────────────────────────────────────────────────────
 
 export function DesignListSection() {
@@ -99,6 +166,7 @@ export function DesignListSection() {
   const searchParams = useSearchParams()
   const currentDesignId = searchParams.get("id")
   const fromAdmin = searchParams.get("from") === "admin"
+  const fromEnterprise = searchParams.get("from") === "enterprise"
   const orderId = searchParams.get("orderId")
   const accessToken = useUserStore((s) => s.accessToken)
 
@@ -129,6 +197,11 @@ export function DesignListSection() {
   // 管理员审阅模式：用订单上下文面板替换我的设计列表
   if (fromAdmin && orderId) {
     return <AdminOrderContextSection orderId={orderId} designId={currentDesignId} />
+  }
+
+  // 企业主账号审阅模式：用团队设计上下文面板替换我的设计列表
+  if (fromEnterprise && currentDesignId) {
+    return <EnterpriseDesignContextSection designId={currentDesignId} />
   }
 
   return (

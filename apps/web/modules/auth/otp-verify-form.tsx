@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { GalleryVerticalEnd, Loader2, ArrowLeft } from "lucide-react"
+import { Loader2, ArrowLeft } from "lucide-react"
+import { LogoIcon } from "@/components/layouts/Logo"
 
 import { verifyOtp, verifyOtpSchema, type VerifyOtpInput } from "@/lib/api/auth"
 import { useUserStore } from "@/store/userStore"
@@ -56,6 +57,9 @@ export function OtpVerifyForm() {
         setToken(res.accessToken)
         sessionStorage.removeItem("otp_email")
         router.push(redirect)
+      } else if (res.action === "change_password") {
+        sessionStorage.setItem("change_password_token", res.changePasswordToken)
+        router.push(`/login/change-password?redirect=${encodeURIComponent(redirect)}`)
       } else {
         sessionStorage.setItem("otp_setup_token", res.setupToken)
         router.push(`/login/set-password?redirect=${encodeURIComponent(redirect)}`)
@@ -71,7 +75,7 @@ export function OtpVerifyForm() {
       <div className="flex flex-col items-center gap-2 text-center">
         <Link href="/" className="flex flex-col items-center gap-2 font-medium">
           <div className="flex size-8 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-6" />
+            <LogoIcon className="size-6" />
           </div>
           <span className="sr-only">烬炆外设</span>
         </Link>

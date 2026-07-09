@@ -176,7 +176,7 @@ function ProductionCard({ item, onAdvance, isPending, isFullscreen }: Production
 
       {/* 生产信息 */}
       <div className={["px-4 py-3 space-y-1.5", isFullscreen && "px-5 py-4 space-y-2"].join(" ")}>
-        <InfoLine icon={Package} label="数量" value="1 套" fullscreen={isFullscreen} />
+        <InfoLine icon={Package} label="数量" value={`${item.quantity} 套`} fullscreen={isFullscreen} />
         <InfoLine icon={Package} label="包装" value="标准包装" fullscreen={isFullscreen} />
         {specText && <InfoLine icon={Keyboard} label="规格" value={specText} fullscreen={isFullscreen} />}
         {item.note && <InfoLine icon={Package} label="备注" value={item.note} fullscreen={isFullscreen} />}

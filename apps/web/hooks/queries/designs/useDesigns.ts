@@ -6,6 +6,7 @@ import {
   updateDesign,
   deleteDesign,
   uploadDesignThumbnail,
+  submitDesign,
   type CreateDesignPayload,
   type UpdateDesignPayload,
 } from '@/lib/api/designs';
@@ -86,6 +87,18 @@ export function useUploadDesignThumbnail() {
     mutationFn: ({ id, blob }: { id: string; blob: Blob }) =>
       uploadDesignThumbnail(id, blob),
     onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: designKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: designKeys.detail(id) });
+    },
+  });
+}
+
+export function useSubmitDesign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => submitDesign(id),
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: designKeys.lists() });
       queryClient.invalidateQueries({ queryKey: designKeys.detail(id) });
     },

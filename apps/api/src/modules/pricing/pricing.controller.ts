@@ -1,11 +1,23 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import {
+  ORDER_QUANTITY_MAX,
+  ORDER_QUANTITY_MIN,
+} from '@modules/order/order.constants';
 import { PricingService, PriceQuote } from './pricing.service';
 
 class QuoteQuery {
   @IsString()
   designId: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(ORDER_QUANTITY_MIN)
+  @Max(ORDER_QUANTITY_MAX)
+  quantity?: number;
 }
 
 /**
@@ -18,7 +30,7 @@ export class PricingController {
   constructor(private readonly pricingService: PricingService) {}
 
   /**
-   * GET /pricing/quote?designId=xxx
+   * GET /pricing/quote?designId=xxx&quantity=3
    * 返回定制键帽的报价明细，仅用于前端展示，不产生任何订单记录。
    */
   @Get('quote')
@@ -26,6 +38,7 @@ export class PricingController {
     return this.pricingService.quote({
       type: 'CUSTOM_KEYCAP',
       designId: query.designId,
+      quantity: query.quantity,
     });
   }
 }

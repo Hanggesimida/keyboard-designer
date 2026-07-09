@@ -51,7 +51,7 @@ export function PanelSection({
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 )}
               >
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <span className="truncate text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {title}
                 </span>
                 <ChevronDown className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180 cursor-pointer" />
@@ -69,7 +69,7 @@ export function PanelSection({
     <section className={sectionClass}>
       {title && (
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <span className="truncate text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             {title}
           </span>
           {action}
