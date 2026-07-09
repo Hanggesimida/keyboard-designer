@@ -6,24 +6,27 @@
 # ============================================================
 FROM node:24-alpine AS pruner
 
+ARG PNPM_VERSION=11.10.0
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate \
+    && npm install -g turbo@2.8.17
 
 WORKDIR /app
 
 COPY . .
 
-RUN pnpm dlx turbo prune api --docker --out-dir /pruned
+RUN turbo prune api --docker --out-dir /pruned
 
 # ============================================================
 # Stage 2: installer — 仅用 json/ 层安装依赖（最大化 layer 缓存）
 # ============================================================
 FROM node:24-alpine AS installer
 
+ARG PNPM_VERSION=11.10.0
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 
@@ -38,9 +41,10 @@ RUN pnpm install --frozen-lockfile
 # ============================================================
 FROM node:24-alpine AS builder
 
+ARG PNPM_VERSION=11.10.0
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 

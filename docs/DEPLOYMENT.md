@@ -50,7 +50,7 @@ Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
 - [Docker Compose](https://docs.docker.com/compose/install/) v2+
 - Git（用于拉取代码）
 
-构建镜像时使用 **Node 24** 与 **pnpm 11.5.0**（已封装在 Dockerfile 中，宿主机无需安装 Node）。
+构建镜像时使用 **Node 24** 与 **pnpm 11.10.0**（与根目录 `package.json` 的 `packageManager` 一致，已封装在 Dockerfile 中，宿主机无需安装 Node）。
 
 ---
 
