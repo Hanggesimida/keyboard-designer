@@ -37,7 +37,7 @@ export async function loadUserFonts(
           document.fonts.add(face)
           loaded.add(id)
         } catch (err) {
-          console.warn(`[loadUserFonts] 加载失败 ${id}:`, err)
+          console.warn("[loadUserFonts] 加载失败", { fontId: id, family, url, err })
         } finally {
           inflight.delete(id)
         }
