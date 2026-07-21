@@ -29,8 +29,9 @@ export function Keycap3DPreview() {
   return (
     <Preview3DErrorBoundary onRetry={handleRetry}>
       <div
-        className="relative h-full w-full bg-background"
+        className="relative h-full w-full"
         style={{
+          backgroundColor: "rgb(63, 63, 63)",
           backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }}

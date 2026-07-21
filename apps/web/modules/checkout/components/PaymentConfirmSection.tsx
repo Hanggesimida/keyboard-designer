@@ -43,6 +43,16 @@ export function PaymentConfirmSection({
   const [method, setMethod] = useState<PaymentMethod>("ALIPAY")
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isPaying, setIsPaying] = useState(false)
+  const [showWechatHint, setShowWechatHint] = useState(false)
+
+  function handleSelectMethod(value: PaymentMethod) {
+    if (value === "WECHAT") {
+      setShowWechatHint(true)
+      window.setTimeout(() => setShowWechatHint(false), 4000)
+      return
+    }
+    setMethod(value)
+  }
 
   const { mutate: createOrder, isPending: isCreatingOrder } = useCreateOrder()
   const { payOrder } = usePayOrder()
@@ -108,7 +118,7 @@ export function PaymentConfirmSection({
                 <button
                   key={m.value}
                   type="button"
-                  onClick={() => setMethod(m.value)}
+                  onClick={() => handleSelectMethod(m.value)}
                   disabled={isProcessing}
                   className={cn(
                     "flex cursor-pointer flex-col items-start gap-0.5 rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -123,6 +133,11 @@ export function PaymentConfirmSection({
               )
             })}
           </div>
+          {showWechatHint && (
+            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+              微信支付功能暂未开发完成，请使用支付宝支付
+            </p>
+          )}
         </div>
       )}
 
