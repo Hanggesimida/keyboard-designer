@@ -13,6 +13,7 @@ import {
   XCircle,
   RefreshCw,
   CheckCheck,
+  type LucideIcon,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
@@ -29,7 +30,7 @@ import { PageHeader } from "@/components/layouts/PageHeader"
 interface StatCardProps {
   label: string
   value: number | string
-  icon: React.ElementType
+  icon: LucideIcon
   iconCls: string
   href?: string
 }
@@ -65,7 +66,7 @@ function StatCard({ label, value, icon: Icon, iconCls, href }: StatCardProps) {
 
 // ─── 通知类型图标映射 ─────────────────────────────────────────────────────────
 
-const NOTIFICATION_ICON: Record<NotificationType, { icon: React.ElementType; cls: string }> = {
+const NOTIFICATION_ICON: Record<NotificationType, { icon: LucideIcon; cls: string }> = {
   ORDER_PAID: { icon: ShoppingBag, cls: "text-sky-400" },
   ORDER_CANCELLED: { icon: XCircle, cls: "text-muted-foreground/70" },
   ORDER_REFUND_REQUEST: { icon: RefreshCw, cls: "text-rose-400" },

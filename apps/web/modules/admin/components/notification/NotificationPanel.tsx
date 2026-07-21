@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { CheckCheck, ShoppingBag, XCircle, RefreshCw, Bell } from 'lucide-react';
+import { CheckCheck, ShoppingBag, XCircle, RefreshCw, Bell, type LucideIcon } from 'lucide-react';
 import { cn } from '@workspace/ui/lib/utils';
 import type { Notification, NotificationType } from '@/lib/api/notifications';
 import {
@@ -18,7 +18,7 @@ import {
 
 const TYPE_CONFIG: Record<
   NotificationType,
-  { icon: React.ElementType; iconCls: string; dotCls: string }
+  { icon: LucideIcon; iconCls: string; dotCls: string }
 > = {
   ORDER_PAID: {
     icon: ShoppingBag,

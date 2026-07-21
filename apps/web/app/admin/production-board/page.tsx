@@ -12,6 +12,7 @@ import {
   ImageIcon,
   Maximize2,
   Minimize2,
+  type LucideIcon,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
@@ -245,7 +246,7 @@ function InfoLine({
   value,
   fullscreen,
 }: {
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
   value: string
   fullscreen?: boolean
