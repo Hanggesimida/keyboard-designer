@@ -2,6 +2,38 @@ import { create, useStore } from "zustand"
 import { temporal } from "zundo"
 import type { TemporalState } from "zundo"
 import { DEFAULT_ARTBOARD_BG, DEFAULT_KEYCAP_COLORS } from "@/modules/design/lib/designDefaults"
+import {
+  PREVIEW_3D_HEIGHT_DEFAULT,
+  PREVIEW_3D_HEIGHT_MAX,
+  PREVIEW_3D_HEIGHT_MIN,
+  PREVIEW_3D_HEIGHT_STORAGE_KEY,
+} from "@/modules/design/lib/preview3d/constants"
+
+function clampPreview3dHeight(height: number): number {
+  return Math.min(PREVIEW_3D_HEIGHT_MAX, Math.max(PREVIEW_3D_HEIGHT_MIN, Math.round(height)))
+}
+
+function readStoredPreview3dHeight(): number {
+  if (typeof window === "undefined") return PREVIEW_3D_HEIGHT_DEFAULT
+  try {
+    const raw = window.localStorage.getItem(PREVIEW_3D_HEIGHT_STORAGE_KEY)
+    if (raw == null) return PREVIEW_3D_HEIGHT_DEFAULT
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed)) return PREVIEW_3D_HEIGHT_DEFAULT
+    return clampPreview3dHeight(parsed)
+  } catch {
+    return PREVIEW_3D_HEIGHT_DEFAULT
+  }
+}
+
+function persistPreview3dHeight(height: number) {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.setItem(PREVIEW_3D_HEIGHT_STORAGE_KEY, String(height))
+  } catch {
+    // 忽略配额/隐私模式写入失败
+  }
+}
 
 export interface Layer {
   id: string
@@ -68,8 +100,8 @@ export interface CanvasImageElement {
 export type CanvasElement = CanvasImageElement
 
 export interface KeycapOverride {
-  bgColor?: string
-  topColor?: string
+  /** 整颗键帽本体色（应为纯色 hex；写入路径避免存渐变） */
+  color?: string
   labelText?: string
   labelColor?: string
   fontSize?: number
@@ -98,8 +130,11 @@ export interface KeycapOverride {
 export interface GlobalKeycapStyle {
   fontSize: number
   labelColor: string
-  topColor: string
-  bgColor: string
+  /**
+   * 整颗键帽本体色。可为纯色，或 CSS 线性渐变（表示整盘按方向分配纯色的意图）；
+   * 渲染时由 resolveKeycapBodyColor 按键位置采样为纯色，不会在单键内画渐变。
+   */
+  color: string
   borderColor: string
   /** 全局隐藏边框时，单键可通过 override.borderHidden === false 强制显示 */
   borderHidden: boolean
@@ -156,6 +191,10 @@ interface DesignUIState {
    * 随每次状态快照复制，也支持相同图片的跨元素去重。
    */
   assetMap: Record<string, string>
+  /** 是否显示 3D 预览旁路面板（纯 UI，不参与 undo） */
+  show3dPreview: boolean
+  /** 3D 预览面板高度（px，纯 UI，localStorage 持久化，不参与 undo） */
+  preview3dHeight: number
 }
 
 interface DesignUIActions {
@@ -226,13 +265,20 @@ interface DesignUIActions {
    * layers 数组首位 = 视觉最顶层；'up' 表示视觉上移（向数组首位移动），'down' 表示视觉下移。
    */
   reorderLayer: (id: string, direction: "up" | "down") => void
+  /** 设置是否显示 3D 预览 */
+  setShow3dPreview: (show: boolean) => void
+  /** 切换 3D 预览开关 */
+  toggleShow3dPreview: () => void
+  /** 设置 3D 预览面板高度（会 clamp 并写入 localStorage） */
+  setPreview3dHeight: (height: number) => void
+  /** 从 localStorage 恢复预览高度（客户端挂载后调用，避免 SSR mismatch） */
+  hydratePreview3dHeight: () => void
 }
 
 const initialGlobalKeycapStyle: GlobalKeycapStyle = {
   fontSize: 7,
   labelColor: DEFAULT_KEYCAP_COLORS.labelColor,
-  topColor: DEFAULT_KEYCAP_COLORS.topColor,
-  bgColor: DEFAULT_KEYCAP_COLORS.bgColor,
+  color: DEFAULT_KEYCAP_COLORS.color,
   borderColor: DEFAULT_KEYCAP_COLORS.borderColor,
   borderHidden: false,
 }
@@ -246,7 +292,7 @@ const initialLayers: Layer[] = [
  * 只追踪设计数据变更，排除纯 UI 选择态、实时预览态以及素材库（assetMap）。
  * assetMap 含大型 base64 字符串，不应随状态快照复制；素材去重也依赖其跨历史持久化。
  */
-export type UndoableDesignState = Omit<DesignUIState, "selectedKeycapIds" | "activeLayerId" | "selectedElementId" | "keycapEditTarget" | "liveDragOverrides" | "assetMap">
+export type UndoableDesignState = Omit<DesignUIState, "selectedKeycapIds" | "activeLayerId" | "selectedElementId" | "keycapEditTarget" | "liveDragOverrides" | "assetMap" | "show3dPreview" | "preview3dHeight">
 
 function applyOverridePatch(
   prev: KeycapOverride,
@@ -288,6 +334,9 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     keycapEditTarget: null,
     liveDragOverrides: {},
     assetMap: {},
+    show3dPreview: false,
+    // SSR 用默认值；客户端挂载后由 DesignCanvas hydrate，避免 hydration mismatch
+    preview3dHeight: PREVIEW_3D_HEIGHT_DEFAULT,
 
     resetAll: () =>
       set({
@@ -587,11 +636,22 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         ;[arr[idx], arr[targetIdx]] = [arr[targetIdx]!, arr[idx]!]
         return { layers: arr }
       }),
+
+    setShow3dPreview: (show) => set({ show3dPreview: show }),
+    toggleShow3dPreview: () => set((s) => ({ show3dPreview: !s.show3dPreview })),
+    setPreview3dHeight: (height) => {
+      const next = clampPreview3dHeight(height)
+      persistPreview3dHeight(next)
+      set({ preview3dHeight: next })
+    },
+    hydratePreview3dHeight: () => {
+      set({ preview3dHeight: readStoredPreview3dHeight() })
+    },
   }),
   {
     partialize: (state) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { selectedKeycapIds, activeLayerId, selectedElementId, keycapEditTarget, liveDragOverrides, assetMap, ...undoable } = state
+      const { selectedKeycapIds, activeLayerId, selectedElementId, keycapEditTarget, liveDragOverrides, assetMap, show3dPreview, preview3dHeight, ...undoable } = state
       return undoable as UndoableDesignState
     },
     /**

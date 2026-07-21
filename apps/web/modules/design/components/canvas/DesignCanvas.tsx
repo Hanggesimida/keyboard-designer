@@ -1,12 +1,15 @@
 ﻿"use client"
 
-import { useRef, useState, useEffect, useCallback, useMemo } from "react"
+import { useRef, useState, useEffect, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Home } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
-import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
+import { flattenLayout } from "@/modules/design/lib/design/layout"
+import type { KeyDef } from "@/modules/design/types/design"
+import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP } from "./KeycapNode"
 import {
   KEY_RADIUS_TOP,
   getTopFaceRects,
@@ -24,6 +27,20 @@ import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 import { useAutoExport } from "@/modules/design/hooks/useAutoExport"
 import { generateJig } from "@/lib/api/export"
+import {
+  PREVIEW_3D_HEIGHT_MAX,
+  PREVIEW_3D_HEIGHT_MIN,
+} from "@/modules/design/lib/preview3d/constants"
+import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
+import {
+  buildGlobalDistributedColors,
+} from "@/modules/design/lib/design/resolveKeycapAppearance"
+import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
+
+const Keycap3DPreview = dynamic(
+  () => import("../preview3d/Keycap3DPreview").then((m) => m.Keycap3DPreview),
+  { ssr: false },
+)
 
 // ─── 常量 ──────────────────────────────────────────────
 const ART_PAD = 28                    // 画板内边距
@@ -232,6 +249,15 @@ function KeyboardTemplate({
   const fontWeight = useDesignUIStore((s) => s.fontWeight)
   const fontStyle = useDesignUIStore((s) => s.fontStyle)
 
+  const globalDistributedColors = useMemo(
+    () =>
+      buildGlobalDistributedColors(
+        globalKeycapStyle.color,
+        keyCentersFromDefs(keys),
+      ),
+    [globalKeycapStyle.color, keys],
+  )
+
   // 按图层数组逆序渲染：layers[0] 为最顶层，在 SVG 中最后绘制（覆盖下方层）
   const reversedLayers = [...layers].reverse()
 
@@ -263,6 +289,7 @@ function KeyboardTemplate({
               onSelect={(shiftKey) => onSelectKeycap(layer.id, key.keyId, shiftKey)}
               override={layerOverrides[key.keyId]}
               globalDefaults={globalKeycapStyle}
+              globalDistributedColors={globalDistributedColors}
               fontFamily={fontFamily}
               fontWeight={fontWeight}
               fontStyle={fontStyle}
@@ -369,14 +396,21 @@ export function DesignCanvas() {
   const resetAll = useDesignUIStore((s) => s.resetAll)
   const clearTemporalHistory = useTemporalDesignStore((s) => s.clear)
   const templateId = useDesignUIStore((s) => s.templateId)
+  const show3dPreview = useDesignUIStore((s) => s.show3dPreview)
+  const preview3dHeight = useDesignUIStore((s) => s.preview3dHeight)
+  const setPreview3dHeight = useDesignUIStore((s) => s.setPreview3dHeight)
+  const hydratePreview3dHeight = useDesignUIStore((s) => s.hydratePreview3dHeight)
+
+  // 客户端恢复预览高度，避免 SSR hydration mismatch
+  useEffect(() => {
+    hydratePreview3dHeight()
+  }, [hydratePreview3dHeight])
 
   // ─── 响应式布局数据（随 templateId 变化而重算） ────────
   const { keys, unit, artW, artH, bounds } = useMemo(() => {
     const layout = getLayoutData(templateId)
     const u = layout.baseUnit
-    const allKeys = layout.rows.flatMap((row) =>
-      row.keys.map((key) => ({ ...key, section: row.section ?? "base" }))
-    ) as KeyDef[]
+    const allKeys = flattenLayout(layout)
     const b = getTemplateBounds(allKeys, u)
     return {
       keys: allKeys,
@@ -389,8 +423,31 @@ export function DesignCanvas() {
 
   // ─── 拖放状态 ────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false)
+  const previewResizeRef = useRef<{ startY: number; startH: number } | null>(null)
   const canUndo = pastStates.length > 0
   const canRedo = futureStates.length > 0
+
+  const handlePreviewResizePointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    previewResizeRef.current = { startY: e.clientY, startH: preview3dHeight }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }, [preview3dHeight])
+
+  const handlePreviewResizePointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = previewResizeRef.current
+    if (!drag) return
+    const next = drag.startH + (e.clientY - drag.startY)
+    setPreview3dHeight(next)
+  }, [setPreview3dHeight])
+
+  const handlePreviewResizePointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!previewResizeRef.current) return
+    previewResizeRef.current = null
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+  }, [])
 
   // Delete/Backspace 键删除、方向键微调选中画布元素（单键帽编辑模式打开时由模态框处理）
   useEffect(() => {
@@ -625,7 +682,7 @@ export function DesignCanvas() {
       return { ...rest, src: assetMap[assetId] ?? "" }
     })
 
-    const design = {
+    const design = normalizeDesignColorFields({
       version: 1,
       templateId: tid,
       artboardBackground,
@@ -634,7 +691,7 @@ export function DesignCanvas() {
       layers,
       layerKeycapOverrides,
       canvasElements: resolvedElements,
-    }
+    })
 
     const blob = await generateJig(design)
 
@@ -668,119 +725,13 @@ export function DesignCanvas() {
     : null
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-full w-full overflow-hidden bg-background"
-      style={{
-        backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
-        backgroundSize: "24px 24px",
-        cursor: isPanning ? "grabbing" : isSpacePressed ? "grab" : "default",
-      }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* 画板 */}
-      <div
-        ref={artboardRef}
-        className="absolute rounded-sm shadow-2xl"
-        style={{
-          width: artW,
-          height: artH,
-          backgroundColor: artboardBg,
-          transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-          transformOrigin: "0 0",
-          transition: "background-color 0.15s",
-          willChange: "transform",
-        }}
-      >
-        <div style={{ position: "absolute", top: ART_PAD, left: ART_PAD }}>
-          <KeyboardTemplate
-            keys={keys}
-            width={bounds.width}
-            height={bounds.height}
-            unit={unit}
-            selectedKeycapIds={selectedKeycapIds}
-            onSelectKeycap={handleSelectKeycap}
-            labelEditTarget={null}
-            zoom={viewport.zoom}
-            onEnterLabelEdit={handleEnterLabelEdit}
-            onLabelOffsetChange={handleLabelOffsetChange}
-            canvasElements={imageCanvasElements}
-          />
-        </div>
-
-        {/* 自由元素层（图片/贴纸） */}
-        <CanvasElementLayer
-          viewport={viewport}
-          artW={artW}
-          artH={artH}
-          isSpacePressed={isSpacePressed}
-          isPanning={isPanning}
-        />
-
-        {/* 拖入图片时的高亮遮罩 */}
-        {isDragOver && (
-          <div
-            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-sm border-2 border-dashed border-primary/70 bg-primary/10"
-          >
-            <span className="rounded bg-popover/90 px-3 py-1.5 text-[13px] text-primary select-none backdrop-blur-sm border border-border">
-              释放以添加图片
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* 框选矩形 */}
-      {marqueeOverlay && (
-        <div
-          className="pointer-events-none absolute z-10 border border-primary/80 bg-primary/10"
-          style={{
-            left: marqueeOverlay.left,
-            top: marqueeOverlay.top,
-            width: marqueeOverlay.width,
-            height: marqueeOverlay.height,
-          }}
-        />
-      )}
-
-      {/* 多选计数徽标 */}
-      {selectedKeycapIds.length > 1 && (
-        <div className="absolute bottom-4 right-4 rounded bg-primary/80 px-2 py-0.5 text-[11px] text-primary-foreground select-none backdrop-blur-sm">
-          已选 {selectedKeycapIds.length} 个键帽
-        </div>
-      )}
-
-      {/* 缩放比例 + 快捷键提示（单键帽编辑模式打开时隐藏） */}
-      {!keycapEditTarget && (
-        <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 select-none rounded bg-popover/90 border border-border px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur-sm"
-          title="Ctrl+0 适配  Ctrl+1 实际尺寸"
-        >
-          <span>{Math.round(viewport.zoom * 100)}%</span>
-          <span className="opacity-40">·</span>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground"
-            onClick={(e) => { e.stopPropagation(); fitToScreen() }}
-          >
-            适配
-          </Button>
-        </div>
-      )}
-
-      {/* 返回首页按钮 */}
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+      {/* 顶部工具栏 / 返回首页：始终贴在中间列顶部，不被 3D 顶开 */}
       <Button
         variant="ghost"
         size="icon-xs"
         asChild
-        className="absolute top-3 left-3 bg-popover/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground"
+        className="absolute top-3 left-3 z-30 bg-popover/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground"
       >
         <Link
           href="/"
@@ -791,7 +742,6 @@ export function DesignCanvas() {
         </Link>
       </Button>
 
-      {/* 顶部工具栏：撤销/重做 + 重置 + 导出 + 导入 */}
       <CanvasToolbar
         canUndo={canUndo}
         canRedo={canRedo}
@@ -802,17 +752,150 @@ export function DesignCanvas() {
         onAfterImport={clearTemporalHistory}
       />
 
-      {/* 单键帽编辑模态框（portal 到容器 div 内，已有 fixed inset-0 覆盖） */}
-      {keycapEditTarget && editKeyDef && (
-        <KeycapEditorModal
-          keyId={keycapEditTarget.keyId}
-          layerId={keycapEditTarget.layerId}
-          keyDef={editKeyDef}
-          unit={unit}
-          artPad={ART_PAD}
-          onClose={() => setKeycapEditTarget(null)}
-        />
+      {show3dPreview && (
+        <div
+          className="relative w-full shrink-0"
+          style={{ height: preview3dHeight }}
+        >
+          <Keycap3DPreview />
+          <div
+            role="separator"
+            aria-orientation="horizontal"
+            aria-valuemin={PREVIEW_3D_HEIGHT_MIN}
+            aria-valuemax={PREVIEW_3D_HEIGHT_MAX}
+            aria-valuenow={preview3dHeight}
+            aria-label="调整 3D 预览高度"
+            title="拖动调整高度"
+            className="absolute bottom-0 left-0 right-0 z-20 flex h-2 cursor-ns-resize items-center justify-center border-b border-border bg-transparent hover:bg-border/40 active:bg-border/60"
+            onPointerDown={handlePreviewResizePointerDown}
+            onPointerMove={handlePreviewResizePointerMove}
+            onPointerUp={handlePreviewResizePointerUp}
+            onPointerCancel={handlePreviewResizePointerUp}
+          >
+            <div className="pointer-events-none h-0.5 w-10 rounded-full bg-muted-foreground/40" />
+          </div>
+        </div>
       )}
+
+      <div
+        ref={containerRef}
+        className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+        style={{
+          backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+          cursor: isPanning ? "grabbing" : isSpacePressed ? "grab" : "default",
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* 画板 */}
+        <div
+          ref={artboardRef}
+          className="absolute rounded-sm shadow-2xl"
+          style={{
+            width: artW,
+            height: artH,
+            backgroundColor: artboardBg,
+            transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+            transformOrigin: "0 0",
+            transition: "background-color 0.15s",
+            willChange: "transform",
+          }}
+        >
+          <div style={{ position: "absolute", top: ART_PAD, left: ART_PAD }}>
+            <KeyboardTemplate
+              keys={keys}
+              width={bounds.width}
+              height={bounds.height}
+              unit={unit}
+              selectedKeycapIds={selectedKeycapIds}
+              onSelectKeycap={handleSelectKeycap}
+              labelEditTarget={null}
+              zoom={viewport.zoom}
+              onEnterLabelEdit={handleEnterLabelEdit}
+              onLabelOffsetChange={handleLabelOffsetChange}
+              canvasElements={imageCanvasElements}
+            />
+          </div>
+
+          {/* 自由元素层（图片/贴纸） */}
+          <CanvasElementLayer
+            viewport={viewport}
+            artW={artW}
+            artH={artH}
+            isSpacePressed={isSpacePressed}
+            isPanning={isPanning}
+          />
+
+          {/* 拖入图片时的高亮遮罩 */}
+          {isDragOver && (
+            <div
+              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-sm border-2 border-dashed border-primary/70 bg-primary/10"
+            >
+              <span className="rounded bg-popover/90 px-3 py-1.5 text-[13px] text-primary select-none backdrop-blur-sm border border-border">
+                释放以添加图片
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 框选矩形 */}
+        {marqueeOverlay && (
+          <div
+            className="pointer-events-none absolute z-10 border border-primary/80 bg-primary/10"
+            style={{
+              left: marqueeOverlay.left,
+              top: marqueeOverlay.top,
+              width: marqueeOverlay.width,
+              height: marqueeOverlay.height,
+            }}
+          />
+        )}
+
+        {/* 多选计数徽标 */}
+        {selectedKeycapIds.length > 1 && (
+          <div className="absolute bottom-4 right-4 rounded bg-primary/80 px-2 py-0.5 text-[11px] text-primary-foreground select-none backdrop-blur-sm">
+            已选 {selectedKeycapIds.length} 个键帽
+          </div>
+        )}
+
+        {/* 缩放比例 + 快捷键提示（单键帽编辑模式打开时隐藏） */}
+        {!keycapEditTarget && (
+          <div
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 select-none rounded bg-popover/90 border border-border px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur-sm"
+            title="Ctrl+0 适配  Ctrl+1 实际尺寸"
+          >
+            <span>{Math.round(viewport.zoom * 100)}%</span>
+            <span className="opacity-40">·</span>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground"
+              onClick={(e) => { e.stopPropagation(); fitToScreen() }}
+            >
+              适配
+            </Button>
+          </div>
+        )}
+
+        {/* 单键帽编辑模态框（portal 到容器 div 内，已有 fixed inset-0 覆盖） */}
+        {keycapEditTarget && editKeyDef && (
+          <KeycapEditorModal
+            keyId={keycapEditTarget.keyId}
+            layerId={keycapEditTarget.layerId}
+            keyDef={editKeyDef}
+            unit={unit}
+            artPad={ART_PAD}
+            onClose={() => setKeycapEditTarget(null)}
+          />
+        )}
+      </div>
     </div>
   )
 }

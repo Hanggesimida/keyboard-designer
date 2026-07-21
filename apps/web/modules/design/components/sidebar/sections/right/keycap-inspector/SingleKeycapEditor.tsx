@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import { useState } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -15,9 +14,13 @@ import { useDesignUIStore, type KeycapOverride } from "@/modules/design/store/de
 import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
 import { LabelAlignmentGrid } from "./AlignmentGrid"
 import { BoldItalicToggle } from "./BoldItalicToggle"
-import { ColorLinkDivider } from "./ColorLinkDivider"
 import { ColorRow } from "./ColorRow"
 import { FontFamilySelect } from "./FontFamilySelect"
+import {
+  isGradientValue,
+  parseCssLinearGradient,
+  interpolateGradientColor,
+} from "@/modules/design/lib/design/gradientUtils"
 
 interface SingleKeycapEditorProps {
   keyDef: RowedKeyDef
@@ -58,9 +61,6 @@ export function SingleKeycapEditor({
     const next = isItalic ? "normal" : "italic"
     e.patchOverride({ fontStyle: next === globalFontStyle ? undefined : next })
   }
-
-  const [keycapColorLinked, setKeycapColorLinked] = useState(false)
-
 
   const borderEffectivelyHidden = resolveEffectiveBorderHidden(
     override,
@@ -206,27 +206,20 @@ export function SingleKeycapEditor({
         onChange={(next) => e.patchOverride({ labelColor: next })}
       />
       <ColorRow
-        label="键帽底色"
-        value={override?.bgColor ?? ""}
-        fallback={e.globalKeycapStyle.bgColor}
+        label="键帽颜色"
+        value={override?.color ?? ""}
+        fallback={e.globalKeycapStyle.color}
         disabled={disabled}
         onChange={(next) => {
-          e.patchOverride({ bgColor: next })
-          if (keycapColorLinked) e.patchOverride({ topColor: next })
-        }}
-      />
-      <ColorLinkDivider
-        linked={keycapColorLinked}
-        onToggle={() => setKeycapColorLinked((v) => !v)}
-      />
-      <ColorRow
-        label="键帽顶面"
-        value={override?.topColor ?? ""}
-        fallback={e.globalKeycapStyle.topColor}
-        disabled={disabled}
-        onChange={(next) => {
-          e.patchOverride({ topColor: next })
-          if (keycapColorLinked) e.patchOverride({ bgColor: next })
+          if (isGradientValue(next)) {
+            const parsed = parseCssLinearGradient(next)
+            const solid = parsed
+              ? interpolateGradientColor(parsed, 50)
+              : next
+            e.patchOverride({ color: solid })
+            return
+          }
+          e.patchOverride({ color: next })
         }}
       />
       <ColorRow

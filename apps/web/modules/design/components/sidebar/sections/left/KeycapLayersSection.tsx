@@ -26,15 +26,21 @@ interface KeycapSubRowProps {
   isSelected: boolean
   hasOverride: boolean
   hasImages: boolean
-  onSelect: () => void
+  onSelect: (shiftKey: boolean) => void
+  onEnterEdit: () => void
 }
 
-function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect }: KeycapSubRowProps) {
+function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect, onEnterEdit }: KeycapSubRowProps) {
   return (
     <li
-      onClick={(e) => { e.stopPropagation(); onSelect() }}
+      onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey) }}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        onEnterEdit()
+      }}
       className={cn(
-        "group flex cursor-pointer items-center gap-1 rounded-md py-0.5 pl-8 pr-1 transition-colors",
+        "group flex cursor-pointer select-none items-center gap-1 rounded-md py-0.5 pl-8 pr-1 transition-colors",
         isSelected
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
@@ -184,7 +190,8 @@ interface KeycapLayerTreeNodeProps {
   onToggleLocked: (e: React.MouseEvent) => void
   onToggleLabelsHidden: (e: React.MouseEvent) => void
   onRemove: (e: React.MouseEvent) => void
-  onSelectKeycap: (keyId: string) => void
+  onSelectKeycap: (keyId: string, shiftKey: boolean) => void
+  onEnterKeycapEdit: (keyId: string) => void
 }
 
 function KeycapLayerTreeNode({
@@ -206,6 +213,7 @@ function KeycapLayerTreeNode({
   onToggleLabelsHidden,
   onRemove,
   onSelectKeycap,
+  onEnterKeycapEdit,
 }: KeycapLayerTreeNodeProps) {
   return (
     <div className="flex flex-col gap-px">
@@ -239,7 +247,8 @@ function KeycapLayerTreeNode({
                   isSelected={isActive && selectedKeycapIds.includes(keyDef.keyId)}
                   hasOverride={Boolean(override)}
                   hasImages={hasImages}
-                  onSelect={() => onSelectKeycap(keyDef.keyId)}
+                  onSelect={(shiftKey) => onSelectKeycap(keyDef.keyId, shiftKey)}
+                  onEnterEdit={() => onEnterKeycapEdit(keyDef.keyId)}
                 />
               )
             })}
@@ -261,6 +270,8 @@ export function KeycapLayersSection() {
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
   const setActiveLayer = useDesignUIStore((s) => s.setActiveLayer)
   const setSelectedKeycapIds = useDesignUIStore((s) => s.setSelectedKeycapIds)
+  const toggleKeycapSelection = useDesignUIStore((s) => s.toggleKeycapSelection)
+  const setKeycapEditTarget = useDesignUIStore((s) => s.setKeycapEditTarget)
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
   const toggleLayerVisible = useDesignUIStore((s) => s.toggleLayerVisible)
   const toggleLayerLocked = useDesignUIStore((s) => s.toggleLayerLocked)
@@ -333,9 +344,18 @@ export function KeycapLayersSection() {
             onToggleLocked={(e) => { e.stopPropagation(); toggleLayerLocked(layer.id) }}
             onToggleLabelsHidden={(e) => { e.stopPropagation(); toggleLayerLabelsHidden(layer.id) }}
             onRemove={(e) => { e.stopPropagation(); removeLayer(layer.id) }}
-            onSelectKeycap={(keyId) => {
+            onSelectKeycap={(keyId, shiftKey) => {
+              setActiveLayer(layer.id)
+              if (shiftKey) {
+                toggleKeycapSelection(keyId)
+              } else {
+                setSelectedKeycapIds([keyId])
+              }
+            }}
+            onEnterKeycapEdit={(keyId) => {
               setActiveLayer(layer.id)
               setSelectedKeycapIds([keyId])
+              setKeycapEditTarget({ layerId: layer.id, keyId })
             }}
           />
         ))}

@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -21,7 +21,6 @@ import { useDesignUIStore, type KeycapOverride } from "@/modules/design/store/de
 import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
 import { LabelAlignmentGrid } from "./AlignmentGrid"
 import { BoldItalicToggle } from "./BoldItalicToggle"
-import { ColorLinkDivider } from "./ColorLinkDivider"
 import { ColorRow } from "./ColorRow"
 import { FontFamilySelect } from "./FontFamilySelect"
 
@@ -47,8 +46,6 @@ export function MultiKeycapEditor({
 
   const globalFontWeight = useDesignUIStore((s) => s.fontWeight)
   const globalFontStyle = useDesignUIStore((s) => s.fontStyle)
-
-  const [keycapColorLinked, setKeycapColorLinked] = useState(false)
 
   const letterSpacing = useMemo(
     () => getMixedLetterSpacing(selectedIds, layerOverrides),
@@ -216,38 +213,16 @@ export function MultiKeycapEditor({
         onChange={(next) => e.applyPatch({ labelColor: next })}
       />
       <ColorRow
-        label="键帽底色"
-        value={e.bgColor.value}
-        fallback={e.globalKeycapStyle.bgColor}
-        isMixed={e.bgColor.isMixed}
+        label="键帽颜色"
+        value={e.color.value}
+        fallback={e.globalKeycapStyle.color}
+        isMixed={e.color.isMixed}
         disabled={disabled}
         onChange={(next) => {
           if (isGradientValue(next)) {
-            e.applyGradientAcrossSelection(next, "bgColor")
-            if (keycapColorLinked) e.applyGradientAcrossSelection(next, "topColor")
+            e.applyGradientAcrossSelection(next, "color")
           } else {
-            e.applyPatch({ bgColor: next })
-            if (keycapColorLinked) e.applyPatch({ topColor: next })
-          }
-        }}
-      />
-      <ColorLinkDivider
-        linked={keycapColorLinked}
-        onToggle={() => setKeycapColorLinked((v) => !v)}
-      />
-      <ColorRow
-        label="键帽顶面"
-        value={e.topColor.value}
-        fallback={e.globalKeycapStyle.topColor}
-        isMixed={e.topColor.isMixed}
-        disabled={disabled}
-        onChange={(next) => {
-          if (isGradientValue(next)) {
-            e.applyGradientAcrossSelection(next, "topColor")
-            if (keycapColorLinked) e.applyGradientAcrossSelection(next, "bgColor")
-          } else {
-            e.applyPatch({ topColor: next })
-            if (keycapColorLinked) e.applyPatch({ bgColor: next })
+            e.applyPatch({ color: next })
           }
         }}
       />

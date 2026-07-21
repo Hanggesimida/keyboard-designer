@@ -3,10 +3,8 @@
  * Store 初始状态使用 hex 字符串（用户数据格式），值须与 CSS 变量视觉一致。
  */
 export const DEFAULT_KEYCAP_COLORS = {
-  /** --design-keycap-fill-base */
-  bgColor: "#3c3c3c",
-  /** --design-keycap-fill-top */
-  topColor: "#4a4a4a",
+  /** --design-keycap-fill（整颗键帽本体色） */
+  color: "#4a4a4a",
   /** --design-keycap-stroke */
   borderColor: "#222222",
   /** --design-keycap-label */

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench } from "lucide-react"
+import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench, Boxes } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
@@ -28,6 +28,7 @@ import {
   type ImportPayload,
 } from "@/modules/design/lib/design/exportArtboard"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
+import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 import { useUserStore } from "@/store/userStore"
 import { generateJig } from "@/lib/api/export"
 import { ApiError } from "@/lib/api/request"
@@ -73,6 +74,8 @@ export function CanvasToolbar({
   const [pendingImport, setPendingImport] = useState<ImportPayload | null>(null)
   const [exporting, setExporting] = useState<ExportingFormat>(null)
   const isAdmin = useUserStore((s) => s.user?.role === "ADMIN")
+  const show3dPreview = useDesignUIStore((s) => s.show3dPreview)
+  const toggleShow3dPreview = useDesignUIStore((s) => s.toggleShow3dPreview)
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -130,7 +133,7 @@ export function CanvasToolbar({
         return { ...rest, src: assetMap[assetId] ?? "" }
       })
 
-      const design = {
+      const design = normalizeDesignColorFields({
         version: 1,
         templateId,
         artboardBackground,
@@ -139,7 +142,7 @@ export function CanvasToolbar({
         layers,
         layerKeycapOverrides,
         canvasElements: resolvedElements,
-      }
+      })
 
       const blob = await generateJig(design)
 
@@ -170,7 +173,7 @@ export function CanvasToolbar({
   }
 
   return (
-    <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
+    <div className="absolute top-3 left-1/2 z-30 -translate-x-1/2 flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
       <Button
         type="button"
         variant="ghost"
@@ -190,6 +193,22 @@ export function CanvasToolbar({
         onClick={(e) => { e.stopPropagation(); onRedo() }}
       >
         <Redo2 />
+      </Button>
+
+      <ToolbarSeparator />
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        title={show3dPreview ? "关闭 3D 预览" : "显示 3D 预览"}
+        className={show3dPreview ? "text-foreground bg-accent" : undefined}
+        onClick={(e) => {
+          e.stopPropagation()
+          toggleShow3dPreview()
+        }}
+      >
+        <Boxes />
       </Button>
 
       <ToolbarSeparator />

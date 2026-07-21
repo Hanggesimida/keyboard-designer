@@ -1,9 +1,9 @@
 "use client"
 
-import { useRef, useState, useEffect, useLayoutEffect, useCallback, useId } from "react"
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useId, useMemo } from "react"
 import { X, ImagePlus, Trash2, Move, Crosshair } from "lucide-react"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
-import type { KeyDef } from "./KeycapNode"
+import type { KeyDef } from "@/modules/design/types/design"
 import {
   KEYCAP_GAP as GAP,
   KEY_PAD_LEFT,
@@ -40,6 +40,12 @@ import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
 import { toCssFontFamily } from "@/lib/fonts/fontRef"
 import { LabelAlignmentGrid } from "@/modules/design/components/sidebar/sections/right/keycap-inspector/AlignmentGrid"
 import { ColorRow } from "@/modules/design/components/sidebar/sections/right/keycap-inspector/ColorRow"
+import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
+import {
+  buildGlobalDistributedColors,
+  resolveKeycapBodyColor,
+} from "@/modules/design/lib/design/resolveKeycapAppearance"
+import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
 
 // 1. 组件属性接口定义
 interface Props {
@@ -133,9 +139,23 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const topW = isIso ? (0.868 - 0.124) * pw : isStepped ? pw - STEPPED_PAD_LEFT - STEPPED_PAD_RIGHT : pw - KEY_PAD_LEFT - KEY_PAD_RIGHT
   const topH = isIso ? (0.415 - 0.027) * ph : isStepped ? ph - STEPPED_PAD_TOP - STEPPED_PAD_BOTTOM : ph - KEY_PAD_TOP - KEY_PAD_BOTTOM
 
-  // 5. 键帽默认样式及覆写样式读取
-  const baseFill = override?.bgColor ?? globalDefaults.bgColor ?? DEFAULT_KEYCAP_COLORS.bgColor
-  const topFill = override?.topColor ?? globalDefaults.topColor ?? DEFAULT_KEYCAP_COLORS.topColor
+  // 5. 键帽默认样式及覆写样式读取（底色按整盘渐变采样为纯色）
+  const { allKeys } = useLayoutKeys()
+  const globalDistributedColors = useMemo(
+    () =>
+      buildGlobalDistributedColors(
+        globalDefaults.color,
+        keyCentersFromDefs(allKeys),
+      ),
+    [globalDefaults.color, allKeys],
+  )
+  const keycapFill = resolveKeycapBodyColor({
+    overrideColor: override?.color,
+    globalColor: globalDefaults.color,
+    keyId,
+    globalDistributedColors,
+    fallback: DEFAULT_KEYCAP_COLORS.color,
+  })
   const borderColor = override?.borderColor ?? globalDefaults.borderColor ?? DEFAULT_KEYCAP_COLORS.borderColor
   const labelText = override?.labelText ?? keyDef.label
   const labelColor = override?.labelColor ?? globalDefaults.labelColor ?? DEFAULT_KEYCAP_COLORS.labelColor
@@ -570,7 +590,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                     ? (
                       <path
                         d={roundedPolygonPath(getIsoBasePoints(0, 0, pw, ph), KEY_RADIUS_BASE)}
-                        fill={baseFill}
+                        fill={keycapFill}
                         stroke={borderColor}
                         strokeWidth={0.8 / modalScale}
                       />
@@ -578,7 +598,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                       <rect
                         x={0} y={0} width={pw} height={ph}
                         rx={KEY_RADIUS_BASE}
-                        fill={baseFill}
+                        fill={keycapFill}
                         stroke={borderColor}
                         strokeWidth={0.8 / modalScale}
                       />
@@ -590,14 +610,14 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                     ? (
                       <path
                         d={roundedPolygonPath(getIsoTopFacePoints(0, 0, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))}
-                        fill={topFill}
+                        fill={keycapFill}
                         style={{ pointerEvents: "none" }}
                       />
                     ) : (
                       <rect
                         x={topX} y={topY} width={topW} height={topH}
                         rx={KEY_RADIUS_TOP}
-                        fill={topFill}
+                        fill={keycapFill}
                         style={{ pointerEvents: "none" }}
                       />
                     )

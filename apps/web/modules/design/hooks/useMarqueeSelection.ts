@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react"
 import type { RefObject } from "react"
-import type { KeyDef } from "@/modules/design/components/canvas/KeycapNode"
+import type { KeyDef } from "@/modules/design/types/design"
 import type { Viewport } from "@/modules/design/hooks/useViewport"
 
 const MARQUEE_DRAG_THRESHOLD = 3

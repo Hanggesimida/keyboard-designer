@@ -9,7 +9,6 @@ import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { PanelSection } from "../../panel-section"
 import { getFontCapabilities } from "./font-options"
 import { BoldItalicToggle } from "./keycap-inspector/BoldItalicToggle"
-import { ColorLinkDivider } from "./keycap-inspector/ColorLinkDivider"
 import { ColorRow } from "./keycap-inspector/ColorRow"
 import { FontFamilySelect } from "./keycap-inspector/FontFamilySelect"
 import { toCssFontFamily } from "@/lib/fonts/fontRef"
@@ -35,7 +34,6 @@ export function GlobalKeycapSection() {
   const isItalic = fontStyle === "italic"
 
   const [fontFamilyOpen, setFontFamilyOpen] = useState(false)
-  const [keycapColorLinked, setKeycapColorLinked] = useState(false)
   const [fontSizeInput, setFontSizeInput] = useState(
     String(globalKeycapStyle.fontSize),
   )
@@ -135,23 +133,10 @@ export function GlobalKeycapSection() {
           onChange={(next) => setGlobalKeycapStyle({ labelColor: next })}
         />
         <ColorRow
-          label="键帽顶面"
-          value={globalKeycapStyle.topColor}
-          onChange={(next) => {
-            // 合并为单次 store 更新，避免触发两轮订阅者重渲染
-            setGlobalKeycapStyle(keycapColorLinked ? { topColor: next, bgColor: next } : { topColor: next })
-          }}
-        />
-        <ColorLinkDivider
-          linked={keycapColorLinked}
-          onToggle={() => setKeycapColorLinked((v) => !v)}
-        />
-        <ColorRow
-          label="键帽底色"
-          value={globalKeycapStyle.bgColor}
-          onChange={(next) => {
-            setGlobalKeycapStyle(keycapColorLinked ? { bgColor: next, topColor: next } : { bgColor: next })
-          }}
+          label="键帽颜色"
+          value={globalKeycapStyle.color}
+          // 渐变表示整盘按方向分配纯色；渲染侧 resolveKeycapBodyColor 采样
+          onChange={(next) => setGlobalKeycapStyle({ color: next })}
         />
         <ColorRow
           label="边框颜色"
@@ -186,7 +171,6 @@ export function GlobalKeycapSection() {
           className="mt-1 h-8 w-full gap-1.5 font-normal shadow-none cursor-pointer"
           onClick={() => {
             resetGlobalKeycapStyleSettings()
-            setKeycapColorLinked(false)
           }}
         >
           <RotateCcw className="size-3.5 opacity-70" />

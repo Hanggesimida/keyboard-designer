@@ -14,6 +14,7 @@ import {
 import { useUserStore } from "@/store/userStore"
 import type { DesignData } from "@/lib/api/designs"
 import type { ExportCanvasElement } from "@/modules/design/lib/design/exportArtboard"
+import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 
 function extractDesignData(): DesignData {
   const {
@@ -34,7 +35,7 @@ function extractDesignData(): DesignData {
     return { ...rest, src: assetMap[assetId] ?? "" }
   })
 
-  return {
+  return normalizeDesignColorFields({
     version: 1,
     templateId,
     layers,
@@ -45,7 +46,7 @@ function extractDesignData(): DesignData {
     globalKeycapStyle,
     layerKeycapOverrides,
     canvasElements: exportElements,
-  }
+  })
 }
 
 export function OrderButton() {

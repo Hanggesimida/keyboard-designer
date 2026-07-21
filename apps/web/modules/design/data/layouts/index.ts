@@ -1,4 +1,4 @@
-import type { KeyDef } from "@/modules/design/components/canvas/KeycapNode"
+import type { KeyDef } from "@/modules/design/types/design"
 import ansi104 from "./ansi-104.json"
 import ansi87 from "./ansi-87.json"
 import ansi108 from "./ansi-108.json"

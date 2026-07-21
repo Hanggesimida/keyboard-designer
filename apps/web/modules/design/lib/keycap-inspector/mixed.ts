@@ -10,7 +10,7 @@ export interface MixedColorField {
   isMixed: boolean
 }
 
-export type ColorStyleKey = "labelColor" | "topColor" | "bgColor" | "borderColor"
+export type ColorStyleKey = "labelColor" | "color" | "borderColor"
 
 export function getMixedColorField(
   selectedIds: string[],

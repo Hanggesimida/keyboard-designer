@@ -66,7 +66,7 @@ export function DesignWorkspaceLayout() {
           <DesignSidebarLeft />
         </div>
 
-        {/* 画布区域 */}
+        {/* 画布区域（含可选顶部 3D 预览） */}
         <div className="min-w-0 flex-1">
           <DesignCanvas />
         </div>

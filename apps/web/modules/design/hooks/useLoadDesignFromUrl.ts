@@ -9,15 +9,17 @@ import type { DesignData } from "@/lib/api/designs"
 import type { CanvasElement } from "@/modules/design/store/designUiStore"
 import { parseUserFontId } from "@/lib/fonts/fontRef"
 import { resolveAndCacheUserFonts } from "@/hooks/queries/fonts/useFonts"
+import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 
 /**
  * 将后端持久化格式（内联 src）转换为运行时格式（assetId + assetMap），
  * 并将设计数据应用到 designUiStore。
  */
 function applyDesignData(data: DesignData) {
+  const normalized = normalizeDesignColorFields(data)
   const assetMap: Record<string, string> = {}
 
-  const canvasElements: CanvasElement[] = data.canvasElements.map((el) => {
+  const canvasElements: CanvasElement[] = normalized.canvasElements.map((el) => {
     const src = el.src ?? ""
     const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     if (src) assetMap[assetId] = src
@@ -27,14 +29,14 @@ function applyDesignData(data: DesignData) {
   })
 
   useDesignUIStore.setState({
-    templateId: data.templateId,
-    layers: data.layers,
-    artboardBackground: data.artboardBackground,
-    fontFamily: data.fontFamily ?? "var(--font-ibm-plex-mono)",
-    fontWeight: data.fontWeight ?? 400,
-    fontStyle: data.fontStyle ?? "normal",
-    globalKeycapStyle: data.globalKeycapStyle,
-    layerKeycapOverrides: data.layerKeycapOverrides,
+    templateId: normalized.templateId,
+    layers: normalized.layers,
+    artboardBackground: normalized.artboardBackground,
+    fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
+    fontWeight: normalized.fontWeight ?? 400,
+    fontStyle: normalized.fontStyle ?? "normal",
+    globalKeycapStyle: normalized.globalKeycapStyle,
+    layerKeycapOverrides: normalized.layerKeycapOverrides,
     canvasElements,
     assetMap,
     selectedKeycapIds: [],

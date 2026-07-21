@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import type { KeyDef } from "@/modules/design/components/canvas/KeycapNode"
+import type { KeyDef } from "@/modules/design/types/design"
 import { getLayoutData, getAllKeysWithRow } from "@/modules/design/data/layouts"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 

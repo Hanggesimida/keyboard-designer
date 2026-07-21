@@ -45,8 +45,10 @@
     --color-design-selection-border: var(--design-selection-border);
     --color-design-selection-fill: var(--design-selection-fill);
     --color-design-keycap-selected-border: var(--design-keycap-selected-border);
-    --color-design-keycap-fill-base: var(--design-keycap-fill-base);
-    --color-design-keycap-fill-top: var(--design-keycap-fill-top);
+    --color-design-keycap-fill: var(--design-keycap-fill);
+    /* 旧 token 别名，避免漏改处立即失效 */
+    --color-design-keycap-fill-base: var(--design-keycap-fill);
+    --color-design-keycap-fill-top: var(--design-keycap-fill);
     --color-design-keycap-stroke: var(--design-keycap-stroke);
     --color-design-keycap-label: var(--design-keycap-label);
     --radius-sm: calc(var(--radius) * 0.6);
@@ -109,8 +111,9 @@
     --design-keycap-selected-border: oklch(0.623 0.214 259.815);
     --design-selection-border: var(--design-keycap-selected-border);
     --design-selection-fill: oklch(0.623 0.214 259.815 / 0.15);
-    --design-keycap-fill-base: oklch(0.321 0 0);
-    --design-keycap-fill-top: oklch(0.387 0 0);
+    --design-keycap-fill: oklch(0.387 0 0);
+    --design-keycap-fill-base: var(--design-keycap-fill);
+    --design-keycap-fill-top: var(--design-keycap-fill);
     --design-keycap-stroke: oklch(0.222 0 0);
     --design-keycap-label: oklch(0.855 0 0);
 }
@@ -152,8 +155,9 @@
     --design-keycap-selected-border: oklch(0.623 0.214 259.815);
     --design-selection-border: var(--design-keycap-selected-border);
     --design-selection-fill: oklch(0.623 0.214 259.815 / 0.15);
-    --design-keycap-fill-base: oklch(0.321 0 0);
-    --design-keycap-fill-top: oklch(0.387 0 0);
+    --design-keycap-fill: oklch(0.387 0 0);
+    --design-keycap-fill-base: var(--design-keycap-fill);
+    --design-keycap-fill-top: var(--design-keycap-fill);
     --design-keycap-stroke: oklch(0.222 0 0);
     --design-keycap-label: oklch(0.855 0 0);
 }

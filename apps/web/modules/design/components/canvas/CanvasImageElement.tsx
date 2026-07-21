@@ -4,7 +4,8 @@ import { useRef, useState, useCallback, useMemo } from "react"
 import type { CanvasImageElement as CanvasImageElementData } from "@/modules/design/store/designUiStore"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
-import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "./KeycapNode"
+import { KEY_RADIUS_BASE, KEYCAP_GAP } from "./KeycapNode"
+import type { KeyDef } from "@/modules/design/types/design"
 import {
   type ResizeHandle,
   computeResizePatch,

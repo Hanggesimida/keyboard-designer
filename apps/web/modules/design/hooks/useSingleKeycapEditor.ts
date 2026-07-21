@@ -38,8 +38,7 @@ export function useSingleKeycapEditor({
     useShallow((s) => ({
       fontSize: s.globalKeycapStyle.fontSize,
       labelColor: s.globalKeycapStyle.labelColor,
-      bgColor: s.globalKeycapStyle.bgColor,
-      topColor: s.globalKeycapStyle.topColor,
+      color: s.globalKeycapStyle.color,
       borderColor: s.globalKeycapStyle.borderColor,
       borderHidden: s.globalKeycapStyle.borderHidden,
     })),

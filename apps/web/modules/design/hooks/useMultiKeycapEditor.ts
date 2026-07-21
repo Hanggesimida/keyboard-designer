@@ -20,12 +20,8 @@ import {
   useDesignUIStore,
   type KeycapOverride,
 } from "@/modules/design/store/designUiStore"
-import {
-  isGradientValue,
-  parseCssLinearGradient,
-  interpolateGradientColor,
-} from "@/modules/design/lib/design/gradientUtils"
-import { getLayoutData } from "@/modules/design/data/layouts"
+import { parseCssLinearGradient } from "@/modules/design/lib/design/gradientUtils"
+import { distributeGradientColors } from "@/modules/design/lib/design/distributeGradientColors"
 import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
 
 export function useMultiKeycapEditor({
@@ -53,8 +49,7 @@ export function useMultiKeycapEditor({
   const globalKeycapStyle = useDesignUIStore(
     useShallow((s) => ({
       labelColor: s.globalKeycapStyle.labelColor,
-      bgColor: s.globalKeycapStyle.bgColor,
-      topColor: s.globalKeycapStyle.topColor,
+      color: s.globalKeycapStyle.color,
       borderColor: s.globalKeycapStyle.borderColor,
       borderHidden: s.globalKeycapStyle.borderHidden,
       fontSize: s.globalKeycapStyle.fontSize,
@@ -63,18 +58,17 @@ export function useMultiKeycapEditor({
   const globalFontFamily = useDesignUIStore((s) => s.fontFamily)
 
   // 用 useMemo 缓存 O(n) 的混合值计算，仅在依赖变化时重算
-  const { labelColor, bgColor, topColor, borderColor, fontSize, fontFamily } = useMemo(
+  const { labelColor, color, borderColor, fontSize, fontFamily } = useMemo(
     () => ({
       labelColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "labelColor", "labelColor"),
-      bgColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "bgColor", "bgColor"),
-      topColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "topColor", "topColor"),
+      color: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "color", "color"),
       borderColor: getMixedColorField(selectedIds, layerOverrides, globalKeycapStyle, "borderColor", "borderColor"),
       fontSize: getMixedFontSize(selectedIds, layerOverrides, globalKeycapStyle),
       fontFamily: getMixedFontFamily(selectedIds, layerOverrides, globalFontFamily),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedIds, layerOverrides, globalKeycapStyle.labelColor, globalKeycapStyle.bgColor,
-     globalKeycapStyle.topColor, globalKeycapStyle.borderColor, globalKeycapStyle.fontSize,
+    [selectedIds, layerOverrides, globalKeycapStyle.labelColor, globalKeycapStyle.color,
+     globalKeycapStyle.borderColor, globalKeycapStyle.fontSize,
      globalKeycapStyle.borderHidden, globalFontFamily],
   )
 
@@ -102,7 +96,7 @@ export function useMultiKeycapEditor({
    * 从渐变里采样出各自对应的纯色，实现跨键帽的统一渐变效果。
    */
   const applyGradientAcrossSelection = useCallback(
-    (gradientCSS: string, field: "bgColor" | "topColor") => {
+    (gradientCSS: string, field: "color") => {
       if (disabled) return
       const parsed = parseCssLinearGradient(gradientCSS)
       if (!parsed) {
@@ -110,7 +104,6 @@ export function useMultiKeycapEditor({
         return
       }
 
-      // 收集各键帽中心坐标（使用 layout 单位，结果等比，最终会归一化）
       const centers: Array<{ id: string; cx: number; cy: number }> = []
       for (const keyId of selectedIds) {
         const keyDef = KEYS_BY_ID.get(keyId)
@@ -123,26 +116,10 @@ export function useMultiKeycapEditor({
       }
       if (centers.length === 0) return
 
-      // CSS 角度约定：0deg = 向上，90deg = 向右；梯度方向向量为 (sin θ, -cos θ)
-      const rad = (parsed.angle * Math.PI) / 180
-      const dx = Math.sin(rad)
-      const dy = -Math.cos(rad)
-
-      // 将每个中心投影到渐变方向轴
-      const projections = centers.map((c) => ({
-        id: c.id,
-        proj: c.cx * dx + c.cy * dy,
-      }))
-
-      const minProj = Math.min(...projections.map((p) => p.proj))
-      const maxProj = Math.max(...projections.map((p) => p.proj))
-      const range = maxProj - minProj
-
-      // 采样每个键帽的颜色并生成批量 override
+      const colors = distributeGradientColors(parsed, centers)
       const batchOverrides: Record<string, Partial<KeycapOverride>> = {}
-      for (const { id, proj } of projections) {
-        const t = range === 0 ? 0 : ((proj - minProj) / range) * 100
-        batchOverrides[id] = { [field]: interpolateGradientColor(parsed, t) }
+      for (const [id, hex] of Object.entries(colors)) {
+        batchOverrides[id] = { [field]: hex }
       }
       batchSetKeycapOverrides(layerId, batchOverrides)
     },
@@ -244,8 +221,7 @@ export function useMultiKeycapEditor({
     globalFontFamily,
 
     labelColor,
-    bgColor,
-    topColor,
+    color,
     borderColor,
     fontSize,
     fontFamily,

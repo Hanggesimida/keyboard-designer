@@ -20,6 +20,7 @@ import { useUserStore } from "@/store/userStore"
 import type { DesignData } from "@/lib/api/designs"
 import type { ExportArtboardParams, ExportCanvasElement } from "@/modules/design/lib/design/exportArtboard"
 import { generateThumbnailBlob } from "@/modules/design/lib/design/exportArtboard"
+import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 
 interface SaveDesignButtonProps {
   getExportParams: () => ExportArtboardParams
@@ -45,7 +46,7 @@ function extractDesignData(): DesignData {
     return { ...rest, src: assetMap[assetId] ?? "" }
   })
 
-  return {
+  return normalizeDesignColorFields({
     version: 1,
     templateId,
     layers,
@@ -56,7 +57,7 @@ function extractDesignData(): DesignData {
     globalKeycapStyle,
     layerKeycapOverrides,
     canvasElements: exportElements,
-  }
+  })
 }
 
 export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {

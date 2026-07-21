@@ -4,7 +4,7 @@
  * file: 相对 public/ 的 TTF 路径（页面预览资产；服务端转曲以 api ExportModule 为准）。
  * null 表示该字体未提供转曲文件，导出时保留 <text>。
  *
- * 与 apps/api/src/modules/export/font-assets.ts、Python scripts/generate_jig_svg.py 保持同步。
+ * 与 apps/api/src/modules/export/font-assets.ts 保持同步。
  */
 
 export interface FontAsset {

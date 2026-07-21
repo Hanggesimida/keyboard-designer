@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from "react"
 import type { GlobalKeycapStyle, KeycapOverride } from "@/modules/design/store/designUiStore"
-import { resolveEffectiveBorderHidden } from "@/modules/design/lib/keycap-inspector/border"
 import { registerTextMetrics } from "@/modules/design/store/textMetricsRegistry"
 import { toCssFontFamily } from "@/lib/fonts/fontRef"
 import {
@@ -23,10 +22,10 @@ import {
   roundedPolygonPath,
 } from "@/modules/design/lib/design/keycapGeometry"
 import {
-  isGradientValue,
-  parseCssLinearGradient,
-  cssAngleToSvgCoords,
-} from "@/modules/design/lib/design/gradientUtils"
+  CSS_VAR_COLOR_FALLBACKS,
+  resolveKeycapBodyColor,
+  resolveLayerKeycapFields,
+} from "@/modules/design/lib/design/resolveKeycapAppearance"
 
 export interface KeyDef {
   keyId: string
@@ -52,38 +51,6 @@ export const KEY_RADIUS_BASE = _KEY_RADIUS_BASE
 
 const GAP = KEYCAP_GAP
 
-// ─── SVG gradient helper ───────────────────────────────────────────────────────
-
-interface SvgFillResult {
-  /** linearGradient element to place inside <defs>, or null for solid fills */
-  gradientDef: React.ReactElement | null
-  /** fill attribute value: gradient URL or the original solid color string */
-  fill: string
-}
-
-function toSvgFill(value: string, id: string): SvgFillResult {
-  if (!isGradientValue(value)) return { gradientDef: null, fill: value }
-  const parsed = parseCssLinearGradient(value)
-  if (!parsed) return { gradientDef: null, fill: value }
-  const { x1, y1, x2, y2 } = cssAngleToSvgCoords(parsed.angle)
-  const gradientDef = (
-    <linearGradient
-      key={id}
-      id={id}
-      x1={x1}
-      y1={y1}
-      x2={x2}
-      y2={y2}
-      gradientUnits="objectBoundingBox"
-    >
-      {parsed.stops.map((stop) => (
-        <stop key={stop.id} offset={`${stop.pos}%`} stopColor={stop.color} />
-      ))}
-    </linearGradient>
-  )
-  return { gradientDef, fill: `url(#${id})` }
-}
-
 const KEY_SELECTED_STROKE_WIDTH = 2
 
 interface KeycapNodeProps {
@@ -95,6 +62,11 @@ interface KeycapNodeProps {
   override?: KeycapOverride
   /** 全局键帽样式（单键 override 优先） */
   globalDefaults?: GlobalKeycapStyle
+  /**
+   * 全局键帽色为渐变时，由父组件预计算的 keyId → 纯色映射
+   *（整盘按方向采样，见 buildGlobalDistributedColors）。
+   */
+  globalDistributedColors?: Readonly<Record<string, string>>
   fontFamily?: string
   /** 全局字重：400 = 常规，700 = 加粗 */
   fontWeight?: number
@@ -126,6 +98,7 @@ export function KeycapNode({
   onSelect,
   override,
   globalDefaults,
+  globalDistributedColors,
   fontFamily,
   fontWeight,
   fontStyle,
@@ -153,34 +126,32 @@ export function KeycapNode({
   const topW = topFaceRects[0]!.w
   const topH = topFaceRects[0]!.h
 
-  const baseFill =
-    override?.bgColor ??
-    globalDefaults?.bgColor ??
-    "var(--design-keycap-fill-base)"
-  const topFill =
-    override?.topColor ??
-    globalDefaults?.topColor ??
-    "var(--design-keycap-fill-top)"
+  const layerFields = resolveLayerKeycapFields({
+    override,
+    globalStyle: globalDefaults,
+    defaultLabel: keyDef.label,
+    labelsHidden,
+    fallbacks: CSS_VAR_COLOR_FALLBACKS,
+  })
 
-  const baseSvg = toSvgFill(baseFill, `kb-${keyDef.keyId}`)
-  const topSvg = toSvgFill(topFill, `kt-${keyDef.keyId}`)
-  const hasDefs = baseSvg.gradientDef !== null || topSvg.gradientDef !== null
-  const resolvedBorder =
-    override?.borderColor ??
-    globalDefaults?.borderColor ??
-    "var(--design-keycap-stroke)"
-  const borderHidden = resolveEffectiveBorderHidden(override, globalDefaults)
+  // 键帽底色始终为纯色：全局渐变按整盘投影采样，单键渐变降为中点色
+  const fill = resolveKeycapBodyColor({
+    overrideColor: override?.color,
+    globalColor: globalDefaults?.color,
+    keyId: keyDef.keyId,
+    globalDistributedColors,
+    fallback: CSS_VAR_COLOR_FALLBACKS.color,
+  })
+  const resolvedBorder = layerFields.borderColor
+  const borderHidden = layerFields.borderHidden
   const baseStroke = isSelected
     ? "var(--design-keycap-selected-border)"
     : borderHidden
       ? "none"
       : resolvedBorder
   const baseStrokeWidth = isSelected ? KEY_SELECTED_STROKE_WIDTH : borderHidden ? 0 : 1
-  const labelText = override?.labelText ?? keyDef.label
-  const labelColor =
-    override?.labelColor ??
-    globalDefaults?.labelColor ??
-    "var(--design-keycap-label)"
+  const labelText = layerFields.labelText
+  const labelColor = layerFields.labelColor
   const fontSize =
     override?.fontSize ?? globalDefaults?.fontSize ?? KEY_LABEL_SIZE
   const labelFontFamily = toCssFontFamily(
@@ -356,21 +327,15 @@ export function KeycapNode({
       const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
       return (
         <g data-keycap="true" style={{ cursor: "pointer" }} {...clickHandler}>
-          {hasDefs && (
-            <defs>
-              {baseSvg.gradientDef}
-              {topSvg.gradientDef}
-            </defs>
-          )}
           <path
             d={isoBasePath}
-            fill={baseSvg.fill}
+            fill={fill}
             stroke={borderHidden ? "none" : resolvedBorder}
             strokeWidth={borderHidden ? 0 : 1}
           />
           <path
             d={isoTopPath}
-            fill={topSvg.fill}
+            fill={fill}
             style={{ pointerEvents: "none" }}
           />
         </g>
@@ -378,15 +343,9 @@ export function KeycapNode({
     }
     return (
       <g data-keycap="true" style={{ cursor: "pointer" }} {...clickHandler}>
-        {hasDefs && (
-          <defs>
-            {baseSvg.gradientDef}
-            {topSvg.gradientDef}
-          </defs>
-        )}
         <rect
           x={px} y={py} width={pw} height={ph} rx={KEY_RADIUS_BASE}
-          fill={baseSvg.fill}
+          fill={fill}
           stroke={borderHidden ? "none" : resolvedBorder}
           strokeWidth={borderHidden ? 0 : 1}
         />
@@ -394,7 +353,7 @@ export function KeycapNode({
           <rect
             key={i}
             x={r.x} y={r.y} width={r.w} height={r.h} rx={KEY_RADIUS_TOP}
-            fill={topSvg.fill}
+            fill={fill}
             style={{ pointerEvents: "none" }}
           />
         ))}
@@ -541,23 +500,17 @@ export function KeycapNode({
         {...clickHandler}
         style={{ cursor: isLabelEditing ? "default" : "pointer" }}
       >
-        {hasDefs && (
-          <defs>
-            {baseSvg.gradientDef}
-            {topSvg.gradientDef}
-          </defs>
-        )}
         {/* ISO 底座（L 形圆角路径） */}
         <path
           d={isoBasePath}
-          fill={baseSvg.fill}
+          fill={fill}
           stroke={baseStroke}
           strokeWidth={baseStrokeWidth}
         />
         {/* ISO 顶面填充（L 形圆角路径） */}
         <path
           d={isoTopPath}
-          fill={topSvg.fill}
+          fill={fill}
           style={{ pointerEvents: "none" }}
         />
         {/* ISO 顶面边框 */}
@@ -627,12 +580,6 @@ export function KeycapNode({
       {...clickHandler}
       style={{ cursor: isLabelEditing ? "default" : "pointer" }}
     >
-      {hasDefs && (
-        <defs>
-          {baseSvg.gradientDef}
-          {topSvg.gradientDef}
-        </defs>
-      )}
       {/* 键帽底座 */}
       <rect
         x={px}
@@ -640,7 +587,7 @@ export function KeycapNode({
         width={pw}
         height={ph}
         rx={KEY_RADIUS_BASE}
-        fill={baseSvg.fill}
+        fill={fill}
         stroke={baseStroke}
         strokeWidth={baseStrokeWidth}
       />
@@ -653,7 +600,7 @@ export function KeycapNode({
           width={r.w}
           height={r.h}
           rx={KEY_RADIUS_TOP}
-          fill={topSvg.fill}
+          fill={fill}
           style={{ pointerEvents: "none" }}
         />
       ))}

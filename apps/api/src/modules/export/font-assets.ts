@@ -4,7 +4,7 @@
  * file: 相对 fonts/ 根的 TTF 路径，供服务端 opentype.js 转曲使用。
  * null 表示该字体未提供转曲文件，导出时保留 <text>。
  *
- * 与 web/lib/fontAssets.ts、Python scripts/generate_jig_svg.py 保持同步。
+ * 与 web/lib/fontAssets.ts 保持同步。
  */
 
 export interface FontAsset {

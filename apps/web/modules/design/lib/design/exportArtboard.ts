@@ -8,13 +8,15 @@
   TEMPLATES,
 } from "@/modules/design/store/designUiStore"
 import type { TemplateId } from "@/modules/design/store/designUiStore"
-import { KEY_RADIUS_BASE, KEYCAP_GAP, type KeyDef } from "@/modules/design/components/canvas/KeycapNode"
+import { KEY_RADIUS_BASE, KEYCAP_GAP } from "@/modules/design/components/canvas/KeycapNode"
+import type { KeyDef } from "@/modules/design/types/design"
 import { FONT_ASSETS } from "@/lib/fontAssets"
 import { normalizeFontFamilyRef } from "@/lib/fonts/fontRef"
 import {
   textsToPaths,
   type TextDescriptor,
 } from "@/lib/api/export"
+import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -468,14 +470,15 @@ export async function parseImportJson(
     }
   }
 
-  return { ok: true, data: raw as ImportPayload }
+  return { ok: true, data: normalizeDesignColorFields(raw as ImportPayload) }
 }
 
 /** 将解析后的设计数据应用到 store，覆盖当前全部设计状态 */
 export function applyImportData(data: ImportPayload) {
+  const normalized = normalizeDesignColorFields(data)
   // 将导出格式（内联 src）转换为运行时格式（assetId + assetMap）
   const assetMap: Record<string, string> = {}
-  const canvasElements: CanvasElement[] = data.canvasElements.map((el) => {
+  const canvasElements: CanvasElement[] = normalized.canvasElements.map((el) => {
     const src = el.src ?? ""
     // 若 JSON 已含 assetId（未来格式），直接复用；否则为每个元素生成新 assetId
     const assetId = el.assetId ?? `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -486,12 +489,12 @@ export function applyImportData(data: ImportPayload) {
   })
 
   useDesignUIStore.setState({
-    templateId: data.templateId,
-    artboardBackground: data.artboardBackground,
-    fontFamily: data.fontFamily ?? "var(--font-ibm-plex-mono)",
-    globalKeycapStyle: data.globalKeycapStyle,
-    layers: data.layers,
-    layerKeycapOverrides: data.layerKeycapOverrides,
+    templateId: normalized.templateId,
+    artboardBackground: normalized.artboardBackground,
+    fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
+    globalKeycapStyle: normalized.globalKeycapStyle,
+    layers: normalized.layers,
+    layerKeycapOverrides: normalized.layerKeycapOverrides,
     canvasElements,
     assetMap,
     selectedKeycapIds: [],
@@ -521,7 +524,7 @@ export function exportArtboardJson() {
     return { ...rest, src: assetMap[assetId] ?? "" }
   })
 
-  const payload = {
+  const payload = normalizeDesignColorFields({
     version: 1,
     templateId,
     artboardBackground,
@@ -530,7 +533,7 @@ export function exportArtboardJson() {
     layers,
     layerKeycapOverrides,
     canvasElements: exportElements,
-  }
+  })
   triggerDownload(
     new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json;charset=utf-8",

@@ -53,6 +53,8 @@ const ART_PAD = 28
 // ─── 类型定义 ─────────────────────────────────────────────────────────────
 
 interface GlobalKeycapStyle {
+  /** 整颗键帽本体色；兼容旧稿 bgColor / topColor */
+  color?: string
   bgColor?: string
   topColor?: string
   fontSize?: number
@@ -61,6 +63,7 @@ interface GlobalKeycapStyle {
 }
 
 interface KeycapOverride {
+  color?: string
   bgColor?: string
   topColor?: string
   labelText?: string
@@ -111,8 +114,7 @@ export interface DesignPayload {
 }
 
 interface ParsedDesign {
-  globalBg: string
-  globalTop: string
+  globalColor: string
   globalFontSize: number
   globalLabelColor: string
   globalFontFamily: string
@@ -145,8 +147,7 @@ interface JigRenderContext {
 }
 
 interface KeyStyle {
-  bgColor: string
-  topColor: string
+  color: string
   labelText: string
   labelColor: string
   fontSize: number
@@ -321,6 +322,15 @@ function buildJigRenderContext(
 
 // ─── 设计数据解析 ─────────────────────────────────────────────────────────
 
+function resolveKeycapColor(source: {
+  color?: string
+  topColor?: string
+  bgColor?: string
+} | null | undefined, fallback: string): string {
+  if (!source) return fallback
+  return source.color ?? source.topColor ?? source.bgColor ?? fallback
+}
+
 function parseDesign(design: DesignPayload): ParsedDesign {
   const gs = design.globalKeycapStyle ?? {}
   const overridesByKey: Record<string, KeycapOverride> = {}
@@ -329,7 +339,7 @@ function parseDesign(design: DesignPayload): ParsedDesign {
     for (const [keyId, ov] of Object.entries(keyMap)) {
       if (!overridesByKey[keyId]) overridesByKey[keyId] = {}
       const fields: (keyof KeycapOverride)[] = [
-        "bgColor", "topColor",
+        "color", "bgColor", "topColor",
         "labelText", "labelColor", "fontSize", "fontFamily",
         "letterSpacing", "lineHeightRatio",
         "labelOffsetX", "labelOffsetY",
@@ -340,12 +350,18 @@ function parseDesign(design: DesignPayload): ParsedDesign {
           (overridesByKey[keyId] as Record<string, unknown>)[field] = ov[field]
         }
       }
+      // 将遗留双色收敛为单一 color，写入后去掉旧字段以免下游混淆
+      const merged = overridesByKey[keyId]!
+      if (merged.color != null || merged.topColor != null || merged.bgColor != null) {
+        merged.color = resolveKeycapColor(merged, "#aaaaaa")
+        delete merged.bgColor
+        delete merged.topColor
+      }
     }
   }
 
   return {
-    globalBg: gs.bgColor ?? "#888888",
-    globalTop: gs.topColor ?? "#aaaaaa",
+    globalColor: resolveKeycapColor(gs, "#aaaaaa"),
     globalFontSize: gs.fontSize ?? KEY_LABEL_SIZE,
     globalLabelColor: gs.labelColor ?? "#cccccc",
     globalFontFamily: design.fontFamily ?? "Inter, system-ui, sans-serif",
@@ -385,8 +401,7 @@ function loadTemplateLayout(templateId: string): Layout {
 function getKeyStyle(keyId: string, design: ParsedDesign, defaultLabel: string): KeyStyle {
   const ov = design.overrides[keyId] ?? {}
   return {
-    bgColor: ov.bgColor ?? design.globalBg,
-    topColor: ov.topColor ?? design.globalTop,
+    color: resolveKeycapColor(ov, design.globalColor),
     labelText: ov.labelText ?? defaultLabel,
     labelColor: ov.labelColor ?? design.globalLabelColor,
     fontSize: ov.fontSize ?? design.globalFontSize,
@@ -472,12 +487,12 @@ function buildDesignLayersIntermediate(
 
     const bottom = resolveBottomFace(pos, topScale)
     if (bottom) {
-      colorLines.push(renderShape(bottom, st.bgColor, `data-key="${keyId}" data-layer="bottom"`))
+      colorLines.push(renderShape(bottom, st.color, `data-key="${keyId}" data-layer="bottom"`))
     }
 
     const top = resolveTopFace(pos, topScale)
     if (top) {
-      colorLines.push(renderShape(top, st.topColor, `data-key="${keyId}" data-layer="top"`))
+      colorLines.push(renderShape(top, st.color, `data-key="${keyId}" data-layer="top"`))
     }
 
     if (!top || !st.labelText || labelRenderedKeys.has(keyId)) continue
