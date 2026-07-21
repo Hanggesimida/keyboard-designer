@@ -17,6 +17,7 @@ import {
   Activity,
   Copy,
   Check,
+  type LucideIcon,
 } from "lucide-react"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
@@ -378,7 +379,7 @@ function ExportButton({
   label,
   onClick,
 }: {
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
   onClick: () => void
 }) {

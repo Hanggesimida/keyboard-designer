@@ -64,8 +64,10 @@ apps/web/
 
 ### 环境要求
 
-- **Node.js** >= 20
-- **pnpm** >= 9（`npm i -g pnpm`）
+- **Node.js** >= 22
+- **pnpm** 11.12.0（建议 `corepack enable`）
+
+> 转曲、治具、字体库、登录等功能依赖后端服务；开发时请一并启动 `apps/api`（见 [apps/api/README.md](../api/README.md)）。开发环境下前端通过 Next.js rewrite 代理到 `localhost:3001`。
 
 ### 安装依赖
 
