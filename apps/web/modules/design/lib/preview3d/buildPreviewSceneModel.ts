@@ -7,7 +7,10 @@ import {
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
 import { normalizeKeyShape } from "@/modules/design/types/design"
 import { getKeyboardBounds, keyDefToWorld } from "./layoutToWorld"
-import { resolveKeycapModel } from "./modelContract"
+import {
+  expectedKeycapModelName,
+  resolveKeycapModel,
+} from "./modelContract"
 import type {
   PreviewDesignStateInput,
   PreviewKey,
@@ -35,6 +38,8 @@ export function buildPreviewSceneModel(
     keyCentersFromDefs(flatKeys),
   )
 
+  const missingSet = new Set<string>()
+
   const keys: PreviewKey[] = flatKeys.map((key) => {
     const appearance = resolveKeycapAppearance({
       globalStyle: g,
@@ -46,12 +51,17 @@ export function buildPreviewSceneModel(
     })
     const { position, size } = keyDefToWorld(key, baseUnit)
     const shape = normalizeKeyShape(key.shape)
-    const model = resolveKeycapModel({
+    const lookup = {
       w: key.w,
       h: key.h,
       rowLevel: key.rowLevel,
       shape,
-    })
+    }
+    const model = resolveKeycapModel(lookup)
+    if (!model) {
+      const expected = expectedKeycapModelName(lookup)
+      if (expected) missingSet.add(expected)
+    }
 
     return {
       id: key.keyId,
@@ -69,6 +79,8 @@ export function buildPreviewSceneModel(
       visible: appearance.visible,
     }
   })
+
+  const missingModels = Array.from(missingSet).sort()
 
   const worldBounds = getKeyboardBounds(flatKeys)
   const bounds = {
@@ -114,12 +126,14 @@ export function buildPreviewSceneModel(
   ].join("||")
 
   const selectionRevision = designState.selectedKeycapIds.join(",")
+  const missingRevision = missingModels.join(",")
 
   return {
     templateId: designState.templateId,
     baseUnit,
     keys,
     bounds,
-    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}`,
+    missingModels,
+    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${missingRevision}`,
   }
 }

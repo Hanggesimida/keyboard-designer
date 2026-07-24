@@ -34,7 +34,7 @@ export const LAYOUT_REGISTRY: Record<string, LayoutData> = {
 }
 
 export function getLayoutData(templateId: string): LayoutData {
-  return LAYOUT_REGISTRY[templateId] ?? LAYOUT_REGISTRY["ansi-104"]!
+  return LAYOUT_REGISTRY[templateId] ?? LAYOUT_REGISTRY["ansi-108"]!
 }
 
 export function getAllKeysWithRow(layout: LayoutData) {

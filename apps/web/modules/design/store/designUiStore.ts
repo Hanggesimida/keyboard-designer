@@ -319,7 +319,7 @@ function applyOverridePatch(
 export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   temporal(
   (set, get) => ({
-    templateId: "ansi-144",
+    templateId: "ansi-108",
     layers: initialLayers,
     activeLayerId: null,
     artboardBackground: DEFAULT_ARTBOARD_BG,
@@ -340,7 +340,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
 
     resetAll: () =>
       set({
-        templateId: "ansi-144",
+        templateId: "ansi-108",
         layers: initialLayers,
         globalKeycapStyle: initialGlobalKeycapStyle,
         layerKeycapOverrides: {},

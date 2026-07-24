@@ -1,14 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useRef, type ComponentRef } from "react"
+import { useEffect, useRef, type ComponentRef } from "react"
 import { useThree } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
-import { useShallow } from "zustand/react/shallow"
-import { useDesignUIStore } from "@/modules/design/store/designUiStore"
-import { getLayoutData } from "@/modules/design/data/layouts"
-import { buildPreviewSceneModel } from "@/modules/design/lib/preview3d/buildPreviewSceneModel"
 import { computeCameraFitPose } from "@/modules/design/lib/preview3d/cameraFit"
-import type { PreviewDesignStateInput } from "@/modules/design/lib/preview3d/types"
+import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
 import { KeycapMesh } from "./KeycapMesh"
@@ -91,45 +87,18 @@ function CameraRig({
 }
 
 interface Keyboard3DSceneProps {
+  sceneModel: PreviewSceneModel
   /** 递增以强制复位相机（不重置模板） */
   cameraResetToken?: number
+  /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
+  onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
 }
 
-export function Keyboard3DScene({ cameraResetToken = 0 }: Keyboard3DSceneProps) {
-  const storeSlice = useDesignUIStore(
-    useShallow((s) => ({
-      templateId: s.templateId,
-      globalKeycapStyle: s.globalKeycapStyle,
-      layers: s.layers,
-      activeLayerId: s.activeLayerId,
-      layerKeycapOverrides: s.layerKeycapOverrides,
-      selectedKeycapIds: s.selectedKeycapIds,
-    })),
-  )
-
-  const sceneModel = useMemo(() => {
-    const designSnapshot: PreviewDesignStateInput = {
-      templateId: storeSlice.templateId,
-      globalKeycapStyle: {
-        color: storeSlice.globalKeycapStyle.color,
-        labelColor: storeSlice.globalKeycapStyle.labelColor,
-        borderColor: storeSlice.globalKeycapStyle.borderColor,
-        borderHidden: storeSlice.globalKeycapStyle.borderHidden,
-      },
-      layers: storeSlice.layers.map((l) => ({
-        id: l.id,
-        visible: l.visible,
-        opacity: l.opacity,
-        labelsHidden: l.labelsHidden,
-      })),
-      activeLayerId: storeSlice.activeLayerId,
-      layerKeycapOverrides: storeSlice.layerKeycapOverrides,
-      selectedKeycapIds: storeSlice.selectedKeycapIds,
-    }
-    const layout = getLayoutData(designSnapshot.templateId)
-    return buildPreviewSceneModel(layout, designSnapshot)
-  }, [storeSlice])
-
+export function Keyboard3DScene({
+  sceneModel,
+  cameraResetToken = 0,
+  onSelectKeycap,
+}: Keyboard3DSceneProps) {
   const center = sceneModel.bounds.center
   const extents = {
     width: sceneModel.bounds.width,
@@ -154,9 +123,26 @@ export function Keyboard3DScene({ cameraResetToken = 0 }: Keyboard3DSceneProps) 
           .filter((key) => key.visible)
           .map((key) =>
             key.modelPath ? (
-              <KeycapMesh key={key.id} previewKey={key} modelPath={key.modelPath} />
+              <KeycapMesh
+                key={key.id}
+                previewKey={key}
+                modelPath={key.modelPath}
+                onSelect={
+                  onSelectKeycap
+                    ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
+                    : undefined
+                }
+              />
             ) : (
-              <PlaceholderKeycap key={key.id} previewKey={key} />
+              <PlaceholderKeycap
+                key={key.id}
+                previewKey={key}
+                onSelect={
+                  onSelectKeycap
+                    ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
+                    : undefined
+                }
+              />
             ),
           )}
       </group>

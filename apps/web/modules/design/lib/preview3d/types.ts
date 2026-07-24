@@ -41,6 +41,11 @@ export interface PreviewSceneModel {
   baseUnit: number
   keys: PreviewKey[]
   bounds: PreviewSceneBounds
+  /**
+   * 当前布局未命中的期望 GLB 文件名（去重排序）。
+   * 空数组表示全部有真模。
+   */
+  missingModels: string[]
   /** 几何/外观/选择态变化标记 */
   revision: string
 }
