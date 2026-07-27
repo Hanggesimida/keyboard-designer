@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useGLTF } from "@react-three/drei"
 import { useThree, type ThreeEvent } from "@react-three/fiber"
 import {
@@ -8,7 +8,14 @@ import {
   KEYCAP_MODEL_PATHS,
   MODEL_SCALE,
 } from "@/modules/design/lib/preview3d/modelContract"
+import {
+  createKeycapDyeSubMaterial,
+  setDyeSubDecalEnabled,
+  setDyeSubKeyTopY,
+  syncDyeSubAppearance,
+} from "@/modules/design/lib/preview3d/keycapDyeSubMaterial"
 import type { PreviewKey } from "@/modules/design/lib/preview3d/types"
+import { useSharedDyeSubUniforms } from "./KeycapDecalProvider"
 
 /** 超过此像素位移视为拖拽（旋转相机），不触发选中 */
 const CLICK_DELTA_PX = 5
@@ -27,6 +34,8 @@ type MeshLike = {
   material?: { name?: string } | Array<{ name?: string }>
   geometry?: {
     getAttribute: (name: string) => unknown
+    boundingBox?: { max: { y: number } } | null
+    computeBoundingBox?: () => void
   }
 }
 
@@ -35,7 +44,7 @@ type SceneLike = {
 }
 
 /**
- * 开发环境校验：恰好 1 个 Mesh，且带 POSITION / TEXCOORD_0。
+ * 开发环境校验：恰好 1 个 Mesh，且带 POSITION。
  * 不符合时 console.warn，不抛错。
  */
 function validateKeycapModelMesh(scene: SceneLike, path: string): void {
@@ -61,13 +70,6 @@ function validateKeycapModelMesh(scene: SceneLike, path: string): void {
     )
   }
 
-  const uv = mesh.geometry?.getAttribute("uv")
-  if (!uv) {
-    console.warn(
-      `[Preview3D] 模型契约异常 (${path}): mesh 缺少 TEXCOORD_0 / uv`,
-    )
-  }
-
   const mat = mesh.material
   const matName = Array.isArray(mat) ? mat[0]?.name : mat?.name
   if (matName && matName !== KEYCAP_MATERIAL_NAME) {
@@ -86,17 +88,62 @@ function findKeycapGeometry(scene: SceneLike) {
   return geometry
 }
 
+/** 世界空间顶面高度：本地 bbox.max.y × MODEL_SCALE（底面在 y=0） */
+function resolveKeyTopY(geometry: MeshLike["geometry"] | null): number {
+  if (!geometry) return 0.2
+  if (!geometry.boundingBox && geometry.computeBoundingBox) {
+    geometry.computeBoundingBox()
+  }
+  const maxY = geometry.boundingBox?.max.y
+  if (typeof maxY === "number" && Number.isFinite(maxY)) {
+    return maxY * MODEL_SCALE
+  }
+  return 0.2
+}
+
 /**
  * 真实 GLB 键帽：共享 drei 缓存的 geometry，声明式材质由 R3F 管理生命周期。
  * 不克隆 / dispose GLTF 共享 geometry。
+ * 贴花通过场景级 SharedDyeSubUniforms 世界空间采样。
  */
 export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps) {
   const { scene } = useGLTF(modelPath)
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
   const validatedRef = useRef<string | null>(null)
+  const shared = useSharedDyeSubUniforms()
 
   const geometry = findKeycapGeometry(scene as SceneLike)
+  const keyTopY = useMemo(() => resolveKeyTopY(geometry), [geometry])
+
+  const material = useMemo(
+    () =>
+      createKeycapDyeSubMaterial({
+        shared,
+        color: previewKey.color,
+        keyTopY,
+        decalEnabled: previewKey.decalEnabled,
+        selected: previewKey.selected,
+      }),
+    // shared 稳定；首帧用当前色/选中态，后续用 effect 同步
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 材质实例按键生命周期创建一次
+    [shared, keyTopY],
+  )
+
+  useEffect(() => {
+    return () => {
+      material.dispose()
+    }
+  }, [material])
+
+  useEffect(() => {
+    setDyeSubKeyTopY(material, keyTopY)
+  }, [keyTopY, material])
+
+  useEffect(() => {
+    setDyeSubDecalEnabled(material, previewKey.decalEnabled)
+    invalidate()
+  }, [invalidate, material, previewKey.decalEnabled])
 
   useEffect(() => {
     if (validatedRef.current === modelPath) return
@@ -105,13 +152,14 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
   }, [modelPath, scene])
 
   useEffect(() => {
+    syncDyeSubAppearance(material, {
+      color: previewKey.color,
+      selected: previewKey.selected,
+    })
     invalidate()
-  }, [geometry, invalidate, previewKey.color, previewKey.selected])
+  }, [geometry, invalidate, material, previewKey.color, previewKey.selected])
 
   if (!geometry) return null
-
-  const color = previewKey.color
-  const selected = previewKey.selected
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
@@ -122,6 +170,7 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
   return (
     <mesh
       geometry={geometry as never}
+      material={material as never}
       position={previewKey.position}
       scale={MODEL_SCALE}
       onClick={onSelect ? handleClick : undefined}
@@ -140,15 +189,7 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
             }
           : undefined
       }
-    >
-      <meshStandardMaterial
-        color={color}
-        roughness={0.55}
-        metalness={0.05}
-        emissive={selected ? "#5b8def" : "#000000"}
-        emissiveIntensity={selected ? 0.35 : 0}
-      />
-    </mesh>
+    />
   )
 }
 

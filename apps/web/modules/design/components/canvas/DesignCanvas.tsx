@@ -31,6 +31,7 @@ import {
   PREVIEW_3D_HEIGHT_MAX,
   PREVIEW_3D_HEIGHT_MIN,
 } from "@/modules/design/lib/preview3d/constants"
+import { DESIGN_ART_PAD } from "@/modules/design/lib/preview3d/imageDecal"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 import {
   buildGlobalDistributedColors,
@@ -43,7 +44,7 @@ const Keycap3DPreview = dynamic(
 )
 
 // ─── 常量 ──────────────────────────────────────────────
-const ART_PAD = 28                    // 画板内边距
+const ART_PAD = DESIGN_ART_PAD // 画板内边距（与 3D 贴花矩阵共用）
 
 function getTemplateBounds(keys: KeyDef[], unit: number) {
   let maxX = 0

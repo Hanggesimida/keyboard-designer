@@ -1,4 +1,5 @@
 import type { KeyShape, KeySection } from "@/modules/design/types/design"
+import type { PreviewImageDecal } from "./imageDecal"
 
 /** 与 React / Zustand / Three 无关的单键预览数据 */
 export interface PreviewKey {
@@ -23,6 +24,8 @@ export interface PreviewKey {
   labelsHidden: boolean
   selected: boolean
   visible: boolean
+  /** 当前全局贴花是否作用于此键（与 2D clip 相交一致） */
+  decalEnabled: boolean
 }
 
 export interface PreviewSceneBounds {
@@ -46,6 +49,11 @@ export interface PreviewSceneModel {
    * 空数组表示全部有真模。
    */
   missingModels: string[]
+  /**
+   * 全局键帽贴花（首版 0～1 张）：裁到全部键帽的顶层图片。
+   * 由世界空间投影采样，不依赖 mesh UV。
+   */
+  imageDecals: PreviewImageDecal[]
   /** 几何/外观/选择态变化标记 */
   revision: string
 }
@@ -82,4 +90,23 @@ export interface PreviewDesignStateInput {
     >
   >
   selectedKeycapIds: ReadonlyArray<string>
+  /** 画布图片元素（含 clipToKeycaps） */
+  canvasElements?: ReadonlyArray<{
+    id: string
+    type: "image"
+    assetId: string
+    x: number
+    y: number
+    width: number
+    height: number
+    opacity: number
+    rotation?: number
+    clipToKeycaps?: boolean
+    clipToKeycapId?: string
+    clipToKeycapIds?: string[]
+  }>
+  /** assetId → data URL */
+  assetMap?: Readonly<Record<string, string>>
+  /** 拖拽跟手偏移（画板 px） */
+  liveDragOverrides?: Readonly<Record<string, { dx: number; dy: number }>>
 }

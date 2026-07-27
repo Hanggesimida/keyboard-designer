@@ -6,6 +6,7 @@ import {
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
 import { normalizeKeyShape } from "@/modules/design/types/design"
+import { buildImageDecals } from "./imageDecal"
 import { getKeyboardBounds, keyDefToWorld } from "./layoutToWorld"
 import {
   expectedKeycapModelName,
@@ -39,6 +40,21 @@ export function buildPreviewSceneModel(
   )
 
   const missingSet = new Set<string>()
+
+  const imageDecals = buildImageDecals({
+    canvasElements: designState.canvasElements ?? [],
+    assetMap: designState.assetMap ?? {},
+    baseUnit,
+    keys: flatKeys.map((k) => ({
+      keyId: k.keyId,
+      x: k.x,
+      y: k.y,
+      w: k.w,
+      h: k.h,
+    })),
+    liveDragOverrides: designState.liveDragOverrides,
+  })
+  const decalKeySet = new Set(imageDecals[0]?.keyIds ?? [])
 
   const keys: PreviewKey[] = flatKeys.map((key) => {
     const appearance = resolveKeycapAppearance({
@@ -77,6 +93,7 @@ export function buildPreviewSceneModel(
       labelsHidden: appearance.labelsHidden,
       selected: selected.has(key.keyId),
       visible: appearance.visible,
+      decalEnabled: decalKeySet.has(key.keyId),
     }
   })
 
@@ -128,12 +145,20 @@ export function buildPreviewSceneModel(
   const selectionRevision = designState.selectedKeycapIds.join(",")
   const missingRevision = missingModels.join(",")
 
+  const decalRevision = imageDecals
+    .map(
+      (d) =>
+        `${d.elementId}:${d.opacity}:${d.keyIds.join(",")}:${d.matrixElements.map((n) => n.toFixed(5)).join(",")}`,
+    )
+    .join("|")
+
   return {
     templateId: designState.templateId,
     baseUnit,
     keys,
     bounds,
     missingModels,
-    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${missingRevision}`,
+    imageDecals,
+    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${missingRevision}#${decalRevision}`,
   }
 }

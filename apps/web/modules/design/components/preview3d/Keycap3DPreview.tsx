@@ -30,6 +30,9 @@ export function Keycap3DPreview() {
       activeLayerId: s.activeLayerId,
       layerKeycapOverrides: s.layerKeycapOverrides,
       selectedKeycapIds: s.selectedKeycapIds,
+      canvasElements: s.canvasElements,
+      assetMap: s.assetMap,
+      liveDragOverrides: s.liveDragOverrides,
     })),
   )
 
@@ -55,6 +58,11 @@ export function Keycap3DPreview() {
       activeLayerId: storeSlice.activeLayerId,
       layerKeycapOverrides: storeSlice.layerKeycapOverrides,
       selectedKeycapIds: storeSlice.selectedKeycapIds,
+      canvasElements: storeSlice.canvasElements.filter(
+        (el): el is Extract<typeof el, { type: "image" }> => el.type === "image",
+      ),
+      assetMap: storeSlice.assetMap,
+      liveDragOverrides: storeSlice.liveDragOverrides,
     }
     return buildPreviewSceneModel(
       getLayoutData(designSnapshot.templateId),

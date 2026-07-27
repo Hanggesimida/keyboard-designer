@@ -6,6 +6,7 @@ import { OrbitControls } from "@react-three/drei"
 import { computeCameraFitPose } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
+import { KeycapDecalProvider } from "./KeycapDecalProvider"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
 import { KeycapMesh } from "./KeycapMesh"
 
@@ -105,6 +106,8 @@ export function Keyboard3DScene({
     depth: sceneModel.bounds.depth,
   }
 
+  const primaryDecal = sceneModel.imageDecals[0] ?? null
+
   return (
     <>
       <ambientLight intensity={0.55} />
@@ -118,34 +121,36 @@ export function Keyboard3DScene({
         cameraResetToken={cameraResetToken}
       />
 
-      <group>
-        {sceneModel.keys
-          .filter((key) => key.visible)
-          .map((key) =>
-            key.modelPath ? (
-              <KeycapMesh
-                key={key.id}
-                previewKey={key}
-                modelPath={key.modelPath}
-                onSelect={
-                  onSelectKeycap
-                    ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
-                    : undefined
-                }
-              />
-            ) : (
-              <PlaceholderKeycap
-                key={key.id}
-                previewKey={key}
-                onSelect={
-                  onSelectKeycap
-                    ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
-                    : undefined
-                }
-              />
-            ),
-          )}
-      </group>
+      <KeycapDecalProvider decal={primaryDecal}>
+        <group>
+          {sceneModel.keys
+            .filter((key) => key.visible)
+            .map((key) =>
+              key.modelPath ? (
+                <KeycapMesh
+                  key={key.id}
+                  previewKey={key}
+                  modelPath={key.modelPath}
+                  onSelect={
+                    onSelectKeycap
+                      ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
+                      : undefined
+                  }
+                />
+              ) : (
+                <PlaceholderKeycap
+                  key={key.id}
+                  previewKey={key}
+                  onSelect={
+                    onSelectKeycap
+                      ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
+                      : undefined
+                  }
+                />
+              ),
+            )}
+        </group>
+      </KeycapDecalProvider>
     </>
   )
 }

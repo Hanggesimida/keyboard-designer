@@ -5,9 +5,8 @@
  * - 单位：米；1U footprint ≈ 0.0181m（相对 19.05mm 键距自带 ~5% 缝隙）
  * - 原点：键帽底面中心（y_min = 0，X/Z 对称）；node.translation = [0,0,0]，无 rotation
  * - 坐标系：Y-up（X 宽、Y 高、Z 深），与 Three.js 一致
- * - 每个文件 1 node + 1 mesh；统一材质名 `Keycap`；带 TEXCOORD_0 十字 UV
+ * - 每个文件 1 node + 1 mesh；统一材质名 `Keycap`
  * - 缩放：MODEL_SCALE 将米换算为 `1u = 1 world unit`
- * - UV 细节见 uvCrossLayout.ts
  */
 
 import type { KeyShape } from "@/modules/design/types/design"
