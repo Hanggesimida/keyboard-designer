@@ -122,7 +122,7 @@ export function LoginForm() {
           <div className="flex size-8 items-center justify-center rounded-md">
             <LogoIcon className="size-6" />
           </div>
-          <span className="sr-only">烬炆外设</span>
+          <span className="sr-only">键盘设计器</span>
         </Link>
         <h1 className="text-xl font-bold">欢迎回来</h1>
         <FieldDescription>

@@ -1,5 +1,7 @@
 # JW Keyboard Designer — API
 
+> **已废弃。** 本服务已迁入 `legacy/api`，不参与默认构建与部署。若需自行启用，见上级 [legacy/README.md](../README.md)。
+
 **JW Keyboard Designer** 的后端服务，基于 [NestJS 11](https://nestjs.com/) + [Prisma 7](https://www.prisma.io/) + PostgreSQL 构建。负责字体转曲、治具生成、用户鉴权、字体库、订单与支付，以及带 SSE 实时通知的管理后台。
 
 ---
@@ -38,7 +40,7 @@
 ## 目录结构
 
 ```
-apps/api/
+legacy/api/
 ├── src/
 │   ├── main.ts                 # 入口：ValidationPipe、CORS、监听端口
 │   ├── app.module.ts           # 根模块（全局 ConfigModule，按 NODE_ENV 加载 .env）

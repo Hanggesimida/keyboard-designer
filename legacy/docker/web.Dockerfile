@@ -1,8 +1,8 @@
-# 构建上下文：项目根目录
-# docker build -f docker/api.Dockerfile .
+# 已废弃：见 legacy/README.md。
+# docker build -f legacy/docker/web.Dockerfile .
 
 # ============================================================
-# Stage 1: pruner — 执行 turbo prune，裁剪出 api 所需的最小子集
+# Stage 1: pruner — 执行 turbo prune，裁剪出 web 所需的最小子集
 # ============================================================
 FROM node:24-alpine AS pruner
 
@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN turbo prune api --docker --out-dir /pruned
+RUN turbo prune web --docker --out-dir /pruned
 
 # ============================================================
 # Stage 2: installer — 仅用 json/ 层安装依赖（最大化 layer 缓存）
@@ -37,7 +37,7 @@ COPY --from=pruner /pruned/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # ============================================================
-# Stage 3: builder — 复制完整源码，生成 Prisma Client，编译
+# Stage 3: builder — 复制完整源码，Next.js standalone 构建
 # ============================================================
 FROM node:24-alpine AS builder
 
@@ -52,15 +52,8 @@ WORKDIR /app
 COPY --from=installer /app/ .
 COPY --from=pruner /pruned/full/ .
 
-# 生成 Prisma Client（输出到 apps/api/generated/prisma）
-RUN pnpm --filter api exec prisma generate
-
-# NestJS webpack 打包 → apps/api/dist/main.js
-RUN pnpm --filter api build
-
-# pnpm deploy：将 api 的生产依赖提取到干净目录，解决 workspace 符号链接问题
-# pnpm v10+ 默认要求 inject-workspace-packages；Docker 构建用 --legacy 避免影响本地开发体验
-RUN pnpm --filter api deploy --prod --legacy /out/api
+# Next.js standalone 模式构建
+RUN pnpm --filter web build
 
 # ============================================================
 # Stage 4: runner — 最小运行时镜像
@@ -70,16 +63,17 @@ FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=builder /out/api/node_modules        ./node_modules
-COPY --from=builder /app/apps/api/dist           ./dist
-COPY --from=builder /app/apps/api/generated      ./generated
-COPY --from=builder /app/apps/api/prisma         ./prisma
-COPY --from=builder /app/apps/api/prisma.config.ts ./prisma.config.ts
+# Next.js standalone 输出包含完整的最小化 node_modules
+# 在 monorepo 中，standalone 目录内部会保留 apps/web/ 的路径结构
+COPY --from=builder /app/apps/web/.next/standalone ./
 
-# 转曲内置字体（来自 web public；turbo prune 不含 web，故从构建上下文直接 COPY）
-# 治具/布局数据（随 api 仓库 assets 维护）
-COPY apps/web/public/fonts                       ./assets/fonts
-COPY apps/api/assets/design-data                 ./assets/design-data
+# 静态资源和 public 必须手动复制到 standalone 对应路径
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public       ./apps/web/public
 
-EXPOSE 3001
-CMD ["node", "dist/main"]
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# monorepo standalone 中，server.js 位于 apps/web/server.js
+CMD ["node", "apps/web/server.js"]

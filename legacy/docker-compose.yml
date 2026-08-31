@@ -1,3 +1,7 @@
+# 已废弃：见 legacy/README.md。
+# 本文件随目录迁入 legacy/ 后不能直接 docker compose up。
+# 恢复时需把 legacy/api 加回 workspace，并把 build context 指回仓库根目录、
+# dockerfile 改为 legacy/docker/*.Dockerfile，COPY apps/api 改为 legacy/api。
 services:
   # ─────────────────────────────────────────────
   # Nginx 反向代理

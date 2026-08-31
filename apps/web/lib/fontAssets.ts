@@ -1,10 +1,11 @@
 /**
  * 字体资产映射表 — CSS var → 字体文件路径 + 族名
  *
- * file: 相对 public/ 的 TTF 路径（页面预览资产；服务端转曲以 api ExportModule 为准）。
+ * file: 相对 public/ 的 TTF 路径（页面预览与浏览器转曲）。
  * null 表示该字体未提供转曲文件，导出时保留 <text>。
  *
- * 与 apps/api/src/modules/export/font-assets.ts 保持同步。
+ * 与浏览器导出 `lib/export/browser` 使用同一套 public/fonts。
+ * 已废弃的服务端对照表在 legacy/api/src/modules/export/font-assets.ts。
  */
 
 export interface FontAsset {

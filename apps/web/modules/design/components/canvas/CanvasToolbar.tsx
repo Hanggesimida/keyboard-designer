@@ -1,12 +1,10 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench, Boxes } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench, Boxes, AlertTriangle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { Spinner } from "@workspace/ui/components/spinner"
-import { SaveDesignButton } from "./SaveDesignButton"
-import { OrderButton } from "./OrderButton"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +27,12 @@ import {
 } from "@/modules/design/lib/design/exportArtboard"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
-import { useUserStore } from "@/store/userStore"
-import { generateJig } from "@/lib/api/export"
+import { generateJig } from "@/lib/export"
 import { ApiError } from "@/lib/api/request"
+import {
+  DESIGN_EXPORTED_EVENT,
+  NOSAVE_HINT_DISMISSED_KEY,
+} from "@/modules/design/lib/session-events"
 
 interface CanvasToolbarProps {
   canUndo: boolean
@@ -60,6 +61,37 @@ function ToolbarSeparator() {
   return <Separator orientation="vertical" />
 }
 
+function NoSaveHint() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (window.localStorage.getItem(NOSAVE_HINT_DISMISSED_KEY) === "1") return
+    setVisible(true)
+  }, [])
+
+  if (!visible) return null
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-background/90 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur">
+      <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />
+      <span>设计不会自动保存，刷新后会丢失，请及时导出 JSON。</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        className="h-auto px-1.5 py-0 text-[11px] text-foreground hover:bg-amber-500/10"
+        onClick={(e) => {
+          e.stopPropagation()
+          window.localStorage.setItem(NOSAVE_HINT_DISMISSED_KEY, "1")
+          setVisible(false)
+        }}
+      >
+        我知道了
+      </Button>
+    </div>
+  )
+}
+
 export function CanvasToolbar({
   canUndo,
   canRedo,
@@ -73,7 +105,6 @@ export function CanvasToolbar({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<ImportPayload | null>(null)
   const [exporting, setExporting] = useState<ExportingFormat>(null)
-  const isAdmin = useUserStore((s) => s.user?.role === "ADMIN")
   const show3dPreview = useDesignUIStore((s) => s.show3dPreview)
   const toggleShow3dPreview = useDesignUIStore((s) => s.toggleShow3dPreview)
 
@@ -110,6 +141,12 @@ export function CanvasToolbar({
     } finally {
       setExporting(null)
     }
+  }
+
+  const handleExportJson = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    exportArtboardJson()
+    window.dispatchEvent(new Event(DESIGN_EXPORTED_EVENT))
   }
 
   const handleGenerateJig = async (e: React.MouseEvent) => {
@@ -173,7 +210,8 @@ export function CanvasToolbar({
   }
 
   return (
-    <div className="absolute top-3 left-1/2 z-30 -translate-x-1/2 flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
+    <div className="absolute top-3 left-1/2 z-30 -translate-x-1/2 flex flex-col items-center gap-2">
+      <div className="flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
       <Button
         type="button"
         variant="ghost"
@@ -242,84 +280,68 @@ export function CanvasToolbar({
         </AlertDialogContent>
       </AlertDialog>
 
-      {isAdmin && (
-        <>
-          <ToolbarSeparator />
+      <ToolbarSeparator />
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            title="导出 PNG"
-            disabled={exporting !== null}
-            onClick={handleExportPng}
-          >
-            {exporting === "png" ? <Spinner className="size-3.5" /> : <FileImage className="size-3.5" />}
-            PNG
-          </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        title="导出 PNG"
+        disabled={exporting !== null}
+        onClick={handleExportPng}
+      >
+        {exporting === "png" ? <Spinner className="size-3.5" /> : <FileImage className="size-3.5" />}
+        PNG
+      </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            title="导出 SVG（字体转曲）"
-            disabled={exporting !== null}
-            onClick={handleExportSvg}
-          >
-            {exporting === "svg" ? <Spinner className="size-3.5" /> : <FileCode2 className="size-3.5" />}
-            SVG
-          </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        title="导出 SVG（字体转曲）"
+        disabled={exporting !== null}
+        onClick={handleExportSvg}
+      >
+        {exporting === "svg" ? <Spinner className="size-3.5" /> : <FileCode2 className="size-3.5" />}
+        SVG
+      </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            title="导出 JSON"
-            onClick={(e) => { e.stopPropagation(); exportArtboardJson() }}
-          >
-            <FileJson2 className="size-3.5" />
-            JSON
-          </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        title="导出 JSON"
+        onClick={handleExportJson}
+      >
+        <FileJson2 className="size-3.5" />
+        JSON
+      </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            title="导入 JSON"
-            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
-          >
-            <FolderOpen className="size-3.5" />
-            导入
-          </Button>
-        </>
-      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        title="导入 JSON"
+        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+      >
+        <FolderOpen className="size-3.5" />
+        导入
+      </Button>
 
       <ToolbarSeparator />
 
-      <SaveDesignButton getExportParams={getExportParams} />
-
-      <ToolbarSeparator />
-
-      <OrderButton />
-
-      {isAdmin && (
-        <>
-          <ToolbarSeparator />
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            title="生成治具 SVG（字体转曲）"
-            disabled={exporting !== null}
-            className="hover:text-chart-2"
-            onClick={handleGenerateJig}
-          >
-            {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
-            治具
-          </Button>
-        </>
-      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        title="生成治具 SVG（字体转曲）"
+        disabled={exporting !== null}
+        className="hover:text-chart-2"
+        onClick={handleGenerateJig}
+      >
+        {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
+        治具
+      </Button>
 
       <input
         ref={fileInputRef}
@@ -373,6 +395,8 @@ export function CanvasToolbar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
+      <NoSaveHint />
     </div>
   )
 }

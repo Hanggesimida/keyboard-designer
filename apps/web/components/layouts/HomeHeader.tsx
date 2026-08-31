@@ -6,7 +6,7 @@ import { Menu, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { Logo } from "@/components/layouts/Logo"
-import { useUserStore } from "@/store/userStore"
+import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 
 const menuItems = [
   { name: "首页", href: "/" },
@@ -17,9 +17,6 @@ const menuItems = [
 export function HomeHeader() {
   const [menuState, setMenuState] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const accessToken = useUserStore((s) => s.accessToken)
-  const hasHydrated = useUserStore((s) => s._hasHydrated)
-  const isLoggedIn = hasHydrated && !!accessToken
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,13 +45,16 @@ export function HomeHeader() {
                 <Logo />
               </Link>
 
-              <button
-                onClick={() => setMenuState(!menuState)}
-                aria-label={menuState === true ? "关闭菜单" : "打开菜单"}
-                className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden">
-                <Menu className="in-data-[state=active]:rotate-180 group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
-                <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
-              </button>
+              <div className="flex items-center gap-1 lg:hidden">
+                <ThemeToggle />
+                <button
+                  onClick={() => setMenuState(!menuState)}
+                  aria-label={menuState === true ? "关闭菜单" : "打开菜单"}
+                  className="relative z-20 -m-2.5 -mr-2 cursor-pointer p-2.5">
+                  <Menu className="in-data-[state=active]:rotate-180 group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
+                  <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
+                </button>
+              </div>
             </div>
 
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
@@ -85,42 +85,13 @@ export function HomeHeader() {
                   ))}
                 </ul>
               </div>
-              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                {!hasHydrated ? null : isLoggedIn ? (
-                  <Button asChild>
-                    <Link href="/profile">
-                      <span>个人中心</span>
-                    </Link>
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className={cn(isScrolled && "lg:hidden")}>
-                      <Link href="/login">
-                        <span>登录</span>
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      className={cn(isScrolled && "lg:hidden")}>
-                      <Link href="/login">
-                        <span>注册</span>
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      className={cn(
-                        isScrolled ? "lg:inline-flex" : "hidden",
-                        menuState && "max-lg:hidden",
-                      )}>
-                      <Link href="/design">
-                        <span>开始设计</span>
-                      </Link>
-                    </Button>
-                  </>
-                )}
+              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:items-center sm:gap-3 sm:space-y-0 md:w-fit">
+                <ThemeToggle className="hidden lg:inline-flex" />
+                <Button asChild>
+                  <Link href="/design">
+                    <span>开始设计</span>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

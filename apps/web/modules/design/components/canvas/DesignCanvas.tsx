@@ -26,7 +26,7 @@ import { usePanInteraction } from "@/modules/design/hooks/usePanInteraction"
 import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
 import { useAutoExport } from "@/modules/design/hooks/useAutoExport"
-import { generateJig } from "@/lib/api/export"
+import { generateJig } from "@/lib/export"
 import {
   PREVIEW_3D_HEIGHT_MAX,
   PREVIEW_3D_HEIGHT_MIN,

@@ -85,7 +85,7 @@ export function HeroSection() {
                   href="/design"
                   className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-black/5 transition-all duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
                 >
-                  <span className="text-foreground text-sm">全新键帽设计体验</span>
+                  <span className="text-foreground text-sm">完全免费，无需注册</span>
                   <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700" />
 
                   <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
@@ -106,7 +106,7 @@ export function HeroSection() {
                   设计专属键帽
                 </h1>
                 <p className="mx-auto mt-8 max-w-2xl text-balance text-lg">
-                  直观的键帽编辑器，自定义键帽，所见即所得。
+                  完全免费的键帽编辑器，自定义键帽，所见即所得。无需注册，打开即可设计。
                 </p>
               </AnimatedGroup>
 

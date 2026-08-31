@@ -16,13 +16,8 @@ import {
   FONT_OPTIONS,
   type FontOption,
 } from "@/modules/design/components/sidebar/sections/right/font-options"
-import {
-  useDeleteUserFont,
-  useUploadUserFont,
-  useUserFonts,
-} from "@/hooks/queries/fonts/useFonts"
 import { toCssFontFamily, toUserFontRef } from "@/lib/fonts/fontRef"
-import { useUserStore } from "@/store/userStore"
+import { useSessionFontStore } from "@/lib/fonts/sessionFontStore"
 
 interface FontFamilySelectProps {
   label: ReactNode
@@ -46,14 +41,14 @@ export function FontFamilySelect({
   onOpenChange,
   onPick,
 }: FontFamilySelectProps) {
-  const accessToken = useUserStore((s) => s.accessToken)
-  const { data: userFonts = [] } = useUserFonts()
-  const uploadMutation = useUploadUserFont()
-  const deleteMutation = useDeleteUserFont()
+  const sessionFonts = useSessionFontStore((state) => state.fonts)
+  const addSessionFont = useSessionFontStore((state) => state.addFont)
+  const removeSessionFont = useSessionFontStore((state) => state.removeFont)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isSessionFontLoading, setIsSessionFontLoading] = useState(false)
 
-  const customOptions: FontOption[] = userFonts.map((f) => ({
+  const customOptions: FontOption[] = sessionFonts.map((f) => ({
     value: toUserFontRef(f.id),
     label: f.displayName,
     category: "custom",
@@ -73,13 +68,16 @@ export function FontFamilySelect({
     if (!file) return
     setUploadError(null)
     try {
-      const font = await uploadMutation.mutateAsync({ file })
+      setIsSessionFontLoading(true)
+      const font = await addSessionFont(file)
       onPick(toUserFontRef(font.id))
       onOpenChange(false)
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "上传失败，请确认文件为 .ttf / .otf"
       setUploadError(msg)
+    } finally {
+      setIsSessionFontLoading(false)
     }
   }
 
@@ -89,7 +87,7 @@ export function FontFamilySelect({
       return
     }
     try {
-      await deleteMutation.mutateAsync(id)
+      removeSessionFont(id)
       if (effectiveFontFamily === ref) {
         onPick("var(--font-ibm-plex-mono)")
       }
@@ -154,15 +152,15 @@ export function FontFamilySelect({
                     <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
                       {cat.label}
                     </span>
-                    {cat.key === "custom" && accessToken && (
+                    {cat.key === "custom" && (
                       <button
                         type="button"
                         className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50"
-                        disabled={uploadMutation.isPending}
+                        disabled={isSessionFontLoading}
                         onClick={() => fileInputRef.current?.click()}
                         title="上传 .ttf / .otf"
                       >
-                        {uploadMutation.isPending ? (
+                        {isSessionFontLoading ? (
                           <Spinner className="size-3" />
                         ) : (
                           <Upload className="size-3" />
@@ -172,15 +170,9 @@ export function FontFamilySelect({
                     )}
                   </div>
 
-                  {cat.key === "custom" && !accessToken && (
+                  {cat.key === "custom" && items.length === 0 && (
                     <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
-                      登录后可上传个人字体
-                    </div>
-                  )}
-
-                  {cat.key === "custom" && accessToken && items.length === 0 && (
-                    <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
-                      暂无字体，支持 .ttf / .otf（请确保拥有使用授权）
+                      可临时加载 .ttf / .otf；刷新后会移除（请确保拥有使用授权）
                     </div>
                   )}
 

@@ -1,15 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
-  output: "standalone",
-  async rewrites() {
-    if (process.env.NODE_ENV !== 'development') return [];
+  async redirects() {
     return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:3001/:path*',
-      },
-    ];
+      "/login/:path*",
+      "/register",
+      "/profile/:path*",
+      "/checkout",
+      "/admin/:path*",
+    ].map((source) => ({
+      source,
+      destination: "/design",
+      permanent: false,
+    }))
   },
 }
 

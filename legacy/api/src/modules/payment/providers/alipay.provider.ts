@@ -53,7 +53,7 @@ export class AlipayProvider implements IPaymentProvider {
           out_trade_no: payment.id,
           product_code: 'FAST_INSTANT_TRADE_PAY',
           total_amount: payment.amount.toString(),
-          subject: `烬炆定制键帽 ${order.orderNo}`,
+          subject: `键盘设计器 ${order.orderNo}`,
           body: `订单号：${order.orderNo}`,
         },
       });

@@ -12,7 +12,7 @@ const testimonials = [
   {
     featured: true,
     quote:
-      '键帽设计器彻底改变了我的定制流程。以前要在 Photoshop 里一个个键帽画，现在拖拽调色、实时预览，十分钟就能出一套完整配色方案。完成后下单直接交给厂商，省时又省心。',
+      '键盘设计器彻底改变了我的设计流程。以前要在 Photoshop 里一个个键帽画，现在拖拽调色、实时预览，十分钟就能出一套完整配色方案。',
     name: '张明',
     role: '机械键盘爱好者',
     initials: 'ZM',
@@ -77,7 +77,7 @@ export function TestimonialsSection() {
             为定制玩家而生，深受键盘爱好者喜爱
           </h2>
           <p className="text-muted-foreground text-balance">
-            从配色灵感、布局适配到导出生产，帮助机械键盘玩家在浏览器中完成整套键帽设计。
+            从配色灵感、布局适配到文件导出，帮助机械键盘玩家在浏览器中免费完成整套键帽设计。
           </p>
         </div>
 

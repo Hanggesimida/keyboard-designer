@@ -1,31 +1,13 @@
 ﻿"use client"
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react"
-import { ImagePlus, Trash2, Spline, Maximize2 } from "lucide-react"
+import { ImagePlus, Trash2, Spline } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { PanelSection } from "../../panel-section"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
-import { getLayoutData } from "@/modules/design/data/layouts"
-
-const ART_PAD = 28
-
-function getBaseBounds(templateId: string) {
-  const layout = getLayoutData(templateId)
-  const unit = layout.baseUnit
-  const baseKeys = layout.rows
-    .filter((r) => (r.section ?? "base") === "base")
-    .flatMap((r) => r.keys)
-  let maxX = 0
-  let maxY = 0
-  for (const k of baseKeys) {
-    maxX = Math.max(maxX, k.x + k.w)
-    maxY = Math.max(maxY, k.y + k.h)
-  }
-  return { w: Math.ceil(maxX * unit), h: Math.ceil(maxY * unit) }
-}
 
 // ─── 图片缩略图行 ──────────────────────────────────────
 interface AssetRowProps {
@@ -33,14 +15,12 @@ interface AssetRowProps {
   src: string
   isSelected: boolean
   keyLabelMap: Record<string, string>
-  baseBounds: { w: number; h: number }
   onSelect: () => void
   onDelete: () => void
   onResize: (w: number, h: number) => void
-  onFitToBase: (x: number, y: number, w: number, h: number) => void
 }
 
-function AssetRow({ element, src, isSelected, keyLabelMap, baseBounds, onSelect, onDelete, onResize, onFitToBase }: AssetRowProps) {
+function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, onResize }: AssetRowProps) {
   const keyLabel = element.clipToKeycapId
     ? (keyLabelMap[element.clipToKeycapId] ?? element.clipToKeycapId)
     : null
@@ -138,22 +118,6 @@ function AssetRow({ element, src, isSelected, keyLabelMap, baseBounds, onSelect,
 
       {/* 操作按钮组（hover 时显示） */}
       <span className="flex shrink-0 items-center -space-x-1.5">
-        {keyLabel === null && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 cursor-pointer"
-            title={`适配主键盘区（${baseBounds.w} × ${baseBounds.h} px，居中对齐）`}
-            onClick={(e) => {
-              e.stopPropagation()
-              onFitToBase(ART_PAD, ART_PAD, baseBounds.w, baseBounds.h)
-            }}
-          >
-            <Maximize2 className="size-3" />
-          </Button>
-        )}
-
         <Button
           type="button"
           variant="ghost"
@@ -190,8 +154,6 @@ export function AssetSection() {
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
   const updateCanvasElement = useDesignUIStore((s) => s.updateCanvasElement)
   const setSelectedElementId = useDesignUIStore((s) => s.setSelectedElementId)
-  const templateId = useDesignUIStore((s) => s.templateId)
-  const baseBounds = useMemo(() => getBaseBounds(templateId), [templateId])
 
   const imageElements = canvasElements.filter(
     (el): el is CanvasImageElement => el.type === "image",
@@ -322,11 +284,9 @@ export function AssetSection() {
               src={assetMap[el.assetId] ?? ""}
               isSelected={selectedElementId === el.id}
               keyLabelMap={keyLabelMap}
-              baseBounds={baseBounds}
               onSelect={() => setSelectedElementId(el.id)}
               onDelete={() => removeCanvasElement(el.id)}
               onResize={(w, h) => updateCanvasElement(el.id, { width: w, height: h })}
-              onFitToBase={(x, y, w, h) => updateCanvasElement(el.id, { x, y, width: w, height: h })}
             />
           ))}
         </ul>

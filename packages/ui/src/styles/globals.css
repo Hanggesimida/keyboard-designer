@@ -166,6 +166,12 @@
   * {
     @apply border-border outline-ring/50;
     }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground font-sans;
     }
@@ -182,13 +188,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(1 0 0 / 18%);
+  background: color-mix(in oklch, var(--foreground) 18%, transparent);
   border-radius: 9999px;
   transition: background 0.15s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(1 0 0 / 32%);
+  background: color-mix(in oklch, var(--foreground) 32%, transparent);
 }
 
 ::-webkit-scrollbar-corner {
@@ -198,7 +204,7 @@
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(1 0 0 / 18%) transparent;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent) transparent;
 }
 
 /* 针对 Chrome, Safari, Edge, Opera */

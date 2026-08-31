@@ -26,7 +26,7 @@ interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
   headerRight?: React.ReactNode
 }
 
-export function DashboardSidebar({ navGroups, title = "烬炆外设", headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", headerRight, ...props }: DashboardSidebarProps) {
+export function DashboardSidebar({ navGroups, title = "键盘设计器", headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", headerRight, ...props }: DashboardSidebarProps) {
   const pathname = usePathname()
 
   function isActive(href: string, exact?: boolean) {

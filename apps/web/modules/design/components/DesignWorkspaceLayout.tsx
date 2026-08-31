@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Home, Monitor } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -10,14 +10,49 @@ import { DesignCanvas } from "./canvas/DesignCanvas"
 import { DesignLoadingScreen } from "./DesignLoadingScreen"
 import { useTemporalDesignStore } from "@/modules/design/store/designUiStore"
 import { useLoadDesignFromUrl } from "@/modules/design/hooks/useLoadDesignFromUrl"
-import { useUserFonts } from "@/hooks/queries/fonts/useFonts"
+import { DESIGN_EXPORTED_EVENT } from "@/modules/design/lib/session-events"
+import { useSessionFontStore } from "@/lib/fonts/sessionFontStore"
 
 export function DesignWorkspaceLayout() {
   const undo = useTemporalDesignStore((s) => s.undo)
   const redo = useTemporalDesignStore((s) => s.redo)
+  const historyPosition = useTemporalDesignStore(
+    (s) => `${s.pastStates.length}:${s.futureStates.length}`,
+  )
+  const previousHistoryPosition = useRef(historyPosition)
+  const [hasUnexportedChanges, setHasUnexportedChanges] = useState(false)
+  const clearSessionFonts = useSessionFontStore((state) => state.clearFonts)
+
   useLoadDesignFromUrl()
-  // 预拉取「我的字体」并注入 FontFace，供画布与导出使用
-  useUserFonts()
+
+  useEffect(() => {
+    if (previousHistoryPosition.current !== historyPosition) {
+      previousHistoryPosition.current = historyPosition
+      setHasUnexportedChanges(true)
+    }
+  }, [historyPosition])
+
+  useEffect(() => {
+    const handleExported = () => setHasUnexportedChanges(false)
+    window.addEventListener(DESIGN_EXPORTED_EVENT, handleExported)
+    return () =>
+      window.removeEventListener(DESIGN_EXPORTED_EVENT, handleExported)
+  }, [])
+
+  useEffect(() => {
+    return () => clearSessionFonts()
+  }, [clearSessionFonts])
+
+  useEffect(() => {
+    if (!hasUnexportedChanges) return
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [hasUnexportedChanges])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,6 +1,6 @@
 # JW Keyboard Designer — Web
 
-一款基于浏览器的**键盘键帽可视化设计工具**，支持多种 ANSI 布局、图层管理、键帽定制、贴图拖拽以及 PNG / SVG / JIG 治具多格式导出。
+一款基于浏览器的**键盘键帽可视化设计工具**，支持多种 ANSI 布局、图层管理、键帽定制、贴图拖拽以及 PNG / SVG / JIG 治具多格式导出。这是纯前端应用，文字转曲与治具生成都在浏览器内完成。
 
 ---
 
@@ -15,9 +15,9 @@
 | **画布贴图** | 拖拽图片到画布，支持自由变换与分层 |
 | **撤销 / 重做** | Zustand + zundo 实现完整的操作历史（`Ctrl/⌘ + Z / Y`） |
 | **PNG 导出** | 客户端直接导出当前画板为 PNG |
-| **SVG 导出** | 调用 Nest API（opentype）将文字转曲为 `<path>`；无字体文件时保留 `<text>` |
+| **SVG 导出** | 浏览器内 opentype.js 将文字转曲为 `<path>`；无字体文件时保留 `<text>` |
 | **JSON 导入 / 导出** | 设计数据序列化，方便保存与分享 |
-| **JIG 治具生成** | 根据设计数据调用 Nest API，生成可用于生产的治具 SVG |
+| **JIG 治具生成** | 浏览器内根据设计数据生成可用于生产的治具 SVG |
 
 ---
 
@@ -30,7 +30,7 @@
 | 状态管理 | [Zustand 5](https://zustand-demo.pmnd.rs/) + [zundo](https://github.com/charkour/zundo)（撤销/重做） |
 | 手势交互 | [@use-gesture/react](https://use-gesture.netlify.app/)、[@react-spring/web](https://www.react-spring.dev/) |
 | 颜色处理 | [colord](https://github.com/omgovich/colord) |
-| 字体转曲 / 治具 | NestJS Export 模块（opentype.js，见 `apps/api`） |
+| 字体转曲 / 治具 | 浏览器端 opentype.js（`lib/export/browser/`） |
 | 图标 | [lucide-react](https://lucide.dev/) |
 | 共享组件 | `@workspace/ui`（基于 [shadcn/ui](https://ui.shadcn.com/)） |
 
@@ -51,12 +51,14 @@ apps/web/
 │       ├── hooks/              # 视口、框选、平移、键帽编辑等 hooks
 │       ├── store/              # Zustand store（designUiStore）
 │       ├── lib/                # 导出、SVG 工具、渐变、几何计算
-│       └── data/               # 布局 JSON、JIG 模板、示例设计（生产转曲读 api/assets）
+│       └── data/               # 布局 JSON、JIG 模板
 ├── lib/
-│   ├── api/export.ts           # texts-to-paths / generate-jig 客户端
-│   └── fontAssets.ts           # 字体资源映射（显示 + fallback）
-└── public/fonts/               # woff2 供页面显示；ttf 供本地 api 转曲回退
+│   ├── export/                 # 浏览器转曲与治具
+│   └── fonts/                  # 会话字体
+└── public/fonts/               # 显示与转曲用字体
 ```
+
+登录、个人中心、管理后台等路由仍在 `app/` 下，但会被 redirect 到 `/design`。恢复后端时见 [legacy/README.md](../../legacy/README.md)。
 
 ---
 
@@ -67,7 +69,7 @@ apps/web/
 - **Node.js** >= 22
 - **pnpm** 11.12.0（建议 `corepack enable`）
 
-> 转曲、治具、字体库、登录等功能依赖后端服务；开发时请一并启动 `apps/api`（见 [apps/api/README.md](../api/README.md)）。开发环境下前端通过 Next.js rewrite 代理到 `localhost:3001`。
+无需启动后端。
 
 ### 安装依赖
 
@@ -79,18 +81,10 @@ pnpm install
 
 ### 启动开发服务器
 
-**启动所有应用**（推荐，Turbo 并行）：
-
 ```bash
-pnpm dev
-```
-
-**仅启动 web**：
-
-```bash
+pnpm web:dev
+# 或
 pnpm --filter web dev
-# 或在 apps/web 目录下
-pnpm dev
 ```
 
 访问：
@@ -100,20 +94,16 @@ pnpm dev
 ### 构建生产包
 
 ```bash
-# monorepo 根目录
-pnpm build
-
-# 仅构建 web
-pnpm --filter web build
-pnpm --filter web start
+pnpm web:build
+pnpm web:start
 ```
 
 ### 代码检查
 
 ```bash
-pnpm lint        # ESLint
-pnpm typecheck   # TypeScript 类型检查
-pnpm format      # Prettier 格式化
+pnpm web:lint
+pnpm web:typecheck
+pnpm web:test
 ```
 
 ---
@@ -124,8 +114,6 @@ pnpm format      # Prettier 格式化
 |------|------|------|
 | `/` | 页面 | 产品落地页：Hero、功能介绍、87 键实时预览 |
 | `/design` | 页面 | 键帽设计工作区（左侧栏 / 画布 / 右侧栏三栏布局） |
-
-转曲与治具由 Nest 提供（经 `/api` 反向代理）：`POST /api/texts-to-paths`、`POST /api/generate-jig`。
 
 > 设计器为桌面端优先（≥ 768px），移动端会提示切换到大屏设备。
 
@@ -151,10 +139,10 @@ pnpm format      # Prettier 格式化
 ```
 jw-keyboard-designer/
 ├── apps/
-│   ├── web/          # 本前端应用（Next.js）
-│   └── api/          # 后端服务（NestJS）
-└── packages/
-    ├── ui/           # 共享 shadcn/ui 组件与全局样式
-    ├── eslint-config/
-    └── typescript-config/
+│   └── web/          # 本前端应用（Next.js）
+├── packages/
+│   ├── ui/           # 共享 shadcn/ui 组件与全局样式
+│   ├── eslint-config/
+│   └── typescript-config/
+└── legacy/           # 已废弃的 NestJS 后端，见 legacy/README.md
 ```

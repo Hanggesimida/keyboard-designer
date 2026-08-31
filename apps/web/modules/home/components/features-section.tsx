@@ -44,7 +44,7 @@ export function FeaturesSection() {
               <Download className="text-primary size-5" />
               <h3 className="mt-5 text-lg font-semibold">导出 SVG / 图片</h3>
               <p className="text-muted-foreground mt-3 text-balance">
-                一键导出为 SVG 矢量图或高清 PNG，随时用于设计稿或打印生产。
+                一键导出为 SVG 矢量图或高清 PNG，随时用于设计稿分享或打印预览。
               </p>
               <ExportIllustration />
             </Card>

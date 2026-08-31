@@ -43,7 +43,7 @@ export function TemplateSection() {
   const baseBounds = useMemo(() => getBaseKeysBounds(templateId), [templateId])
 
   return (
-    <PanelSection title="模板">
+    <PanelSection title="模板" first>
       <div className="flex flex-col gap-2">
         <Label
           htmlFor="template-trigger"

@@ -58,7 +58,7 @@ export function DesignLoadingScreen() {
             <rect x="6" y="16" width="16" height="3" rx="1.5" fill="var(--muted-foreground)" opacity="0.5" />
           </svg>
           <span className="text-[15px] font-semibold tracking-wide text-foreground/80">
-            Keyboard Designer
+            键盘设计器
           </span>
         </div>
         <span className="text-[11px] text-muted-foreground">正在初始化工作区…</span>

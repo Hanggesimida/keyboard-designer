@@ -1,362 +1,77 @@
-# 生产环境部署指南
+# 部署指南
 
-本文档说明如何使用 Docker Compose 将 **JW Keyboard Designer** 部署到生产服务器。
+JW Keyboard Designer 是纯前端应用。推荐只将 `apps/web` 部署到 Vercel。仓库中的 NestJS / Docker 全栈资源已迁入 [`legacy/`](../legacy/README.md)，不参与默认部署。
 
-## 架构概览
+## Vercel
 
-生产环境由四个容器组成，通过 Nginx 统一对外暴露 **80 / 443 端口**（HTTP 自动跳转 HTTPS）：
+### 前置条件
 
-```mermaid
-flowchart LR
-    Client[浏览器] --> Nginx[Nginx :443]
-    Client -->|HTTP :80| Nginx80[Nginx :80]
-    Nginx80 -->|301 重定向| Nginx
-    Nginx -->|"/ 页面"| Web[Next.js :3000]
-    Nginx -->|"/api/*"| API[NestJS :3001]
-    API --> PG[(PostgreSQL :5432)]
-```
+- 一个 Vercel 项目。
+- Node.js >= 22。
+- 仓库使用 pnpm 11.12.0，版本由根 `package.json` 的 `packageManager` 固定。
 
-| 服务 | 镜像 / 构建 | 内部端口 | 说明 |
-|------|-------------|----------|------|
-| `nginx` | `nginx:alpine` | 80, 443 | 反向代理，TLS 终结，按路径分流 |
-| `web` | `docker/web.Dockerfile` | 3000 | Next.js（standalone 模式） |
-| `api` | `docker/api.Dockerfile` | 3001 | NestJS + Prisma |
-| `postgres` | `postgres:17` | 5432 | PostgreSQL 数据库 |
+不需要配置 API、数据库、Redis、JWT、SES、COS 或支付密钥。
 
-### 路由规则
+### 通过 Vercel 控制台部署
 
-Nginx 配置见 [`docker/nginx.conf`](../docker/nginx.conf)：
+1. 在 Vercel 中导入此仓库。
+2. Root Directory 设为 `apps/web`。
+3. 打开 **Include source files outside of the Root Directory**，以便读取 workspace 中的 `packages/ui`。
+4. 使用 `apps/web/vercel.json` 的 Next.js 预设；Install、Build、Output Directory 保持 Vercel 默认值。
+5. 不要配置后端密钥或已废弃的 `NEXT_PUBLIC_APP_MODE`。
+6. 触发部署，完成后检查 `/` 和 `/design`。
 
-- `/api/admin/notifications/stream` → NestJS SSE 长连接（关闭缓冲，超时 3600s）
-- 其余 `/api/*` → NestJS（去掉 `/api` 前缀后转发；含 `texts-to-paths`、`generate-jig`、`fonts` 等）
-- 其余路径 → Next.js 前端
-
-生产环境下前端通过相对路径 `/api` 访问后端，无需配置跨域；开发环境才使用 Next.js rewrite 直连 `localhost:3001`。
-
----
-
-## 环境要求
-
-### 服务器
-
-- **操作系统**：Linux（推荐 Ubuntu 22.04+）或任意支持 Docker 的系统
-- **CPU / 内存**：建议 2 核、4 GB RAM 及以上
-- **磁盘**：建议 20 GB 以上（含镜像、数据库、日志）
-- **网络**：开放 **80**、**443** 端口
-
-### 软件
-
-- [Docker Engine](https://docs.docker.com/engine/install/) 24+
-- [Docker Compose](https://docs.docker.com/compose/install/) v2+
-- Git（用于拉取代码）
-
-构建镜像时使用 **Node 24** 与 **pnpm 11.10.0**（与根目录 `package.json` 的 `packageManager` 一致，已封装在 Dockerfile 中，宿主机无需安装 Node）。
-
----
-
-## 部署前准备
-
-### 1. 域名
-
-1. 将域名 A 记录指向服务器公网 IP。
-2. 修改 [`docker/nginx.conf`](../docker/nginx.conf) 中的 `server_name`（默认为 `jinwenkey.com`）为你的实际域名。
-3. 将 SSL 证书放入 [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/)，详见 [配置 HTTPS](#配置-https)。
-
-### 2. JWT 密钥
-
-生成足够强度的随机字符串，例如：
+### 通过 CLI 部署
 
 ```bash
-openssl rand -base64 48
+corepack enable
+pnpm install
+pnpm web:build
+cd apps/web
+vercel
+vercel --prod
 ```
 
-写入 `.env` 中的 `JWT_SECRET`。
+首次执行 `vercel` 时确认项目 Root Directory 为 `apps/web`，并在控制台打开工作区外源码访问。
 
----
+### 部署后验收
 
-## 环境变量
+- 首页和 `/design` 可直接打开，刷新路由不返回 404。
+- 设计器无需登录即可使用。
+- 浏览器 Network 面板中没有预期外的 `/api/*` 请求。
+- JSON 导出后可以重新导入。
+- PNG、SVG、JSON 与 JIG 治具导出可用，文字转曲不请求 API。
+- 刷新页面后未导出的内存状态会消失；这是预期行为，不是服务故障。
+- `/login`、`/profile`、`/admin`、`/checkout` 会跳到 `/design`。
 
-在项目根目录创建 `.env` 文件（**不要提交到 Git**）。Docker Compose 会自动读取该文件。
+### 环境变量
 
-```env
-# ── PostgreSQL ──────────────────────────────────
-POSTGRES_USER=jw
-POSTGRES_PASSWORD=请替换为强密码
-POSTGRES_DB=jw_keyboard
+前端示例见 `apps/web/.env.example`。当前 Web **不需要任何环境变量**。
 
-# ── Redis ───────────────────────────────────────
-REDIS_PASSWORD=请替换为强密码
+不要向任何 `NEXT_PUBLIC_*` 变量写入数据库连接串、JWT 私钥或云服务密钥。
 
-# ── API ─────────────────────────────────────────
-JWT_SECRET=请替换为 openssl rand -base64 48 的输出
-JWT_EXPIRES_IN=7d
-SETUP_TOKEN_SECRET=请替换为 openssl rand -base64 48 的输出（与 JWT_SECRET 不同）
+### Vercel 常见问题
 
-# ── 腾讯云 SES（邮箱 OTP 验证码，缺失时 API 无法启动）──
-TENCENT_SECRET_ID=你的腾讯云 SecretId
-TENCENT_SECRET_KEY=你的腾讯云 SecretKey
-TENCENT_SES_REGION=ap-guangzhou
-TENCENT_SES_FROM=no-reply@你的域名.com
-TENCENT_SES_TEMPLATE_ID=你的邮件模板 ID
-```
+#### 找不到工作区包
 
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `POSTGRES_USER` | 是 | 数据库用户名 |
-| `POSTGRES_PASSWORD` | 是 | 数据库密码 |
-| `POSTGRES_DB` | 是 | 数据库名 |
-| `REDIS_PASSWORD` | 是 | Redis 访问密码 |
-| `JWT_SECRET` | 是 | JWT 签名密钥，缺失时 API 无法启动 |
-| `JWT_EXPIRES_IN` | 否 | Token 有效期，默认 `7d` |
-| `SETUP_TOKEN_SECRET` | 是 | 注册后设置密码流程的独立签名密钥 |
-| `TENCENT_SECRET_ID` | 是 | 腾讯云 API 密钥 ID（SES 发信） |
-| `TENCENT_SECRET_KEY` | 是 | 腾讯云 API 密钥 Key |
-| `TENCENT_SES_REGION` | 是 | SES 地域，如 `ap-guangzhou` |
-| `TENCENT_SES_FROM` | 是 | 发信地址（需在腾讯云 SES 验证） |
-| `TENCENT_SES_TEMPLATE_ID` | 是 | OTP 邮件模板 ID |
+确认 Vercel Root Directory 是 `apps/web`，并已打开 **Include source files outside of the Root Directory**。`apps/web` 依赖 `packages/ui` 等 workspace 包，不能只复制 Web 目录后独立安装。
 
-腾讯云 SES 配置说明见 [`docs/email-otp-auth.md`](email-otp-auth.md)。
+#### 部署成功但设计刷新后消失
 
-容器内 API 的 `DATABASE_URL` 由 Compose 自动拼接，无需手动配置：
+应用不提供浏览器持久化或服务端存储。请在刷新或关闭页面前手动导出 JSON。
 
-```
-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-```
+## 其他托管平台
 
----
+当前 Web 仍是 Next.js 应用，**没有**设置 `output: "export"`，因此不是纯静态站。所选平台需要支持 Next.js 运行时或兼容适配器。Vercel 是默认、风险最低的部署目标。
 
-## 部署步骤
+若自行容器化 Web，不要把旧文档里的 Next.js `output: "standalone"` 理解成产品模式名。那个选项只用于 Docker 产物布局；纯前端 Vercel 部署不需要它。
 
-### 1. 获取代码
+## 自行恢复全栈后端
 
-```bash
-git clone https://github.com/Hanggesimida/jw-keyboard-designer.git jw-keyboard-designer
-cd jw-keyboard-designer
-```
-
-### 2. 配置环境变量
-
-```bash
-cp .env.example .env   # 若仓库提供了示例文件
-# 编辑 .env，填入上述变量
-```
-
-若仓库暂无 `.env.example`，直接按上一节手动创建 `.env`。
-
-### 3. 修改 Nginx 域名（如需要）
-
-编辑 `docker/nginx.conf`，将 `server_name` 改为你的域名。
-
-### 4. 构建并启动
-
-```bash
-sudo docker compose build
-sudo docker compose up -d
-```
-
-查看服务状态：
-
-```bash
-sudo docker compose ps
-sudo docker compose logs -f
-```
-
-正常启动后，四个服务均为 `running`，`postgres` 健康检查通过后再启动 `api`。
-
-### 5. 执行数据库迁移
-
-**API 镜像不会自动运行迁移**，首次部署及每次 schema 变更后需手动执行：
-
-```bash
-sudo docker compose exec api npx prisma migrate deploy
-```
-
-确认迁移成功：
-
-```bash
-sudo docker compose exec api npx prisma migrate status
-```
-
-### 6. 创建管理员账号
-
-系统注册默认为普通用户（`USER` 角色）。首次部署后：
-
-1. 在网站完成注册；
-2. 将对应用户提升为管理员：
-
-```bash
-docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-  -c "UPDATE \"User\" SET role = 'ADMIN' WHERE email = 'your-admin@example.com';"
-```
-
-> 将 `your-admin@example.com` 替换为实际注册邮箱；`POSTGRES_USER` / `POSTGRES_DB` 需与 `.env` 一致，或在命令中写死具体值。
-
-### 7. 验证
-
-- 浏览器访问 `https://<你的域名>/`，确认前端页面正常加载；访问 `http://` 应自动跳转到 HTTPS。
-- 尝试注册 / 登录，确认 API 正常。
-- 管理员账号登录后访问后台，确认通知 SSE 等管理功能可用。
-
----
-
-## 更新部署
-
-代码或依赖变更后：
-
-```bash
-git pull
-sudo docker compose build          # 若仅改 API，可：docker compose build api
-sudo docker compose up -d
-sudo docker compose exec api npx prisma migrate deploy   # 若有新迁移
-```
-
-仅修改 `.env` 中的运行时变量（如 `JWT_SECRET`）：
-
-```bash
-docker compose up -d
-```
-
----
-
-## 单独构建镜像
-
-不通过 Compose、仅构建镜像时，需在 **项目根目录** 执行：
-
-```bash
-# API
-docker build -f docker/api.Dockerfile -t jw-api:latest .
-
-# Web
-docker build -f docker/web.Dockerfile -t jw-web:latest .
-```
-
----
-
-## 配置 HTTPS
-
-Compose 已内置容器内 Nginx 的 TLS 配置：HTTP 80 自动 301 跳转 HTTPS 443，证书由宿主机目录挂载进容器。
-
-### 证书文件
-
-将以下文件放到 [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/)（与 `docker-compose.yml` 中 `./docker/jinwenkey.com_nginx:/etc/nginx/ssl:ro` 对应）：
-
-| 文件名 | 说明 |
-|--------|------|
-| `jinwenkey.com_bundle.crt` | 站点证书 + 中间证书链（bundle） |
-| `jinwenkey.com.key` | 私钥（**勿提交 Git**，已在 `.gitignore` 中忽略） |
-
-`nginx.conf` 中的引用路径：
-
-```nginx
-ssl_certificate     /etc/nginx/ssl/jinwenkey.com_bundle.crt;
-ssl_certificate_key /etc/nginx/ssl/jinwenkey.com.key;
-```
-
-更换域名时，需同步修改 `server_name` 与证书文件名（或保持文件名不变、仅替换文件内容）。
-
-### 部署后验证
-
-```bash
-# 确认 nginx 已监听 443 且配置无误
-sudo docker compose exec nginx nginx -t
-sudo docker compose logs nginx
-```
-
-浏览器访问 `https://jinwenkey.com`，证书应有效且无混合内容警告。
-
-### 其他 TLS 方案（可选）
-
-若更希望在入口层终结 TLS，也可改用以下方案，并相应还原 `docker-compose.yml` / `nginx.conf` 中的 443 配置：
-
-- **云负载均衡 / CDN**：在阿里云 SLB、Cloudflare 等入口配置 HTTPS，后端仍指向服务器 80 端口。
-- **宿主机 Nginx / Caddy + Certbot**：Docker 外层再套一层反向代理，由宿主机申请 Let's Encrypt 并转发到 `127.0.0.1:80`。
-
----
-
-## 数据备份与恢复
-
-数据库持久化在 Docker Volume `pg_data` 中。
-
-**备份：**
-
-```bash
-docker compose exec -T postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" \
-  > backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-**恢复：**
-
-```bash
-cat backup.sql | docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
-```
-
-建议配置定时备份（cron + 上述命令），并将备份文件异地存储。
-
----
-
-## 生产安全建议
-
-1. **不要** 将 `.env` 提交到版本库。
-2. **不要** 在公网长期暴露 PostgreSQL 的 `5432` 端口。若仅本机或容器间访问，可在 `docker-compose.yml` 中删除 `postgres.ports` 映射。
-3. 使用强密码与足够长的 `JWT_SECRET`。
-4. 定期更新基础镜像（`postgres:17`、`nginx:alpine`、Node 镜像）并重新构建应用镜像。
-5. 配置防火墙，仅开放必要端口（80/443、SSH）。
-
----
-
-## 常见问题
-
-### API 启动报 JWT_SECRET 相关错误
-
-确认 `.env` 中 `JWT_SECRET` 已设置，并执行 `docker compose up -d api` 重新创建容器。
-
-### API 启动报 TENCENT_SECRET_ID 不存在
-
-邮箱 OTP 功能要求 API 启动时加载腾讯云 SES 配置。在 `.env` 中补全 `TENCENT_SECRET_ID`、`TENCENT_SECRET_KEY`、`TENCENT_SES_REGION`、`TENCENT_SES_FROM`、`TENCENT_SES_TEMPLATE_ID` 以及 `SETUP_TOKEN_SECRET`，然后重新创建 API 容器：
-
-```bash
-sudo docker compose up -d api
-sudo docker compose logs -f api
-```
-
-### API 不断重启 / 页面 502 Bad Gateway
-
-1. 查看 API 日志：`sudo docker compose logs api`
-2. 常见原因是缺少上述环境变量，或 `REDIS_PASSWORD` 未设置
-3. 修复 `.env` 后执行 `sudo docker compose up -d` 重建相关容器
-
-### 数据库连接失败
-
-1. 确认 `postgres` 容器健康：`docker compose ps`
-2. 确认 `.env` 中数据库账号密码与 `DATABASE_URL` 拼接一致
-3. 查看 API 日志：`docker compose logs api`
-
-### 迁移报错「database does not exist」
-
-首次启动需等待 PostgreSQL 初始化完成后再执行 `prisma migrate deploy`。
-
-### SSE 通知连接失败
-
-确认 Nginx 中 `/api/admin/notifications/stream` 路由未被其他规则覆盖；该路径需要长连接，不可经过会缓冲响应的中间层。
-
-### 开发环境 vs 生产环境差异
-
-| 项目 | 开发 | 生产 |
-|------|------|------|
-| API 访问 | Next.js rewrite → `localhost:3001` | 浏览器 → Nginx → `/api` → API |
-| CORS | 允许 `localhost:3000` | 关闭（同域反代） |
-| SSE | 直连 `NEXT_PUBLIC_API_URL` | 相对路径 `/api/admin/notifications/stream` |
-| 环境文件 | `apps/api/.env.development` | Compose 注入环境变量 |
-
----
+后端代码、Docker 与恢复步骤见 [`legacy/README.md`](../legacy/README.md)。
 
 ## 相关文件
 
-| 文件 | 说明 |
-|------|------|
-| [`docker-compose.yml`](../docker-compose.yml) | 服务编排与网络 |
-| [`docker/api.Dockerfile`](../docker/api.Dockerfile) | API 多阶段构建 |
-| [`docker/web.Dockerfile`](../docker/web.Dockerfile) | Web 多阶段构建（Turbo prune + standalone） |
-| [`docker/nginx.conf`](../docker/nginx.conf) | 反向代理路由与 HTTPS |
-| [`docker/jinwenkey.com_nginx/`](../docker/jinwenkey.com_nginx/) | TLS 证书目录（挂载为容器内 `/etc/nginx/ssl`） |
-| [`apps/api/prisma/migrations/`](../apps/api/prisma/migrations/) | 数据库迁移文件 |
+- `apps/web/vercel.json`：Vercel 部署配置。
+- `apps/web/.env.example`：Web 无需环境变量的说明。
+- `legacy/`：已废弃的 API、Compose、Nginx 与服务端变量示例。

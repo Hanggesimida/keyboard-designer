@@ -35,7 +35,7 @@ export default function AdminLayout({
   return (
     <DashboardLayout
       navGroups={adminNavGroups}
-      title="烬炆外设后台"
+      title="键盘设计器后台"
       headerIcon={Settings2}
       headerHref="/admin"
       headerRight={<NotificationCenter />}

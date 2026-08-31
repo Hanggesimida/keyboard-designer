@@ -15,7 +15,7 @@ import { normalizeFontFamilyRef } from "@/lib/fonts/fontRef"
 import {
   textsToPaths,
   type TextDescriptor,
-} from "@/lib/api/export"
+} from "@/lib/export"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
@@ -519,7 +519,6 @@ export function exportArtboardJson() {
 
   // 将运行时格式（assetId 引用）转为 JSON 自包含格式（内联 src），方便离线存储与跨设备使用
   const exportElements: ExportCanvasElement[] = elements.map((el) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { assetId, ...rest } = el
     return { ...rest, src: assetMap[assetId] ?? "" }
   })

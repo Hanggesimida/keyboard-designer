@@ -39,7 +39,7 @@ export function CtaSection() {
             开始设计你的专属键帽
           </h2>
           <p className="text-muted-foreground text-lg text-balance max-w-xl mx-auto mb-10">
-            免费使用，无需注册。打开编辑器，选好布局，调出你的专属配色，几分钟内完成设计。
+            完全免费，无需注册，永不收费。打开编辑器，选好布局，调出你的专属配色，几分钟内完成设计。
           </p>
         </AnimatedGroup>
 

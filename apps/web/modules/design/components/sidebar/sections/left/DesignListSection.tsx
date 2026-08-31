@@ -1,5 +1,10 @@
 "use client"
 
+/**
+ * 云端设计列表。纯前端产品路径不再挂载本组件；
+ * 自行恢复后端时把它加回 SidebarLeft，见 legacy/README.md。
+ */
+
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Keyboard, Plus, ArrowLeft, User, Package } from "lucide-react"
@@ -162,6 +167,10 @@ function EnterpriseDesignContextSection({ designId }: { designId: string }) {
 // ─── 普通用户设计列表面板 ──────────────────────────────────────────────────────
 
 export function DesignListSection() {
+  return <FullstackDesignListSection />
+}
+
+function FullstackDesignListSection() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentDesignId = searchParams.get("id")

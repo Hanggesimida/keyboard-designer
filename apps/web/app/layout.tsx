@@ -140,7 +140,7 @@ export default function RootLayout({
   ].join(" ")
 
   return (
-    <html lang="zh-CN" className={`dark ${fontVariables}`}>
+    <html lang="zh-CN" className={`dark ${fontVariables}`} suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
       </body>
