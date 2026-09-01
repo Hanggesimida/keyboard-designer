@@ -1,8 +1,8 @@
-# JW Keyboard Designer — API
+# Keyboard Designer — API
 
 > **已废弃。** 本服务已迁入 `legacy/api`，不参与默认构建与部署。若需自行启用，见上级 [legacy/README.md](../README.md)。
 
-**JW Keyboard Designer** 的后端服务，基于 [NestJS 11](https://nestjs.com/) + [Prisma 7](https://www.prisma.io/) + PostgreSQL 构建。负责字体转曲、治具生成、用户鉴权、字体库、订单与支付，以及带 SSE 实时通知的管理后台。
+**Keyboard Designer** 的后端服务，基于 [NestJS 11](https://nestjs.com/) + [Prisma 7](https://www.prisma.io/) + PostgreSQL 构建。负责字体转曲、治具生成、用户鉴权、字体库、订单与支付，以及带 SSE 实时通知的管理后台。
 
 ---
 
@@ -89,7 +89,7 @@ PORT=3001
 CORS_ORIGIN=http://localhost:3000
 
 # 数据库 / Redis
-DATABASE_URL=postgresql://user:password@localhost:5432/jw_keyboard
+DATABASE_URL=postgresql://user:password@localhost:5432/keyboard
 REDIS_URL=redis://localhost:6379
 
 # JWT

@@ -1,6 +1,6 @@
 # 已废弃的后端（legacy）
 
-本目录保存 JW Keyboard Designer 的 **NestJS 后端与全栈 Docker 部署资源**。产品本身已是纯前端设计器，**默认构建、开发和 Vercel 部署都不会使用这里的代码**。
+本目录保存 Keyboard Designer 的 **NestJS 后端与全栈 Docker 部署资源**。产品本身已是纯前端设计器，**默认构建、开发和 Vercel 部署都不会使用这里的代码**。
 
 有需要时可以自行恢复，但仓库不再提供 `standalone` / `fullstack` 双模式开关。恢复是一次手动接线，不是改环境变量。
 

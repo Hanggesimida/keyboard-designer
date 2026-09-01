@@ -1,4 +1,4 @@
-# JW Keyboard Designer — Web
+# Keyboard Designer — Web
 
 一款基于浏览器的**键盘键帽可视化设计工具**，支持多种 ANSI 布局、图层管理、键帽定制、贴图拖拽以及 PNG / SVG / JIG 治具多格式导出。这是纯前端应用，文字转曲与治具生成都在浏览器内完成。
 
@@ -82,9 +82,7 @@ pnpm install
 ### 启动开发服务器
 
 ```bash
-pnpm web:dev
-# 或
-pnpm --filter web dev
+pnpm dev
 ```
 
 访问：
@@ -94,16 +92,16 @@ pnpm --filter web dev
 ### 构建生产包
 
 ```bash
-pnpm web:build
-pnpm web:start
+pnpm build
+pnpm start
 ```
 
 ### 代码检查
 
 ```bash
-pnpm web:lint
-pnpm web:typecheck
-pnpm web:test
+pnpm lint
+pnpm typecheck
+pnpm test
 ```
 
 ---
@@ -137,7 +135,7 @@ pnpm web:test
 本项目使用 **pnpm workspaces + Turborepo** 管理：
 
 ```
-jw-keyboard-designer/
+keyboard-designer/
 ├── apps/
 │   └── web/          # 本前端应用（Next.js）
 ├── packages/

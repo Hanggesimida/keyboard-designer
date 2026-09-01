@@ -1,6 +1,6 @@
-# JW Keyboard Designer
+# Keyboard Designer
 
-JW Keyboard Designer 是一个浏览器端键帽设计器。这是一个 **纯前端项目**：不要求账号，不连接后端，也不依赖数据库或云服务，适合直接部署到 Vercel。
+Keyboard Designer 是一个浏览器端键帽设计器，可在页面中编辑布局、样式与贴图，并导出 PNG、SVG、JSON 与治具文件。
 
 ## 能力
 
@@ -25,7 +25,7 @@ JW Keyboard Designer 是一个浏览器端键帽设计器。这是一个 **纯�
 
 ```bash
 pnpm install
-pnpm web:dev
+pnpm dev
 ```
 
 访问：
@@ -38,15 +38,13 @@ pnpm web:dev
 ## 常用命令
 
 ```bash
-pnpm web:dev        # 只启动 Web
-pnpm web:build      # 只构建 Web
-pnpm web:start      # 启动 Web 生产构建
-pnpm web:lint       # 检查 Web
-pnpm web:test       # 运行浏览器导出单元测试
-pnpm web:typecheck  # 检查 Web 类型
+pnpm dev        # 启动开发服务器
+pnpm build      # 构建生产包
+pnpm start      # 启动生产构建
+pnpm lint       # 代码检查
+pnpm test       # 运行单元测试
+pnpm typecheck  # 类型检查
 ```
-
-`pnpm dev`、`pnpm build` 等命令仍会通过 Turborepo 对当前工作区执行任务（`apps/web` 与 `packages/*`）。
 
 ## 部署到 Vercel
 
@@ -72,13 +70,13 @@ vercel --prod
 
 - 选择并添加根目录 `LICENSE`；当前仓库尚未声明可采用的开源许可证。
 - 分别核对字体、GLB 模型、图片和图标的再分发许可，必要时补充第三方声明。
-- 将品牌名称、域名和生产证书替换为适合公开仓库的内容。
+- 部署前将 `apps/web/lib/site.ts` 中的站点 URL，以及 `legacy/` 中的域名与证书占位，替换为你自己的生产配置。
 - 扫描当前文件与 Git 历史，确认没有数据库、云服务或支付密钥。
 
 ## 仓库结构
 
 ```text
-jw-keyboard-designer/
+keyboard-designer/
 ├── apps/
 │   └── web/                # Next.js 前端，含 Vercel 配置
 ├── packages/

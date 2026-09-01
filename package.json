@@ -1,19 +1,15 @@
 {
-  "name": "jw-keyboard-designer",
+  "name": "keyboard-designer",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "start": "turbo start",
     "lint": "turbo lint",
+    "test": "turbo test",
     "format": "turbo format",
-    "typecheck": "turbo typecheck",
-    "web:dev": "pnpm --filter web dev",
-    "web:build": "pnpm --filter web build",
-    "web:start": "pnpm --filter web start",
-    "web:lint": "pnpm --filter web lint",
-    "web:test": "pnpm --filter web test",
-    "web:typecheck": "pnpm --filter web typecheck"
+    "typecheck": "turbo typecheck"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

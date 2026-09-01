@@ -330,11 +330,11 @@ export class OrderService {
     return order;
   }
 
-  // 生成可读订单号：JW-YYYYMMDD-XXXXX（5位大写字母+数字随机串）
+  // 生成可读订单号：KD-YYYYMMDD-XXXXX（5位大写字母+数字随机串）
   private generateOrderNo(): string {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const suffix = Math.random().toString(36).toUpperCase().slice(2, 7);
-    return `JW-${date}-${suffix}`;
+    return `KD-${date}-${suffix}`;
   }
 
   private resolveQuantity(dto: CreateOrderDto): number {

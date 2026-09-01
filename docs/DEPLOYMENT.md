@@ -1,6 +1,6 @@
 # 部署指南
 
-JW Keyboard Designer 是纯前端应用。推荐只将 `apps/web` 部署到 Vercel。仓库中的 NestJS / Docker 全栈资源已迁入 [`legacy/`](../legacy/README.md)，不参与默认部署。
+Keyboard Designer 是纯前端应用。推荐只将 `apps/web` 部署到 Vercel。仓库中的 NestJS / Docker 全栈资源已迁入 [`legacy/`](../legacy/README.md)，不参与默认部署。
 
 ## Vercel
 
@@ -24,9 +24,8 @@ JW Keyboard Designer 是纯前端应用。推荐只将 `apps/web` 部署到 Verc
 ### 通过 CLI 部署
 
 ```bash
-corepack enable
 pnpm install
-pnpm web:build
+pnpm build
 cd apps/web
 vercel
 vercel --prod

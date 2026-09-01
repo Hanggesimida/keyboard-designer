@@ -32,4 +32,4 @@ export const PREVIEW_3D_HEIGHT_MIN = 160
 export const PREVIEW_3D_HEIGHT_MAX = 560
 
 /** 预览高度 localStorage key（纯 UI，不进设计 JSON） */
-export const PREVIEW_3D_HEIGHT_STORAGE_KEY = "jw-design-preview3d-height"
+export const PREVIEW_3D_HEIGHT_STORAGE_KEY = "keyboard-design-preview3d-height"

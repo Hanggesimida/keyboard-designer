@@ -8,19 +8,19 @@ services:
   # ─────────────────────────────────────────────
   nginx:
     image: nginx:alpine
-    container_name: jw-nginx
+    container_name: keyboard-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./docker/jinwenkey.com_nginx:/etc/nginx/ssl:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
     depends_on:
       - api
       - web
     networks:
-      - jw-network
+      - keyboard-network
 
   # ─────────────────────────────────────────────
   # PostgreSQL 17
@@ -45,14 +45,14 @@ services:
       retries: 5
     shm_size: 256mb
     networks:
-      - jw-network
+      - keyboard-network
 
   # ─────────────────────────────────────────────
   # Redis 8
   # ─────────────────────────────────────────────
   redis:
     image: redis:8-alpine
-    container_name: jw-redis
+    container_name: keyboard-redis
     restart: unless-stopped
     command: >
       redis-server
@@ -68,7 +68,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - jw-network
+      - keyboard-network
 
   # ─────────────────────────────────────────────
   # NestJS API
@@ -77,8 +77,8 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    image: jw-api:latest
-    container_name: jw-api
+    image: keyboard-api:latest
+    container_name: keyboard-api
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -120,7 +120,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - jw-network
+      - keyboard-network
 
   # ─────────────────────────────────────────────
   # Next.js Web（standalone 模式）
@@ -129,8 +129,8 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
-    image: jw-web:latest
-    container_name: jw-web
+    image: keyboard-web:latest
+    container_name: keyboard-web
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -141,10 +141,10 @@ services:
     depends_on:
       - api
     networks:
-      - jw-network
+      - keyboard-network
 
 networks:
-  jw-network:
+  keyboard-network:
     driver: bridge
 
 volumes:
