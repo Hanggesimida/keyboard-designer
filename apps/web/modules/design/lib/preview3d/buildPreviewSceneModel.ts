@@ -7,6 +7,7 @@ import {
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
 import { normalizeKeyShape } from "@/modules/design/types/design"
 import { buildImageDecals } from "./imageDecal"
+import { buildLegendDrawList } from "./legendAtlas"
 import { getKeyboardBounds, keyDefToWorld } from "./layoutToWorld"
 import {
   expectedKeycapModelName,
@@ -55,6 +56,7 @@ export function buildPreviewSceneModel(
     liveDragOverrides: designState.liveDragOverrides,
   })
   const decalKeySet = new Set(imageDecals[0]?.keyIds ?? [])
+  const legendAtlas = buildLegendDrawList(layout, designState)
 
   const keys: PreviewKey[] = flatKeys.map((key) => {
     const appearance = resolveKeycapAppearance({
@@ -124,7 +126,7 @@ export function buildPreviewSceneModel(
       const keysPart = Object.entries(byKey ?? {})
         .map(([keyId, o]) => {
           if (!o) return `${keyId}:`
-          return `${keyId}:${o.color ?? ""}|${o.labelColor ?? ""}|${o.labelText ?? ""}|${o.borderColor ?? ""}|${o.borderHidden ?? ""}`
+          return `${keyId}:${o.color ?? ""}|${o.labelColor ?? ""}|${o.labelText ?? ""}|${o.borderColor ?? ""}|${o.borderHidden ?? ""}|${o.fontSize ?? ""}|${o.fontFamily ?? ""}|${o.fontWeight ?? ""}|${o.fontStyle ?? ""}|${o.letterSpacing ?? ""}|${o.lineHeightRatio ?? ""}|${o.labelOffsetX ?? ""}|${o.labelOffsetY ?? ""}`
         })
         .sort()
         .join(";")
@@ -138,6 +140,10 @@ export function buildPreviewSceneModel(
     g.labelColor,
     g.borderColor,
     g.borderHidden ? 1 : 0,
+    g.fontSize,
+    designState.fontFamily,
+    designState.fontWeight,
+    designState.fontStyle,
     layerRevision,
     overridesRevision,
   ].join("||")
@@ -159,6 +165,7 @@ export function buildPreviewSceneModel(
     bounds,
     missingModels,
     imageDecals,
-    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${missingRevision}#${decalRevision}`,
+    legendAtlas,
+    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${missingRevision}#${decalRevision}#${legendAtlas.revision}`,
   }
 }

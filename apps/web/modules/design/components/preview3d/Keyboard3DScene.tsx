@@ -121,7 +121,10 @@ export function Keyboard3DScene({
         cameraResetToken={cameraResetToken}
       />
 
-      <KeycapDecalProvider decal={primaryDecal}>
+      <KeycapDecalProvider
+        decal={primaryDecal}
+        legendAtlas={sceneModel.legendAtlas}
+      >
         <group>
           {sceneModel.keys
             .filter((key) => key.visible)

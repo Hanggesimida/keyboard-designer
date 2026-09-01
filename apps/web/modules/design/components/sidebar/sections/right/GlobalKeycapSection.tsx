@@ -17,6 +17,8 @@ const FONT_SIZE_MIN = 6
 const FONT_SIZE_MAX = 32
 
 export function GlobalKeycapSection() {
+  const artboardBackground = useDesignUIStore((s) => s.artboardBackground)
+  const setArtboardBackground = useDesignUIStore((s) => s.setArtboardBackground)
   const globalKeycapStyle = useDesignUIStore((s) => s.globalKeycapStyle)
   const setGlobalKeycapStyle = useDesignUIStore((s) => s.setGlobalKeycapStyle)
   const resetGlobalKeycapStyleSettings = useDesignUIStore(
@@ -28,6 +30,7 @@ export function GlobalKeycapSection() {
   const setFontWeight = useDesignUIStore((s) => s.setFontWeight)
   const fontStyle = useDesignUIStore((s) => s.fontStyle)
   const setFontStyle = useDesignUIStore((s) => s.setFontStyle)
+  const selectedKeycapIds = useDesignUIStore((s) => s.selectedKeycapIds)
 
   const fontCaps = getFontCapabilities(fontFamily)
   const isBold = fontWeight === 700
@@ -54,7 +57,12 @@ export function GlobalKeycapSection() {
   }
 
   return (
-    <PanelSection title="全局键帽样式" collapsible defaultOpen={false}>
+    <PanelSection
+      title="全局键盘样式"
+      first={selectedKeycapIds.length !== 1}
+      collapsible
+      defaultOpen={false}
+    >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <FontFamilySelect
@@ -127,6 +135,11 @@ export function GlobalKeycapSection() {
           />
         </div>
 
+        <ColorRow
+          label="键盘颜色"
+          value={artboardBackground}
+          onChange={setArtboardBackground}
+        />
         <ColorRow
           label="文字颜色"
           value={globalKeycapStyle.labelColor}

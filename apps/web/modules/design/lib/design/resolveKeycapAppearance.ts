@@ -8,11 +8,12 @@
  * - **opacity**：整层 alpha，作用于该层贡献的颜色（等价 2D `<g opacity>`），
  *   不是「只作用于当前有 override 的属性」。
  * - **visible=false**：该层不参与合成；若无任何可见层 → `visible: false`（整键不画）。
- * - **labelsHidden**：图层级；合成结果取「最顶可见层」的值（供 Phase 4；3D Phase 3 仍不渲染字）。
+ * - **labelsHidden**：图层级。3D 刻字图集按层绘制（可见且未隐藏的层自底向顶）；
+ *   `resolveKeycapAppearance` 仍取最顶可见层，供 PreviewKey 摘要。
  * - **键帽底色渐变**：全局 `color` 可为 CSS 渐变（整盘分配意图）；渲染时按键中心在
  *   布局上沿渐变方向投影采样为纯色。单键 override 若仍为渐变则降为 50% 中点纯色。
  *   键帽本体 fill 始终为纯色（文字色 / 边框色仍可用 resolveSolidColor 中点降级）。
- * - **图片**：Phase 3 忽略（无 clip 图进 3D）。
+ * - **图片**：全局 clip 图由 imageDecal 进 3D；单键裁切图仍不进 3D。
  * - **border**：解析可算；3D mesh 不消费。
  */
 

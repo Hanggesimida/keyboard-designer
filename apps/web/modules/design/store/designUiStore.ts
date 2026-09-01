@@ -221,7 +221,7 @@ interface DesignUIActions {
   setFontWeight: (weight: number) => void
   setFontStyle: (style: string) => void
   setGlobalKeycapStyle: (patch: Partial<GlobalKeycapStyle>) => void
-  /** 将全局键帽样式与默认字体恢复为初始值（不影响单键覆盖与其它设计数据） */
+  /** 将全局键盘样式与默认字体恢复为初始值（不影响单键覆盖与其它设计数据） */
   resetGlobalKeycapStyleSettings: () => void
   /** 写入指定图层的单键覆盖 */
   setKeycapOverride: (layerId: string, keycapId: string, patch: Partial<KeycapOverride>) => void
@@ -292,7 +292,17 @@ const initialLayers: Layer[] = [
  * 只追踪设计数据变更，排除纯 UI 选择态、实时预览态以及素材库（assetMap）。
  * assetMap 含大型 base64 字符串，不应随状态快照复制；素材去重也依赖其跨历史持久化。
  */
-export type UndoableDesignState = Omit<DesignUIState, "selectedKeycapIds" | "activeLayerId" | "selectedElementId" | "keycapEditTarget" | "liveDragOverrides" | "assetMap" | "show3dPreview" | "preview3dHeight">
+export type UndoableDesignState = Omit<
+  DesignUIState,
+  | "selectedKeycapIds"
+  | "activeLayerId"
+  | "selectedElementId"
+  | "keycapEditTarget"
+  | "liveDragOverrides"
+  | "assetMap"
+  | "show3dPreview"
+  | "preview3dHeight"
+>
 
 function applyOverridePatch(
   prev: KeycapOverride,
@@ -651,7 +661,17 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   {
     partialize: (state) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { selectedKeycapIds, activeLayerId, selectedElementId, keycapEditTarget, liveDragOverrides, assetMap, show3dPreview, preview3dHeight, ...undoable } = state
+      const {
+        selectedKeycapIds,
+        activeLayerId,
+        selectedElementId,
+        keycapEditTarget,
+        liveDragOverrides,
+        assetMap,
+        show3dPreview,
+        preview3dHeight,
+        ...undoable
+      } = state
       return undoable as UndoableDesignState
     },
     /**

@@ -1,11 +1,14 @@
 /**
  * 键帽五面热升华预览材质：MeshStandardMaterial + onBeforeCompile。
- * 采样不依赖 mesh UV，按世界坐标平面投影，侧壁沿水平法线外翻。
- * 仅 `uDecalEnabled` 的键采样；UV 出界钳制到边缘（配合 ClampToEdge）。
+ * 采样不依赖 mesh UV，按世界坐标平面投影。
+ * 图片贴花：侧壁沿水平法线外翻；仅 `uDecalEnabled` 的键采样；UV 出界钳制。
+ * 刻字图集：仅顶面混合，UV 出界丢弃（避免字色糊到侧壁）。
  */
 
 import {
   ClampToEdgeWrapping,
+  LinearFilter,
+  LinearMipmapLinearFilter,
   Matrix3,
   MeshStandardMaterial,
   SRGBColorSpace,
@@ -19,6 +22,9 @@ export interface SharedDyeSubUniforms {
   uHasMap: { value: number }
   uMapOpacity: { value: number }
   uWrapScale: { value: number }
+  uLegendMap: { value: Texture | null }
+  uLegendMatrix: { value: Matrix3 }
+  uHasLegend: { value: number }
 }
 
 export function createSharedDyeSubUniforms(): SharedDyeSubUniforms {
@@ -29,6 +35,9 @@ export function createSharedDyeSubUniforms(): SharedDyeSubUniforms {
     uMapOpacity: { value: 1 },
     // 略大于 1：侧壁多卷一点，减少“只盖顶面”的空边感
     uWrapScale: { value: 1.15 },
+    uLegendMap: { value: null },
+    uLegendMatrix: { value: new Matrix3() },
+    uHasLegend: { value: 0 },
   }
 }
 
@@ -48,7 +57,7 @@ export interface KeycapDyeSubMaterialOptions {
   metalness?: number
 }
 
-const SHADER_CACHE_KEY = "keycap-dyesub-v2"
+const SHADER_CACHE_KEY = "keycap-dyesub-v3"
 
 /**
  * 创建带世界空间贴花的 Standard 材质。
@@ -80,6 +89,9 @@ export function createKeycapDyeSubMaterial(
     shader.uniforms.uHasMap = options.shared.uHasMap
     shader.uniforms.uMapOpacity = options.shared.uMapOpacity
     shader.uniforms.uWrapScale = options.shared.uWrapScale
+    shader.uniforms.uLegendMap = options.shared.uLegendMap
+    shader.uniforms.uLegendMatrix = options.shared.uLegendMatrix
+    shader.uniforms.uHasLegend = options.shared.uHasLegend
     shader.uniforms.uKeyTopY = keyTopYUniform
     shader.uniforms.uDecalEnabled = decalEnabledUniform
 
@@ -109,6 +121,9 @@ uniform mat3 uImageMatrix;
 uniform float uHasMap;
 uniform float uMapOpacity;
 uniform float uWrapScale;
+uniform sampler2D uLegendMap;
+uniform mat3 uLegendMatrix;
+uniform float uHasLegend;
 uniform float uKeyTopY;
 uniform float uDecalEnabled;
 varying vec3 vWorldPos_dye;
@@ -121,7 +136,7 @@ void main() {
       "#include <map_fragment>",
       /* glsl */ `
 #include <map_fragment>
-if (uHasMap > 0.5 && uDecalEnabled > 0.5) {
+{
   vec3 N = normalize(vWorldNormal_dye);
   vec3 P = vWorldPos_dye;
   // 更早把斜面当侧壁，避免侧面几乎当顶面投影
@@ -133,12 +148,21 @@ if (uHasMap > 0.5 && uDecalEnabled > 0.5) {
   float wrap = drop * uWrapScale;
   float bottomKill = N.y < -0.2 ? 0.0 : 1.0;
   vec2 sampleXZ = mix(P.xz + outward * wrap, P.xz, topW);
-  vec2 uv = (uImageMatrix * vec3(sampleXZ, 1.0)).xy;
-  // 出界钳制到边缘：侧壁外翻不再回退成空白底色（纹理需 ClampToEdge）
-  vec2 uvClamped = clamp(uv, vec2(0.0), vec2(1.0));
-  vec4 tex = texture2D(uMap, uvClamped);
-  float blend = tex.a * uMapOpacity * bottomKill;
-  diffuseColor.rgb = mix(diffuseColor.rgb, tex.rgb, blend);
+  if (uHasMap > 0.5 && uDecalEnabled > 0.5) {
+    vec2 uv = (uImageMatrix * vec3(sampleXZ, 1.0)).xy;
+    // 出界钳制到边缘：侧壁外翻不再回退成空白底色（纹理需 ClampToEdge）
+    vec2 uvClamped = clamp(uv, vec2(0.0), vec2(1.0));
+    vec4 tex = texture2D(uMap, uvClamped);
+    float blend = tex.a * uMapOpacity * bottomKill;
+    diffuseColor.rgb = mix(diffuseColor.rgb, tex.rgb, blend);
+  }
+  if (uHasLegend > 0.5) {
+    vec2 luv = (uLegendMatrix * vec3(P.xz, 1.0)).xy;
+    if (luv.x >= 0.0 && luv.x <= 1.0 && luv.y >= 0.0 && luv.y <= 1.0) {
+      vec4 legend = texture2D(uLegendMap, luv);
+      diffuseColor.rgb = mix(diffuseColor.rgb, legend.rgb, legend.a * topW);
+    }
+  }
 }
 `,
     )
@@ -187,6 +211,16 @@ export function configureDyeSubTexture(tex: Texture): void {
   tex.wrapT = ClampToEdgeWrapping
   tex.colorSpace = SRGBColorSpace
   tex.flipY = true
+  tex.needsUpdate = true
+}
+
+/** 刻字图集：保留 mipmap 远看不闪，各向异性减轻斜视发糊 */
+export function configureLegendTexture(tex: Texture, maxAnisotropy = 8): void {
+  configureDyeSubTexture(tex)
+  tex.generateMipmaps = true
+  tex.minFilter = LinearMipmapLinearFilter
+  tex.magFilter = LinearFilter
+  tex.anisotropy = Math.max(1, Math.min(maxAnisotropy, 16))
   tex.needsUpdate = true
 }
 

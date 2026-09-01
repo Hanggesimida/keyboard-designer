@@ -15,7 +15,7 @@ export function KeycapInfoSection() {
   if (!key) return null
 
   return (
-    <PanelSection title="键帽信息" collapsible defaultOpen={false}>
+    <PanelSection title="键帽信息" first collapsible defaultOpen={false}>
       <div className="flex flex-col gap-2">
         <InfoRow label="标签" value={key.label} />
         <InfoRow label="Key ID" value={key.keyId} />

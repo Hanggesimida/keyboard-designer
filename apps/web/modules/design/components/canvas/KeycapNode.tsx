@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useRef, useState, useEffect } from "react"
 import type { GlobalKeycapStyle, KeycapOverride } from "@/modules/design/store/designUiStore"
@@ -13,7 +13,6 @@ import {
   KEY_RADIUS_BASE as _KEY_RADIUS_BASE,
   KEY_RADIUS_TOP,
   KEY_LABEL_SIZE,
-  KEY_LABEL_OPTICAL_CENTER_RATIO,
   clamp,
   getTopFaceRects,
   getIsoBasePoints,
@@ -21,6 +20,10 @@ import {
   getIsoTopFaceRadii,
   roundedPolygonPath,
 } from "@/modules/design/lib/design/keycapGeometry"
+import {
+  computeKeycapLabelDrawOrigin,
+  getKeycapBaseRect,
+} from "@/modules/design/lib/design/keycapLabelLayout"
 import {
   CSS_VAR_COLOR_FALLBACKS,
   resolveKeycapBodyColor,
@@ -48,8 +51,6 @@ export const KEYCAP_PAD_TOP = KEY_PAD_TOP
 export const KEYCAP_PAD_RIGHT = KEY_PAD_RIGHT
 export const KEYCAP_PAD_BOTTOM = KEY_PAD_BOTTOM
 export const KEY_RADIUS_BASE = _KEY_RADIUS_BASE
-
-const GAP = KEYCAP_GAP
 
 const KEY_SELECTED_STROKE_WIDTH = 2
 
@@ -109,15 +110,7 @@ export function KeycapNode({
   renderMode = "full",
   labelsHidden = false,
 }: KeycapNodeProps) {
-  const rawX = keyDef.x * unit
-  const rawY = keyDef.y * unit
-  const rawW = keyDef.w * unit
-  const rawH = keyDef.h * unit
-
-  const px = rawX + GAP / 2
-  const py = rawY + GAP / 2
-  const pw = rawW - GAP
-  const ph = rawH - GAP
+  const { px, py, pw, ph } = getKeycapBaseRect(keyDef, unit)
 
   const topFaceRects = getTopFaceRects(keyDef.shape, px, py, pw, ph)
   // 以主顶面（首段）为标签定位和拖拽约束的基准；getTopFaceRects 始终返回至少一个元素
@@ -161,16 +154,6 @@ export function KeycapNode({
   const labelFontStyle = override?.fontStyle ?? fontStyle ?? "normal"
   const letterSpacing = override?.letterSpacing ?? 0
   const lineHeightRatio = override?.lineHeightRatio ?? 1.2
-
-  // 逐字符渲染，避免 CSS letter-spacing 在最后字符后附加多余尾部间距
-  const renderChars = (text: string) =>
-    Array.from(text).map((ch, i) => (
-      <tspan key={i} dx={i === 0 ? 0 : letterSpacing}>{ch}</tspan>
-    ))
-
-  // 多行文字支持：按 \n 拆分
-  const labelLines = labelText.split("\n")
-  const lineHeight = fontSize * lineHeightRatio
 
   // ─── 文字尺寸测量 ─────────────────────────────────────
   const textRef = useRef<SVGTextElement>(null)
@@ -304,13 +287,24 @@ export function KeycapNode({
     ? clamp(committedY + dragDelta.y, -maxOffY, maxOffY)
     : clamp(committedY, -maxOffY, maxOffY)
 
-  const textX = topX + topW / 2 + displayOffsetX
-  const textY = topY + topH / 2 + displayOffsetY
-  const opticalOffsetY = fontSize * KEY_LABEL_OPTICAL_CENTER_RATIO
-  // 多行时将整个文字块垂直居中：第一行上移 (N-1)*lineHeight/2
-  const multiLineOffsetY =
-    labelLines.length > 1 ? ((labelLines.length - 1) * lineHeight) / 2 : 0
-  const textYDraw = textY - opticalOffsetY - multiLineOffsetY
+  const { textX, textYDraw, lineHeight, lines: labelLines } =
+    computeKeycapLabelDrawOrigin({
+      topX,
+      topY,
+      topW,
+      topH,
+      offsetX: displayOffsetX,
+      offsetY: displayOffsetY,
+      fontSize,
+      lineHeightRatio,
+      labelText,
+    })
+
+  // 逐字符渲染，避免 CSS letter-spacing 在最后字符后附加多余尾部间距
+  const renderChars = (text: string) =>
+    Array.from(text).map((ch, i) => (
+      <tspan key={i} dx={i === 0 ? 0 : letterSpacing}>{ch}</tspan>
+    ))
 
   const clickHandler = {
     onClick: (e: React.MouseEvent<SVGGElement>) => {

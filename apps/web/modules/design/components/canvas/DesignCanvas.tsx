@@ -780,7 +780,7 @@ export function DesignCanvas() {
 
       <div
         ref={containerRef}
-        className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+        className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
         style={{
           backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
           backgroundSize: "24px 24px",

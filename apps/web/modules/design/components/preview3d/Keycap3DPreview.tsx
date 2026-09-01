@@ -25,6 +25,9 @@ export function Keycap3DPreview() {
   const storeSlice = useDesignUIStore(
     useShallow((s) => ({
       templateId: s.templateId,
+      fontFamily: s.fontFamily,
+      fontWeight: s.fontWeight,
+      fontStyle: s.fontStyle,
       globalKeycapStyle: s.globalKeycapStyle,
       layers: s.layers,
       activeLayerId: s.activeLayerId,
@@ -43,11 +46,15 @@ export function Keycap3DPreview() {
   const sceneModel = useMemo(() => {
     const designSnapshot: PreviewDesignStateInput = {
       templateId: storeSlice.templateId,
+      fontFamily: storeSlice.fontFamily,
+      fontWeight: storeSlice.fontWeight,
+      fontStyle: storeSlice.fontStyle,
       globalKeycapStyle: {
         color: storeSlice.globalKeycapStyle.color,
         labelColor: storeSlice.globalKeycapStyle.labelColor,
         borderColor: storeSlice.globalKeycapStyle.borderColor,
         borderHidden: storeSlice.globalKeycapStyle.borderHidden,
+        fontSize: storeSlice.globalKeycapStyle.fontSize,
       },
       layers: storeSlice.layers.map((l) => ({
         id: l.id,
@@ -110,9 +117,8 @@ export function Keycap3DPreview() {
   return (
     <Preview3DErrorBoundary onRetry={handleRetry}>
       <div
-        className="relative h-full w-full"
+        className="relative h-full w-full bg-design-preview3d-bg"
         style={{
-          backgroundColor: "rgb(63, 63, 63)",
           backgroundImage:
             "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
           backgroundSize: "24px 24px",

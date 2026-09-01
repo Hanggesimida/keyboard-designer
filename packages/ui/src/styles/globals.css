@@ -42,6 +42,7 @@
     --color-background: var(--background);
     --color-design-canvas-grid-dot: var(--design-canvas-grid-dot);
     --color-design-artboard-bg: var(--design-artboard-bg);
+    --color-design-preview3d-bg: var(--design-preview3d-bg);
     --color-design-selection-border: var(--design-selection-border);
     --color-design-selection-fill: var(--design-selection-fill);
     --color-design-keycap-selected-border: var(--design-keycap-selected-border);
@@ -108,6 +109,7 @@
     /* Design canvas tokens */
     --design-canvas-grid-dot: oklch(0 0 0 / 12%);
     --design-artboard-bg: oklch(0.97 0 0);
+    --design-preview3d-bg: oklch(0.94 0 0);
     --design-keycap-selected-border: oklch(0.623 0.214 259.815);
     --design-selection-border: var(--design-keycap-selected-border);
     --design-selection-fill: oklch(0.623 0.214 259.815 / 0.15);
@@ -152,6 +154,7 @@
     --sidebar-ring: oklch(0.556 0 0);
     --design-canvas-grid-dot: oklch(1 0 0 / 12%);
     --design-artboard-bg: oklch(0.269 0 0);
+    --design-preview3d-bg: oklch(0.357 0 0);
     --design-keycap-selected-border: oklch(0.623 0.214 259.815);
     --design-selection-border: var(--design-keycap-selected-border);
     --design-selection-fill: oklch(0.623 0.214 259.815 / 0.15);
