@@ -18,8 +18,9 @@ Keyboard Designer 是纯前端应用。推荐只将 `apps/web` 部署到 Vercel�
 2. Root Directory 设为 `apps/web`。
 3. 打开 **Include source files outside of the Root Directory**，以便读取 workspace 中的 `packages/ui`。
 4. 使用 `apps/web/vercel.json` 的 Next.js 预设；Install、Build、Output Directory 保持 Vercel 默认值。
-5. 不要配置后端密钥或已废弃的 `NEXT_PUBLIC_APP_MODE`。
-6. 触发部署，完成后检查 `/` 和 `/design`。
+5. 将 `apps/web/lib/site.ts` 中的 `url` 改成你的生产站点地址（用于 metadata / Open Graph）。
+6. 不要配置后端密钥或已废弃的 `NEXT_PUBLIC_APP_MODE`。
+7. 触发部署，完成后检查 `/` 和 `/design`。
 
 ### 通过 CLI 部署
 

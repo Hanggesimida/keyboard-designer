@@ -23,6 +23,8 @@ export interface PreviewKey {
   /** 最顶可见层是否隐藏标签（图集烘焙按层处理；此字段供调试/选择态） */
   labelsHidden: boolean
   selected: boolean
+  /** 真实键盘按下 */
+  pressed: boolean
   visible: boolean
   /** 当前全局贴花是否作用于此键（与 2D clip 相交一致） */
   decalEnabled: boolean
@@ -65,12 +67,31 @@ export interface PreviewSceneBounds {
   depth: number
 }
 
+/** 程序化壳体的一块盒体（世界坐标，盒体中心） */
+export interface PreviewCasePart {
+  position: [number, number, number]
+  /** `[widthX, heightY, depthZ]` */
+  size: [number, number, number]
+}
+
+/** 单块托盘：外框 + 顶面内缩定位板 */
+export interface PreviewCase {
+  body: PreviewCasePart
+  plate: PreviewCasePart
+  /** 外框色，来自全局「键盘颜色」 */
+  bodyColor: string
+  /** 定位板色，由键盘颜色派生（略提亮/压暗） */
+  plateColor: string
+}
+
 /** 渲染层只消费此模型，不直接读 layout JSON / store */
 export interface PreviewSceneModel {
   templateId: string
   baseUnit: number
   keys: PreviewKey[]
   bounds: PreviewSceneBounds
+  /** 由键位包围盒推导的托盘壳体（始终存在） */
+  case: PreviewCase
   /**
    * 当前布局未命中的期望 GLB 文件名（去重排序）。
    * 空数组表示全部有真模。
@@ -97,6 +118,8 @@ export interface PreviewDesignStateInput {
   fontFamily: string
   fontWeight: number
   fontStyle: string
+  /** 全局「键盘颜色」（store.artboardBackground） */
+  artboardBackground: string
   globalKeycapStyle: {
     color: string
     labelColor: string
@@ -135,6 +158,8 @@ export interface PreviewDesignStateInput {
     >
   >
   selectedKeycapIds: ReadonlyArray<string>
+  /** 真实键盘当前按下的键帽 id */
+  pressedKeyIds?: ReadonlyArray<string>
   /** 画布图片元素（含 clipToKeycaps） */
   canvasElements?: ReadonlyArray<{
     id: string

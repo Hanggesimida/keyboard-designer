@@ -54,7 +54,8 @@ pnpm typecheck  # 类型检查
 2. 将项目 Root Directory 设为 `apps/web`。
 3. 打开 **Include source files outside of the Root Directory**，让构建能够读取 workspace 中的 `packages/ui`。
 4. Install、Build 和 Output Directory 保持框架默认值。
-5. 不需要配置后端或 `NEXT_PUBLIC_*` 密钥，然后部署。
+5. 将 `apps/web/lib/site.ts` 中的 `url` 改成你的生产站点地址（用于 metadata / Open Graph）。
+6. 不需要配置后端或 `NEXT_PUBLIC_*` 密钥，然后部署。
 
 也可以使用 Vercel CLI：
 
@@ -66,12 +67,11 @@ vercel --prod
 
 详细步骤和故障排查见 [部署指南](docs/DEPLOYMENT.md)。
 
-## 正式开源前检查
+## 许可证
 
-- 选择并添加根目录 `LICENSE`；当前仓库尚未声明可采用的开源许可证。
-- 分别核对字体、GLB 模型、图片和图标的再分发许可，必要时补充第三方声明。
-- 部署前将 `apps/web/lib/site.ts` 中的站点 URL，以及 `legacy/` 中的域名与证书占位，替换为你自己的生产配置。
-- 扫描当前文件与 Git 历史，确认没有数据库、云服务或支付密钥。
+本项目采用 [MIT License](LICENSE)。
+
+字体、GLB 模型、图片和图标等第三方资源可能有独立许可，再分发前请分别核对。
 
 ## 仓库结构
 

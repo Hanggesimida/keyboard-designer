@@ -28,11 +28,13 @@ export function Keycap3DPreview() {
       fontFamily: s.fontFamily,
       fontWeight: s.fontWeight,
       fontStyle: s.fontStyle,
+      artboardBackground: s.artboardBackground,
       globalKeycapStyle: s.globalKeycapStyle,
       layers: s.layers,
       activeLayerId: s.activeLayerId,
       layerKeycapOverrides: s.layerKeycapOverrides,
       selectedKeycapIds: s.selectedKeycapIds,
+      pressedKeyIds: s.pressedKeyIds,
       canvasElements: s.canvasElements,
       assetMap: s.assetMap,
       liveDragOverrides: s.liveDragOverrides,
@@ -42,6 +44,8 @@ export function Keycap3DPreview() {
   const setSelectedKeycapIds = useDesignUIStore((s) => s.setSelectedKeycapIds)
   const toggleKeycapSelection = useDesignUIStore((s) => s.toggleKeycapSelection)
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
+  const show3dCase = useDesignUIStore((s) => s.show3dCase)
+  const toggleShow3dCase = useDesignUIStore((s) => s.toggleShow3dCase)
 
   const sceneModel = useMemo(() => {
     const designSnapshot: PreviewDesignStateInput = {
@@ -49,6 +53,7 @@ export function Keycap3DPreview() {
       fontFamily: storeSlice.fontFamily,
       fontWeight: storeSlice.fontWeight,
       fontStyle: storeSlice.fontStyle,
+      artboardBackground: storeSlice.artboardBackground,
       globalKeycapStyle: {
         color: storeSlice.globalKeycapStyle.color,
         labelColor: storeSlice.globalKeycapStyle.labelColor,
@@ -65,6 +70,7 @@ export function Keycap3DPreview() {
       activeLayerId: storeSlice.activeLayerId,
       layerKeycapOverrides: storeSlice.layerKeycapOverrides,
       selectedKeycapIds: storeSlice.selectedKeycapIds,
+      pressedKeyIds: storeSlice.pressedKeyIds,
       canvasElements: storeSlice.canvasElements.filter(
         (el): el is Extract<typeof el, { type: "image" }> => el.type === "image",
       ),
@@ -117,8 +123,9 @@ export function Keycap3DPreview() {
   return (
     <Preview3DErrorBoundary onRetry={handleRetry}>
       <div
-        className="relative h-full w-full bg-design-preview3d-bg"
+        className="relative h-full w-full"
         style={{
+          backgroundColor: "var(--design-preview3d-bg)",
           backgroundImage:
             "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
@@ -149,6 +156,7 @@ export function Keycap3DPreview() {
             <Keyboard3DScene
               sceneModel={sceneModel}
               cameraResetToken={cameraResetToken}
+              showCase={show3dCase}
               onSelectKeycap={handleSelectKeycap}
             />
           </Canvas>
@@ -157,6 +165,8 @@ export function Keycap3DPreview() {
         <Preview3DOverlay
           loading={!ready}
           onResetCamera={handleResetCamera}
+          showCase={show3dCase}
+          onToggleCase={toggleShow3dCase}
           missingModels={sceneModel.missingModels}
         />
       </div>

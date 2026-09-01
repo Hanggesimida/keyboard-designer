@@ -211,7 +211,7 @@ export function CanvasToolbar({
 
   return (
     <div className="absolute top-3 left-1/2 z-30 -translate-x-1/2 flex flex-col items-center gap-2">
-      <div className="flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
+      <div className="flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm [&_button:not(:disabled)]:cursor-pointer">
       <Button
         type="button"
         variant="ghost"
@@ -336,7 +336,6 @@ export function CanvasToolbar({
         size="xs"
         title="生成治具 SVG（字体转曲）"
         disabled={exporting !== null}
-        className="hover:text-chart-2"
         onClick={handleGenerateJig}
       >
         {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}

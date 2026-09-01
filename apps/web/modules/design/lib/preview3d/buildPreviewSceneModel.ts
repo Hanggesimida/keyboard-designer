@@ -8,6 +8,7 @@ import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradie
 import { normalizeKeyShape } from "@/modules/design/types/design"
 import { buildImageDecals } from "./imageDecal"
 import { buildLegendDrawList } from "./legendAtlas"
+import { buildKeyboardCase } from "./buildKeyboardCase"
 import { getKeyboardBounds, keyDefToWorld } from "./layoutToWorld"
 import {
   expectedKeycapModelName,
@@ -34,6 +35,7 @@ export function buildPreviewSceneModel(
       : 54
 
   const selected = new Set(designState.selectedKeycapIds)
+  const pressed = new Set(designState.pressedKeyIds ?? [])
   const g = designState.globalKeycapStyle
   const globalDistributedColors = buildGlobalDistributedColors(
     g.color,
@@ -94,6 +96,7 @@ export function buildPreviewSceneModel(
       labelColor: appearance.labelColor,
       labelsHidden: appearance.labelsHidden,
       selected: selected.has(key.keyId),
+      pressed: pressed.has(key.keyId),
       visible: appearance.visible,
       decalEnabled: decalKeySet.has(key.keyId),
     }
@@ -109,6 +112,10 @@ export function buildPreviewSceneModel(
     width: worldBounds.width,
     depth: worldBounds.depth,
   }
+  const keyboardCase = buildKeyboardCase(
+    worldBounds,
+    designState.artboardBackground,
+  )
 
   const geometryRevision = `${designState.templateId}:${flatKeys.length}:${keys
     .map((k) => `${k.id}:${k.sizeU[0]}x${k.sizeU[1]}:${k.shape}:${k.modelPath ?? "-"}`)
@@ -136,6 +143,7 @@ export function buildPreviewSceneModel(
     .join(",")
 
   const appearanceRevision = [
+    designState.artboardBackground,
     g.color,
     g.labelColor,
     g.borderColor,
@@ -149,6 +157,7 @@ export function buildPreviewSceneModel(
   ].join("||")
 
   const selectionRevision = designState.selectedKeycapIds.join(",")
+  const pressedRevision = (designState.pressedKeyIds ?? []).join(",")
   const missingRevision = missingModels.join(",")
 
   const decalRevision = imageDecals
@@ -163,9 +172,10 @@ export function buildPreviewSceneModel(
     baseUnit,
     keys,
     bounds,
+    case: keyboardCase,
     missingModels,
     imageDecals,
     legendAtlas,
-    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${missingRevision}#${decalRevision}#${legendAtlas.revision}`,
+    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${pressedRevision}#${missingRevision}#${decalRevision}#${legendAtlas.revision}`,
   }
 }

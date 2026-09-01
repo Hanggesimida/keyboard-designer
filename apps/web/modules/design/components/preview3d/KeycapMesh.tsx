@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react"
 import { useGLTF } from "@react-three/drei"
 import { useThree, type ThreeEvent } from "@react-three/fiber"
+import { KEYCAP_PRESS_TRAVEL_U } from "@/modules/design/lib/preview3d/constants"
 import {
   KEYCAP_MATERIAL_NAME,
   KEYCAP_MODEL_PATHS,
@@ -159,6 +160,10 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
     invalidate()
   }, [geometry, invalidate, material, previewKey.color, previewKey.selected])
 
+  useEffect(() => {
+    invalidate()
+  }, [invalidate, previewKey.pressed])
+
   if (!geometry) return null
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -167,11 +172,14 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
     onSelect?.(e.shiftKey)
   }
 
+  const [x, y, z] = previewKey.position
+  const posY = previewKey.pressed ? y - KEYCAP_PRESS_TRAVEL_U : y
+
   return (
     <mesh
       geometry={geometry as never}
       material={material as never}
-      position={previewKey.position}
+      position={[x, posY, z]}
       scale={MODEL_SCALE}
       onClick={onSelect ? handleClick : undefined}
       onPointerOver={

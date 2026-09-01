@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react"
 import { useThree, type ThreeEvent } from "@react-three/fiber"
-import { PLACEHOLDER_COLOR, PLACEHOLDER_KEY_HEIGHT } from "@/modules/design/lib/preview3d/constants"
+import { KEYCAP_PRESS_TRAVEL_U, PLACEHOLDER_COLOR, PLACEHOLDER_KEY_HEIGHT } from "@/modules/design/lib/preview3d/constants"
 import {
   createKeycapDyeSubMaterial,
   setDyeSubDecalEnabled,
@@ -73,14 +73,21 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
     invalidate()
   }, [invalidate, material, color, selected, sx, sz, previewKey.decalEnabled])
 
+  useEffect(() => {
+    invalidate()
+  }, [invalidate, previewKey.pressed])
+
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
     if (e.delta > CLICK_DELTA_PX) return
     onSelect?.(e.shiftKey)
   }
 
+  const [x, y, z] = previewKey.position
+  const posY = previewKey.pressed ? y - KEYCAP_PRESS_TRAVEL_U : y
+
   return (
-    <group position={previewKey.position}>
+    <group position={[x, posY, z]}>
       <mesh
         position={[0, PLACEHOLDER_KEY_HEIGHT / 2, 0]}
         material={material as never}

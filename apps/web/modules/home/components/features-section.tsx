@@ -19,11 +19,18 @@ export function FeaturesSection() {
               <div className="[mask-image:linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)] -ml-2 -mt-2 mr-0.5 pl-2 pt-2">
                 <div className="bg-background rounded-tl-xl relative mx-auto mt-8 h-96 overflow-hidden border border-transparent shadow ring-1 ring-foreground/5">
                   <img
-                    src="/images/hero.png"
+                    src="/images/hero_light.png"
                     alt="键帽设计编辑器界面"
                     width="2700"
                     height="1440"
-                    className="object-top h-full w-full object-cover"
+                    className="object-top h-full w-full object-cover dark:hidden"
+                  />
+                  <img
+                    src="/images/hero_dark.png"
+                    alt="键帽设计编辑器界面"
+                    width="2700"
+                    height="1440"
+                    className="object-top hidden h-full w-full object-cover dark:block"
                   />
                 </div>
               </div>

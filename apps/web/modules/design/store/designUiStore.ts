@@ -195,6 +195,10 @@ interface DesignUIState {
   show3dPreview: boolean
   /** 3D 预览面板高度（px，纯 UI，localStorage 持久化，不参与 undo） */
   preview3dHeight: number
+  /** 3D 预览是否显示键盘托盘（纯 UI，不参与 undo） */
+  show3dCase: boolean
+  /** 真实键盘当前按下的键帽 id（纯 UI，不参与 undo） */
+  pressedKeyIds: string[]
 }
 
 interface DesignUIActions {
@@ -269,10 +273,17 @@ interface DesignUIActions {
   setShow3dPreview: (show: boolean) => void
   /** 切换 3D 预览开关 */
   toggleShow3dPreview: () => void
+  /** 设置是否显示 3D 托盘 */
+  setShow3dCase: (show: boolean) => void
+  /** 切换 3D 托盘显隐 */
+  toggleShow3dCase: () => void
   /** 设置 3D 预览面板高度（会 clamp 并写入 localStorage） */
   setPreview3dHeight: (height: number) => void
   /** 从 localStorage 恢复预览高度（客户端挂载后调用，避免 SSR mismatch） */
   hydratePreview3dHeight: () => void
+  pressKeycap: (id: string) => void
+  releaseKeycap: (id: string) => void
+  clearPressedKeycaps: () => void
 }
 
 const initialGlobalKeycapStyle: GlobalKeycapStyle = {
@@ -302,6 +313,8 @@ export type UndoableDesignState = Omit<
   | "assetMap"
   | "show3dPreview"
   | "preview3dHeight"
+  | "show3dCase"
+  | "pressedKeyIds"
 >
 
 function applyOverridePatch(
@@ -347,6 +360,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     show3dPreview: false,
     // SSR 用默认值；客户端挂载后由 DesignCanvas hydrate，避免 hydration mismatch
     preview3dHeight: PREVIEW_3D_HEIGHT_DEFAULT,
+    show3dCase: true,
+    pressedKeyIds: [],
 
     resetAll: () =>
       set({
@@ -365,9 +380,10 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         keycapEditTarget: null,
         liveDragOverrides: {},
         assetMap: {},
+        pressedKeyIds: [],
       }),
 
-    setTemplateId: (id) => set({ templateId: id, selectedKeycapIds: [] }),
+    setTemplateId: (id) => set({ templateId: id, selectedKeycapIds: [], pressedKeyIds: [] }),
 
     setSelectedKeycapIds: (ids, options) =>
       set((s) => {
@@ -649,6 +665,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
 
     setShow3dPreview: (show) => set({ show3dPreview: show }),
     toggleShow3dPreview: () => set((s) => ({ show3dPreview: !s.show3dPreview })),
+    setShow3dCase: (show) => set({ show3dCase: show }),
+    toggleShow3dCase: () => set((s) => ({ show3dCase: !s.show3dCase })),
     setPreview3dHeight: (height) => {
       const next = clampPreview3dHeight(height)
       persistPreview3dHeight(next)
@@ -657,6 +675,20 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     hydratePreview3dHeight: () => {
       set({ preview3dHeight: readStoredPreview3dHeight() })
     },
+    pressKeycap: (id) =>
+      set((s) =>
+        s.pressedKeyIds.includes(id)
+          ? s
+          : { pressedKeyIds: [...s.pressedKeyIds, id] },
+      ),
+    releaseKeycap: (id) =>
+      set((s) =>
+        s.pressedKeyIds.includes(id)
+          ? { pressedKeyIds: s.pressedKeyIds.filter((x) => x !== id) }
+          : s,
+      ),
+    clearPressedKeycaps: () =>
+      set((s) => (s.pressedKeyIds.length === 0 ? s : { pressedKeyIds: [] })),
   }),
   {
     partialize: (state) => {
@@ -670,6 +702,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         assetMap,
         show3dPreview,
         preview3dHeight,
+        show3dCase,
+        pressedKeyIds,
         ...undoable
       } = state
       return undoable as UndoableDesignState

@@ -1,20 +1,24 @@
 "use client"
 
-import { RotateCcw } from "lucide-react"
+import { Box, RotateCcw } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 interface Preview3DOverlayProps {
   loading?: boolean
   onResetCamera: () => void
+  showCase: boolean
+  onToggleCase: () => void
   /** 当前布局缺失的期望 GLB 文件名 */
   missingModels?: readonly string[]
 }
 
-/** 3D 预览壳层 overlay：加载态、缺模提示、复位视角、操作提示 */
+/** 3D 预览壳层 overlay：加载态、缺模提示、复位视角、托盘开关、操作提示 */
 export function Preview3DOverlay({
   loading = false,
   onResetCamera,
+  showCase,
+  onToggleCase,
   missingModels = [],
 }: Preview3DOverlayProps) {
   const hasMissing = missingModels.length > 0
@@ -47,6 +51,23 @@ export function Preview3DOverlay({
             }}
           >
             <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={
+              showCase
+                ? "pointer-events-auto size-7 bg-accent/90 text-foreground border border-border backdrop-blur-sm"
+                : "pointer-events-auto size-7 bg-popover/90 text-muted-foreground hover:text-foreground border border-border backdrop-blur-sm"
+            }
+            title={showCase ? "隐藏托盘" : "显示托盘"}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleCase()
+            }}
+          >
+            <Box className="size-3.5" />
           </Button>
           <span className="select-none rounded border border-border bg-popover/90 px-2 py-1 text-[11px] text-muted-foreground backdrop-blur-sm">
             拖动旋转 · 滚轮缩放 · 右键平移

@@ -10,6 +10,7 @@ import { DesignCanvas } from "./canvas/DesignCanvas"
 import { DesignLoadingScreen } from "./DesignLoadingScreen"
 import { useTemporalDesignStore } from "@/modules/design/store/designUiStore"
 import { useLoadDesignFromUrl } from "@/modules/design/hooks/useLoadDesignFromUrl"
+import { usePhysicalKeyPress } from "@/modules/design/hooks/usePhysicalKeyPress"
 import { DESIGN_EXPORTED_EVENT } from "@/modules/design/lib/session-events"
 import { useSessionFontStore } from "@/lib/fonts/sessionFontStore"
 
@@ -24,6 +25,7 @@ export function DesignWorkspaceLayout() {
   const clearSessionFonts = useSessionFontStore((state) => state.clearFonts)
 
   useLoadDesignFromUrl()
+  usePhysicalKeyPress()
 
   useEffect(() => {
     if (previousHistoryPosition.current !== historyPosition) {

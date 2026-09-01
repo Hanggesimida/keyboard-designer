@@ -1,14 +1,33 @@
 "use client"
 
-import { useEffect, useRef, type ComponentRef } from "react"
+import { useEffect, useLayoutEffect, useRef, type ComponentRef } from "react"
+import { useTheme } from "next-themes"
 import { useThree } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
+import {
+  PREVIEW_3D_BG_DARK,
+  PREVIEW_3D_BG_LIGHT,
+} from "@/modules/design/lib/preview3d/constants"
 import { computeCameraFitPose } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
 import { KeycapDecalProvider } from "./KeycapDecalProvider"
+import { KeyboardCaseMesh } from "./KeyboardCaseMesh"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
 import { KeycapMesh } from "./KeycapMesh"
+
+/** 跟随浅色/深色模式设置 WebGL 背景；Three.Color 无法解析 oklch/lab，必须用 hex */
+function ThemeSceneBackground() {
+  const { resolvedTheme } = useTheme()
+  const invalidate = useThree((s) => s.invalidate)
+  const bg = resolvedTheme === "light" ? PREVIEW_3D_BG_LIGHT : PREVIEW_3D_BG_DARK
+
+  useLayoutEffect(() => {
+    invalidate()
+  }, [bg, invalidate])
+
+  return <color attach="background" args={[bg]} />
+}
 
 function CameraRig({
   center,
@@ -91,6 +110,8 @@ interface Keyboard3DSceneProps {
   sceneModel: PreviewSceneModel
   /** 递增以强制复位相机（不重置模板） */
   cameraResetToken?: number
+  /** 是否渲染托盘壳体 */
+  showCase?: boolean
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
   onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
 }
@@ -98,18 +119,26 @@ interface Keyboard3DSceneProps {
 export function Keyboard3DScene({
   sceneModel,
   cameraResetToken = 0,
+  showCase = true,
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
+  const invalidate = useThree((s) => s.invalidate)
   const center = sceneModel.bounds.center
+  const [caseWidth, , caseDepth] = sceneModel.case.body.size
   const extents = {
-    width: sceneModel.bounds.width,
-    depth: sceneModel.bounds.depth,
+    width: caseWidth,
+    depth: caseDepth,
   }
+
+  useEffect(() => {
+    invalidate()
+  }, [invalidate, showCase])
 
   const primaryDecal = sceneModel.imageDecals[0] ?? null
 
   return (
     <>
+      <ThemeSceneBackground />
       <ambientLight intensity={0.55} />
       <directionalLight position={[8, 12, 6]} intensity={1.1} />
       <directionalLight position={[-6, 4, -4]} intensity={0.35} />
@@ -120,6 +149,8 @@ export function Keyboard3DScene({
         templateId={sceneModel.templateId}
         cameraResetToken={cameraResetToken}
       />
+
+      {showCase ? <KeyboardCaseMesh case={sceneModel.case} /> : null}
 
       <KeycapDecalProvider
         decal={primaryDecal}

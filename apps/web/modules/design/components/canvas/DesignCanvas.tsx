@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Home } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { flattenLayout } from "@/modules/design/lib/design/layout"
@@ -249,6 +250,7 @@ function KeyboardTemplate({
   const fontFamily = useDesignUIStore((s) => s.fontFamily)
   const fontWeight = useDesignUIStore((s) => s.fontWeight)
   const fontStyle = useDesignUIStore((s) => s.fontStyle)
+  const pressedKeyIds = useDesignUIStore((s) => s.pressedKeyIds)
 
   const globalDistributedColors = useMemo(
     () =>
@@ -287,6 +289,7 @@ function KeyboardTemplate({
               keyDef={key}
               unit={unit}
               isSelected={isActiveLayer && selectedKeycapIds.includes(key.keyId)}
+              isPressed={pressedKeyIds.includes(key.keyId)}
               onSelect={(shiftKey) => onSelectKeycap(layer.id, key.keyId, shiftKey)}
               override={layerOverrides[key.keyId]}
               globalDefaults={globalKeycapStyle}
@@ -728,20 +731,26 @@ export function DesignCanvas() {
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
       {/* 顶部工具栏 / 返回首页：始终贴在中间列顶部，不被 3D 顶开 */}
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        asChild
-        className="absolute top-3 left-3 z-30 bg-popover/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground"
-      >
-        <Link
-          href="/"
-          title="返回首页"
-          onClick={(e) => e.stopPropagation()}
+      <div className="absolute top-3 left-3 z-30 flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          asChild
+          className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"
         >
-          <Home className="size-3.5" />
-        </Link>
-      </Button>
+          <Link
+            href="/"
+            title="返回首页"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Home className="size-3.5" />
+          </Link>
+        </Button>
+        <ThemeToggle
+          size="icon-xs"
+          className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"
+        />
+      </div>
 
       <CanvasToolbar
         canUndo={canUndo}

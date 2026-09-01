@@ -58,6 +58,8 @@ interface KeycapNodeProps {
   keyDef: KeyDef
   unit: number
   isSelected?: boolean
+  /** 真实键盘按下时下沉 */
+  isPressed?: boolean
   /** shiftKey 为 true 表示 Shift+点击（追加/切换选中） */
   onSelect?: (shiftKey: boolean) => void
   override?: KeycapOverride
@@ -96,6 +98,7 @@ export function KeycapNode({
   keyDef,
   unit,
   isSelected = false,
+  isPressed = false,
   onSelect,
   override,
   globalDefaults,
@@ -306,6 +309,8 @@ export function KeycapNode({
       <tspan key={i} dx={i === 0 ? 0 : letterSpacing}>{ch}</tspan>
     ))
 
+  const pressTransform = isPressed ? "translate(0, 2.5)" : undefined
+
   const clickHandler = {
     onClick: (e: React.MouseEvent<SVGGElement>) => {
       e.stopPropagation()
@@ -320,7 +325,7 @@ export function KeycapNode({
       const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
       const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
       return (
-        <g data-keycap="true" style={{ cursor: "pointer" }} {...clickHandler}>
+        <g data-keycap="true" transform={pressTransform} style={{ cursor: "pointer" }} {...clickHandler}>
           <path
             d={isoBasePath}
             fill={fill}
@@ -336,7 +341,7 @@ export function KeycapNode({
       )
     }
     return (
-      <g data-keycap="true" style={{ cursor: "pointer" }} {...clickHandler}>
+      <g data-keycap="true" transform={pressTransform} style={{ cursor: "pointer" }} {...clickHandler}>
         <rect
           x={px} y={py} width={pw} height={ph} rx={KEY_RADIUS_BASE}
           fill={fill}
@@ -361,7 +366,7 @@ export function KeycapNode({
       const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
       const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
       return (
-        <g data-keycap="true" style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
+        <g data-keycap="true" transform={pressTransform} style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
           {/* 顶面边框 */}
           <path
             d={isoTopPath}
@@ -421,7 +426,7 @@ export function KeycapNode({
       )
     }
     return (
-      <g data-keycap="true" style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
+      <g data-keycap="true" transform={pressTransform} style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
         {/* 顶面边框 */}
         {topFaceRects.map((r, i) => (
           <rect
@@ -491,6 +496,7 @@ export function KeycapNode({
     return (
       <g
         data-keycap="true"
+        transform={pressTransform}
         {...clickHandler}
         style={{ cursor: isLabelEditing ? "default" : "pointer" }}
       >
@@ -571,6 +577,7 @@ export function KeycapNode({
   return (
     <g
       data-keycap="true"
+      transform={pressTransform}
       {...clickHandler}
       style={{ cursor: isLabelEditing ? "default" : "pointer" }}
     >
