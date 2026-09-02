@@ -1,12 +1,13 @@
 "use client"
 
 import { Suspense, useCallback, useMemo, useRef, useState } from "react"
-import { Canvas } from "@react-three/fiber"
+import { Canvas, type RootState } from "@react-three/fiber"
 import { useShallow } from "zustand/react/shallow"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { CAMERA_FOV_DEG } from "@/modules/design/lib/preview3d/constants"
 import { buildPreviewSceneModel } from "@/modules/design/lib/preview3d/buildPreviewSceneModel"
+import { exportPreview3dPng } from "@/modules/design/lib/preview3d/exportPreviewPng"
 import type { PreviewDesignStateInput } from "@/modules/design/lib/preview3d/types"
 import { Keyboard3DScene } from "./Keyboard3DScene"
 import { Preview3DErrorBoundary } from "./Preview3DErrorBoundary"
@@ -19,8 +20,10 @@ const MISS_CLICK_DELTA_PX = 5
 export function Keycap3DPreview() {
   const [canvasKey, setCanvasKey] = useState(0)
   const [ready, setReady] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [cameraResetToken, setCameraResetToken] = useState(0)
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null)
+  const threeRef = useRef<RootState | null>(null)
 
   const storeSlice = useDesignUIStore(
     useShallow((s) => ({
@@ -83,11 +86,26 @@ export function Keycap3DPreview() {
     )
   }, [storeSlice])
 
-  const handleCreated = useCallback(() => {
+  const handleCreated = useCallback((state: RootState) => {
+    threeRef.current = state
     setReady(true)
   }, [])
 
+  const handleExportPng = useCallback(async () => {
+    const state = threeRef.current
+    if (!state || exporting) return
+    setExporting(true)
+    try {
+      await exportPreview3dPng(state, storeSlice.templateId)
+    } catch (err) {
+      console.error("[preview3d] 导出 PNG 失败:", err)
+    } finally {
+      setExporting(false)
+    }
+  }, [exporting, storeSlice.templateId])
+
   const handleRetry = useCallback(() => {
+    threeRef.current = null
     setReady(false)
     setCanvasKey((k) => k + 1)
   }, [])
@@ -164,7 +182,9 @@ export function Keycap3DPreview() {
 
         <Preview3DOverlay
           loading={!ready}
+          exporting={exporting}
           onResetCamera={handleResetCamera}
+          onExportPng={handleExportPng}
           showCase={show3dCase}
           onToggleCase={toggleShow3dCase}
           missingModels={sceneModel.missingModels}

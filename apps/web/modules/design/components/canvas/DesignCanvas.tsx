@@ -886,7 +886,7 @@ export function DesignCanvas() {
             <Button
               variant="ghost"
               size="xs"
-              className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground"
+              className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
               onClick={(e) => { e.stopPropagation(); fitToScreen() }}
             >
               适配

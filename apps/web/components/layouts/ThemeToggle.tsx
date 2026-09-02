@@ -19,7 +19,7 @@ export function ThemeToggle({
       type="button"
       variant="ghost"
       size={size}
-      className={cn(size === "icon" && "size-8", className)}
+      className={cn("cursor-pointer", size === "icon" && "size-8", className)}
       aria-label="切换深色/浅色模式"
       onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
     >

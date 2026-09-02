@@ -1,5 +1,13 @@
 # Keyboard Designer
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/hero_dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/hero_light.png">
+    <img alt="Keyboard Designer 键帽设计编辑器界面" src="apps/web/public/images/hero_light.png" width="900">
+  </picture>
+</p>
+
 Keyboard Designer 是一个浏览器端键帽设计器，可在页面中编辑布局、样式与贴图，并导出 PNG、SVG、JSON 与治具文件。
 
 ## 能力

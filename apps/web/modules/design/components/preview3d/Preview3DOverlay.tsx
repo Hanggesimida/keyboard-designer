@@ -1,22 +1,26 @@
 "use client"
 
-import { Box, RotateCcw } from "lucide-react"
+import { Box, ImageDown, RotateCcw } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 interface Preview3DOverlayProps {
   loading?: boolean
+  exporting?: boolean
   onResetCamera: () => void
+  onExportPng?: () => void
   showCase: boolean
   onToggleCase: () => void
   /** 当前布局缺失的期望 GLB 文件名 */
   missingModels?: readonly string[]
 }
 
-/** 3D 预览壳层 overlay：加载态、缺模提示、复位视角、托盘开关、操作提示 */
+/** 3D 预览壳层 overlay：加载态、缺模提示、复位视角、导出 PNG、托盘开关、操作提示 */
 export function Preview3DOverlay({
   loading = false,
+  exporting = false,
   onResetCamera,
+  onExportPng,
   showCase,
   onToggleCase,
   missingModels = [],
@@ -38,12 +42,12 @@ export function Preview3DOverlay({
             <span className="break-all">{missingModels.join("、")}</span>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center rounded-lg border border-border bg-popover/80 pl-1 pr-2 backdrop-blur-sm">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="pointer-events-auto size-7 bg-popover/90 text-muted-foreground hover:text-foreground border border-border backdrop-blur-sm"
+            className="size-7 text-foreground cursor-pointer"
             title="复位视角"
             onClick={(e) => {
               e.stopPropagation()
@@ -52,14 +56,34 @@ export function Preview3DOverlay({
           >
             <RotateCcw className="size-3.5" />
           </Button>
+          {onExportPng && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 text-foreground cursor-pointer"
+              title="导出当前视角为 PNG"
+              disabled={loading || exporting}
+              onClick={(e) => {
+                e.stopPropagation()
+                onExportPng()
+              }}
+            >
+              {exporting ? (
+                <Spinner className="size-3.5" />
+              ) : (
+                <ImageDown className="size-3.5" />
+              )}
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
             size="icon"
             className={
               showCase
-                ? "pointer-events-auto size-7 bg-accent/90 text-foreground border border-border backdrop-blur-sm"
-                : "pointer-events-auto size-7 bg-popover/90 text-muted-foreground hover:text-foreground border border-border backdrop-blur-sm"
+                ? "size-7 text-foreground bg-accent cursor-pointer"
+                : "size-7 text-foreground cursor-pointer"
             }
             title={showCase ? "隐藏托盘" : "显示托盘"}
             onClick={(e) => {
@@ -69,7 +93,8 @@ export function Preview3DOverlay({
           >
             <Box className="size-3.5" />
           </Button>
-          <span className="select-none rounded border border-border bg-popover/90 px-2 py-1 text-[11px] text-muted-foreground backdrop-blur-sm">
+          <span className="mx-1 h-4 w-px shrink-0 bg-border" aria-hidden />
+          <span className="select-none px-1.5 text-[11px] text-foreground/75">
             拖动旋转 · 滚轮缩放 · 右键平移
           </span>
         </div>
