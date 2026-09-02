@@ -1,14 +1,16 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, Eye, EyeOff } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { LogoIcon } from "@/components/layouts/Logo"
+import { Link, useRouter } from "@/i18n/navigation"
 
-import { setPassword, setPasswordSchema, type SetPasswordInput } from "@/lib/api/auth"
+import { setPassword, createSetPasswordSchema, type SetPasswordInput } from "@/lib/api/auth"
+import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
 import { Button } from "@workspace/ui/components/button"
@@ -22,6 +24,10 @@ import {
 } from "@workspace/ui/components/field"
 
 export function SetPasswordForm() {
+  const t = useTranslations("Auth")
+  const tCommon = useTranslations("Common")
+  const tValidation = useTranslations("Validation")
+  const tErrors = useTranslations("Errors")
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") ?? "/"
@@ -31,6 +37,11 @@ export function SetPasswordForm() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+
+  const setPasswordSchema = useMemo(
+    () => createSetPasswordSchema(tValidation),
+    [tValidation],
+  )
 
   useEffect(() => {
     const token = sessionStorage.getItem("otp_setup_token")
@@ -59,8 +70,7 @@ export function SetPasswordForm() {
       sessionStorage.removeItem("otp_email")
       router.push(redirect)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "设置密码失败，请重试"
-      setServerError(msg)
+      setServerError(resolveErrorMessage(err, t("setPasswordFailed"), tErrors("sessionExpired")))
     }
   }
 
@@ -71,24 +81,24 @@ export function SetPasswordForm() {
           <div className="flex size-8 items-center justify-center rounded-md">
             <LogoIcon className="size-6" />
           </div>
-          <span className="sr-only">键盘设计器</span>
+          <span className="sr-only">{tCommon("appName")}</span>
         </Link>
-        <h1 className="text-xl font-bold">设置登录密码</h1>
+        <h1 className="text-xl font-bold">{t("setPasswordTitle")}</h1>
         <FieldDescription>
-          为您的账号设置密码，方便下次直接登录
+          {t("setPasswordSubtitle")}
         </FieldDescription>
       </div>
 
       <form>
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="password">密码</FieldLabel>
+            <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="至少 8 位"
+                placeholder={t("passwordPlaceholder")}
                 aria-invalid={!!errors.password}
                 disabled={isSubmitting}
                 className="pr-10"
@@ -107,13 +117,13 @@ export function SetPasswordForm() {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="confirm">确认密码</FieldLabel>
+            <FieldLabel htmlFor="confirm">{t("confirmPassword")}</FieldLabel>
             <div className="relative">
               <Input
                 id="confirm"
                 type={showConfirm ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="再次输入密码"
+                placeholder={t("confirmPlaceholder")}
                 aria-invalid={!!errors.confirm}
                 disabled={isSubmitting}
                 className="pr-10"
@@ -143,10 +153,10 @@ export function SetPasswordForm() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={15} className="animate-spin opacity-70" />
-                  设置中…
+                  {t("setting")}
                 </>
               ) : (
-                "完成注册"
+                t("finishRegister")
               )}
             </Button>
           </Field>

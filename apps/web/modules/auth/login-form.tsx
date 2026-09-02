@@ -1,23 +1,25 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@workspace/ui/lib/utils"
 import { LogoIcon } from "@/components/layouts/Logo"
+import { Link, useRouter } from "@/i18n/navigation"
 
 import {
   login,
   sendOtp,
-  loginSchema,
-  sendOtpSchema,
+  createLoginSchema,
+  createSendOtpSchema,
   isChangePasswordResponse,
   type LoginInput,
   type SendOtpInput,
 } from "@/lib/api/auth"
+import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
 import { Button } from "@workspace/ui/components/button"
@@ -36,6 +38,10 @@ import { WechatAuthButton } from "./wechat-auth-button"
 type Tab = "password" | "otp"
 
 export function LoginForm() {
+  const t = useTranslations("Auth")
+  const tCommon = useTranslations("Common")
+  const tValidation = useTranslations("Validation")
+  const tErrors = useTranslations("Errors")
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") ?? "/"
@@ -51,6 +57,9 @@ export function LoginForm() {
   // 验证码发送状态
   const [countdown, setCountdown] = useState(0)
   const [otpSent, setOtpSent] = useState(false)
+
+  const loginSchema = useMemo(() => createLoginSchema(tValidation), [tValidation])
+  const sendOtpSchema = useMemo(() => createSendOtpSchema(tValidation), [tValidation])
 
   // ── 密码登录表单 ─────────────────────────────────────────────
   const passwordForm = useForm<LoginInput>({
@@ -73,9 +82,9 @@ export function LoginForm() {
       const next = failCount + 1
       setFailCount(next)
       if (next >= 3) {
-        setServerError("连续登录失败，请稍后重试")
+        setServerError(t("loginFailedLimit"))
       } else {
-        setServerError(`邮箱或密码错误（还剩 ${3 - next} 次机会）`)
+        setServerError(t("wrongPasswordRemaining", { count: 3 - next }))
       }
     }
   }
@@ -104,13 +113,12 @@ export function LoginForm() {
       startCountdown()
       router.push(`/login/verify?redirect=${encodeURIComponent(redirect)}`)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "发送失败，请稍后重试"
-      setServerError(msg)
+      setServerError(resolveErrorMessage(err, t("sendFailed"), tErrors("sessionExpired")))
     }
   }
 
-  const switchTab = (t: Tab) => {
-    setTab(t)
+  const switchTab = (next: Tab) => {
+    setTab(next)
     setServerError(null)
   }
 
@@ -122,17 +130,17 @@ export function LoginForm() {
           <div className="flex size-8 items-center justify-center rounded-md">
             <LogoIcon className="size-6" />
           </div>
-          <span className="sr-only">键盘设计器</span>
+          <span className="sr-only">{tCommon("appName")}</span>
         </Link>
-        <h1 className="text-xl font-bold">欢迎回来</h1>
+        <h1 className="text-xl font-bold">{t("welcomeBack")}</h1>
         <FieldDescription>
-          没有账号？验证码登录即可自动注册
+          {t("autoRegisterHint")}
         </FieldDescription>
       </div>
 
       {reason === "expired" && (
         <FieldDescription className="text-center rounded-lg border border-amber-500/20 bg-amber-500/8 px-3.5 py-2.5 text-amber-600 dark:text-amber-400">
-          登录已过期，请重新登录后继续
+          {t("sessionExpired")}
         </FieldDescription>
       )}
 
@@ -148,7 +156,7 @@ export function LoginForm() {
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          密码登录
+          {t("passwordTab")}
         </button>
         <button
           type="button"
@@ -160,7 +168,7 @@ export function LoginForm() {
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          验证码登录
+          {t("otpTab")}
         </button>
       </div>
 
@@ -169,7 +177,7 @@ export function LoginForm() {
         <form>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="email">邮箱</FieldLabel>
+              <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
               <Input
                 id="email"
                 type="email"
@@ -184,12 +192,12 @@ export function LoginForm() {
 
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="password">密码</FieldLabel>
+                <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
                 <Link
                   href={`/login/forgot-password?redirect=${encodeURIComponent(redirect)}`}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  忘记密码？
+                  {t("forgotPassword")}
                 </Link>
               </div>
               <Input
@@ -216,16 +224,16 @@ export function LoginForm() {
                 {passwordForm.formState.isSubmitting ? (
                   <>
                     <Loader2 size={15} className="animate-spin opacity-70" />
-                    登录中…
+                    {t("signingIn")}
                   </>
                 ) : (
-                  "登录"
+                  t("signIn")
                 )}
               </Button>
             </Field>
 
-            <FieldSeparator>或</FieldSeparator>
-            <WechatAuthButton action="登录" />
+            <FieldSeparator>{tCommon("or")}</FieldSeparator>
+            <WechatAuthButton action="signIn" />
           </FieldGroup>
         </form>
       )}
@@ -235,7 +243,7 @@ export function LoginForm() {
         <form>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="otp-email">邮箱</FieldLabel>
+              <FieldLabel htmlFor="otp-email">{t("email")}</FieldLabel>
               <Input
                 id="otp-email"
                 type="email"
@@ -263,27 +271,27 @@ export function LoginForm() {
                 {otpForm.formState.isSubmitting ? (
                   <>
                     <Loader2 size={15} className="animate-spin opacity-70" />
-                    发送中…
+                    {t("sending")}
                   </>
                 ) : countdown > 0 ? (
-                  `${countdown}s 后可重新发送`
+                  t("resendIn", { seconds: countdown })
                 ) : (
-                  "发送验证码"
+                  t("sendCode")
                 )}
               </Button>
             </Field>
 
-            <FieldSeparator>或</FieldSeparator>
-            <WechatAuthButton action="登录" />
+            <FieldSeparator>{tCommon("or")}</FieldSeparator>
+            <WechatAuthButton action="signIn" />
           </FieldGroup>
         </form>
       )}
 
       <FieldDescription className="px-6 text-center">
-        点击继续即表示您同意我们的{" "}
-        <a href="#">服务条款</a>
-        {" "}和{" "}
-        <a href="#">隐私政策</a>。
+        {t("agreePrefix")}{" "}
+        <a href="#">{t("terms")}</a>
+        {" · "}
+        <a href="#">{t("privacy")}</a>
       </FieldDescription>
     </div>
   )

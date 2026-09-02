@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Progress } from "@workspace/ui/components/progress"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -9,6 +10,8 @@ import { cn } from "@workspace/ui/lib/utils"
  * 模拟三阶段进度：脚本解析 → 组件初始化 → DOM 就绪，最终淡出消失。
  */
 export function DesignLoadingScreen() {
+  const tCommon = useTranslations("Common")
+  const t = useTranslations("Design.loading")
   const [progress, setProgress] = useState(0)
   const [phase, setPhase] = useState<"loading" | "complete" | "gone">("loading")
 
@@ -58,10 +61,10 @@ export function DesignLoadingScreen() {
             <rect x="6" y="16" width="16" height="3" rx="1.5" fill="var(--muted-foreground)" opacity="0.5" />
           </svg>
           <span className="text-[15px] font-semibold tracking-wide text-foreground/80">
-            键盘设计器
+            {tCommon("appName")}
           </span>
         </div>
-        <span className="text-[11px] text-muted-foreground">正在初始化工作区…</span>
+        <span className="text-[11px] text-muted-foreground">{t("initializing")}</span>
       </div>
 
       {/* 进度条容器 */}

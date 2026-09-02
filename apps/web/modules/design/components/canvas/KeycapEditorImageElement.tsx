@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { createPortal } from "react-dom"
 import { type ResizeHandle, computeResizePatch, normalizeAngleDeg } from "./imageElementUtils"
 import { ResetRotationIcon, RestoreAspectIcon, LockAspectIcon } from "./ImageControlIcons"
@@ -66,6 +67,8 @@ function KeycapImageControlOverlay({
   onToggleLockAspect, onRestoreAspect, onResetRotation,
   onCenterToTopFace,
 }: KeycapImageControlOverlayProps) {
+  const t = useTranslations("Design.editorImage")
+  const tChrome = useTranslations("Design.imageChrome")
   const btnBase: React.CSSProperties = {
     width: CTRL_BTN,
     height: CTRL_BTN,
@@ -116,7 +119,7 @@ function KeycapImageControlOverlay({
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onCenterToTopFace() }}
-          title="居中到 Top Face"
+          title={t("centerTopFace")}
           style={btnBase}
         >
           <svg viewBox="0 0 12 12" width={CTRL_ICON} height={CTRL_ICON} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
@@ -135,9 +138,9 @@ function KeycapImageControlOverlay({
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onCycleClipMode() }}
           title={
-            clipMode === "none" ? "自由显示（点击裁切到键帽底座）" :
-            clipMode === "base" ? "已裁切到键帽底座（点击裁切到顶面）" :
-            "已裁切到键帽顶面（点击切换为自由显示）"
+            clipMode === "none" ? t("freeDisplay") :
+            clipMode === "base" ? t("clippedBase") :
+            t("clippedTop")
           }
           style={{
             ...btnBase,
@@ -167,7 +170,7 @@ function KeycapImageControlOverlay({
             type="button"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onResetRotation() }}
-            title="恢复水平（重置旋转）"
+            title={tChrome("resetRotation")}
             style={btnBase}
           >
             <ResetRotationIcon size={CTRL_ICON} />
@@ -180,7 +183,7 @@ function KeycapImageControlOverlay({
             type="button"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onRestoreAspect() }}
-            title="恢复原始比例"
+            title={tChrome("resetAspect")}
             style={btnBase}
           >
             <RestoreAspectIcon size={CTRL_ICON} />
@@ -192,7 +195,7 @@ function KeycapImageControlOverlay({
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onToggleLockAspect() }}
-          title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
+          title={lockAspect ? tChrome("uniformScale") : tChrome("freeScale")}
           style={{
             ...btnBase,
             background: lockAspect ? SELECTION_BORDER : SELECTION_SURFACE,

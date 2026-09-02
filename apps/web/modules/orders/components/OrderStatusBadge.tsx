@@ -1,3 +1,6 @@
+"use client"
+
+import { useTranslations } from "next-intl"
 import { Badge } from "@workspace/ui/components/badge"
 import type { OrderStatus } from "@/lib/api/orders"
 import { ORDER_STATUS_CONFIG } from "../status"
@@ -11,6 +14,7 @@ interface OrderStatusBadgeProps {
 }
 
 export function OrderStatusBadge({ status, size = "sm" }: OrderStatusBadgeProps) {
+  const t = useTranslations("OrderStatus")
   const cfg = ORDER_STATUS_CONFIG[status] ?? ORDER_STATUS_CONFIG.PENDING
   return (
     <Badge
@@ -20,7 +24,7 @@ export function OrderStatusBadge({ status, size = "sm" }: OrderStatusBadgeProps)
         cfg.badgeCls,
       )}
     >
-      {cfg.label}
+      {t(status)}
     </Badge>
   )
 }

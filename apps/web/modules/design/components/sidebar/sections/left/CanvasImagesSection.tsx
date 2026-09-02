@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Image as ImageIcon } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { cn } from "@workspace/ui/lib/utils"
@@ -43,6 +44,7 @@ function CanvasImageRow({
   onToggleLocked,
   onRemove,
 }: CanvasImageRowProps) {
+  const t = useTranslations("Design.layers")
   const isVisible = element.opacity > 0
   const isLocked = element.type === "image" ? element.locked : false
   const opacityPct = Math.round(element.opacity * 100)
@@ -79,11 +81,11 @@ function CanvasImageRow({
               variant="outline"
               className="h-3.5 shrink-0 border-indigo-500/35 bg-indigo-500/10 px-1 text-[8px] font-normal text-indigo-400 cursor-default"
             >
-              {element.clipToKeycapIds.length} 个键
+              {t("boundKeyCount", { count: element.clipToKeycapIds.length })}
             </Badge>
           </TooltipTrigger>
           <TooltipContent side="right" className="text-[11px] max-w-48">
-            限定到键位：
+            {t("boundToKeys")}
             {element.clipToKeycapIds
               .map((id) => keysById.get(id)?.label ?? id)
               .join("、")}
@@ -103,7 +105,7 @@ function CanvasImageRow({
             </Badge>
           </TooltipTrigger>
           <TooltipContent side="right" className="text-[11px]">
-            裁剪到键帽：{element.clipToKeycapId}
+            {t("clippedToKeycap", { id: element.clipToKeycapId })}
           </TooltipContent>
         </Tooltip>
       )}
@@ -115,7 +117,7 @@ function CanvasImageRow({
           variant="outline"
           className="h-4 border-border px-0.5 text-[9px] font-normal text-muted-foreground shrink-0"
         >
-          隐藏
+          {t("hidden")}
         </Badge>
       )}
       {isVisible && element.opacity < 1 && (
@@ -146,6 +148,7 @@ function CanvasImageRow({
 // ─── 画布图片区 ────────────────────────────────────────
 // canvasElements 末尾 = 最顶层，面板中反序展示（顶层在上）
 export function CanvasImagesSection() {
+  const t = useTranslations("Design.layers")
   const { keysById } = useLayoutKeys()
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
   const assetMap = useDesignUIStore((s) => s.assetMap)
@@ -164,8 +167,8 @@ export function CanvasImagesSection() {
     <TooltipProvider delayDuration={200}>
     <div className="flex flex-col gap-px">
       <SectionHeader
-        label="画布图片"
-        tooltip="画布图片浮于键盘层之上，始终在键帽设计层的上方显示。列表中越靠上表示层叠越高。"
+        label={t("canvasImages")}
+        tooltip={t("canvasImagesHint")}
       />
       <ul className="flex flex-col gap-px">
         {reversed.map((el, i) => {
@@ -199,7 +202,7 @@ export function CanvasImagesSection() {
           )
         })}
       </ul>
-      <SectionFooter label="↕ 上方始终覆盖键帽层" />
+      <SectionFooter label={t("alwaysAboveKeycaps")} />
     </div>
     </TooltipProvider>
   )

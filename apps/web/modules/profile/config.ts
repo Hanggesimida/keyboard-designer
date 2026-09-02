@@ -16,18 +16,18 @@ export type ProfileNavGroup = NavGroup
 
 const BASE_NAV_ITEMS: NavItem[] = [
   {
-    label: "概览",
+    label: "overview",
     href: "/profile",
     icon: LayoutDashboard,
     exact: true,
   },
   {
-    label: "我的键盘",
+    label: "keyboards",
     href: "/profile/keyboards",
     icon: Keyboard,
   },
   {
-    label: "我的订单",
+    label: "orders",
     href: "/profile/orders",
     icon: ShoppingBag,
   },
@@ -36,12 +36,12 @@ const BASE_NAV_ITEMS: NavItem[] = [
 /** 企业主账号专属导航：团队管理（子账号）与团队设计看板（审核 + 批量下单） */
 const ENTERPRISE_MAIN_NAV_ITEMS: NavItem[] = [
   {
-    label: "团队管理",
+    label: "team",
     href: "/profile/team",
     icon: Users,
   },
   {
-    label: "团队设计",
+    label: "teamDesigns",
     href: "/profile/team-designs",
     icon: ClipboardList,
   },
@@ -57,15 +57,15 @@ export function getProfileNavGroups(accountType?: AccountType): NavGroup[] {
   return [
     { items },
     {
-      title: "账号",
+      title: "account",
       items: [
         {
-          label: "地址管理",
+          label: "addresses",
           href: "/profile/addresses",
           icon: MapPin,
         },
         {
-          label: "设置",
+          label: "settings",
           href: "/profile/settings",
           icon: Settings,
         },

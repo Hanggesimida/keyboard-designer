@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Copy, Check, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { useResetSubAccountPassword } from "@/hooks/queries/enterprise/useEnterprise"
 import type { SubAccountSummary } from "@/lib/api/enterprise"
-import { ApiError } from "@/lib/api/request"
+import { resolveErrorMessage } from "@/lib/api/request"
 
 interface ResetSubAccountPasswordDialogProps {
   subAccount: SubAccountSummary | null
@@ -24,6 +25,9 @@ export function ResetSubAccountPasswordDialog({
   subAccount,
   onOpenChange,
 }: ResetSubAccountPasswordDialogProps) {
+  const t = useTranslations("Enterprise")
+  const tCommon = useTranslations("Common")
+  const tErrors = useTranslations("Errors")
   const [initialPassword, setInitialPassword] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -45,7 +49,7 @@ export function ResetSubAccountPasswordDialog({
     resetPassword(subAccount.id, {
       onSuccess: (result) => setInitialPassword(result.initialPassword),
       onError: (err) => {
-        setError(err instanceof ApiError ? err.message : "重置失败，请重试")
+        setError(resolveErrorMessage(err, t("resetFailed"), tErrors("sessionExpired")))
       },
     })
   }
@@ -53,7 +57,7 @@ export function ResetSubAccountPasswordDialog({
   function handleCopy() {
     if (!subAccount || !initialPassword) return
     navigator.clipboard
-      .writeText(`邮箱：${subAccount.email}\n新初始密码：${initialPassword}`)
+      .writeText(t("resetClipboard", { email: subAccount.email, password: initialPassword }))
       .then(() => {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
@@ -66,19 +70,19 @@ export function ResetSubAccountPasswordDialog({
         {initialPassword ? (
           <>
             <DialogHeader>
-              <DialogTitle>密码已重置</DialogTitle>
+              <DialogTitle>{t("passwordReset")}</DialogTitle>
               <DialogDescription>
-                请将以下新登录信息转告设计师，密码仅在此展示一次。设计师下次登录后须设置自己的密码。
+                {t("resetShareHint")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
               <div>
-                <p className="text-[11px] text-muted-foreground">邮箱</p>
+                <p className="text-[11px] text-muted-foreground">{t("email")}</p>
                 <p className="font-mono text-sm text-foreground">{subAccount?.email}</p>
               </div>
               <div>
-                <p className="text-[11px] text-muted-foreground">新初始密码</p>
+                <p className="text-[11px] text-muted-foreground">{t("newInitialPassword")}</p>
                 <p className="font-mono text-sm font-semibold text-foreground">
                   {initialPassword}
                 </p>
@@ -93,23 +97,23 @@ export function ResetSubAccountPasswordDialog({
                 className="cursor-pointer"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? "已复制" : "复制登录信息"}
+                {copied ? t("copied") : t("copyLogin")}
               </Button>
               <Button
                 type="button"
                 onClick={() => handleOpenChange(false)}
                 className="cursor-pointer"
               >
-                完成
+                {t("done")}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>重置子账号密码</DialogTitle>
+              <DialogTitle>{t("resetTitle")}</DialogTitle>
               <DialogDescription>
-                将为「{subAccount?.name ?? subAccount?.email}」生成新的初始密码。重置后该设计师下次登录须修改为自己的密码。
+                {t("resetConfirm")}
               </DialogDescription>
             </DialogHeader>
 
@@ -127,7 +131,7 @@ export function ResetSubAccountPasswordDialog({
                 onClick={() => handleOpenChange(false)}
                 className="cursor-pointer"
               >
-                取消
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="button"
@@ -138,10 +142,10 @@ export function ResetSubAccountPasswordDialog({
                 {isPending ? (
                   <>
                     <Loader2 size={13} className="animate-spin" />
-                    重置中...
+                    {t("resetting")}
                   </>
                 ) : (
-                  "确认重置"
+                  t("confirmReset")
                 )}
               </Button>
             </DialogFooter>

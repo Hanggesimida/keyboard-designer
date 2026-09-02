@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Minus, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
@@ -31,6 +32,7 @@ export function QuantitySelector({
   disabled = false,
   className,
 }: QuantitySelectorProps) {
+  const t = useTranslations("Checkout")
   const [inputValue, setInputValue] = useState(String(value))
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function QuantitySelector({
         className="h-8 w-8 shrink-0 cursor-pointer"
         disabled={disabled || value <= min}
         onClick={() => updateValue(value - 1)}
-        aria-label="减少数量"
+        aria-label={t("decreaseQty")}
       >
         <Minus size={14} />
       </Button>
@@ -89,7 +91,7 @@ export function QuantitySelector({
           }
         }}
         className="h-8 w-14 px-1 text-center tabular-nums"
-        aria-label="购买数量"
+        aria-label={t("qty")}
       />
 
       <Button
@@ -99,7 +101,7 @@ export function QuantitySelector({
         className="h-8 w-8 shrink-0 cursor-pointer"
         disabled={disabled || value >= max}
         onClick={() => updateValue(value + 1)}
-        aria-label="增加数量"
+        aria-label={t("increaseQty")}
       >
         <Plus size={14} />
       </Button>

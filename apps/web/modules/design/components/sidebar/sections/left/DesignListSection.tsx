@@ -6,7 +6,9 @@
  */
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
+import { useSearchParams } from "next/navigation"
 import { Keyboard, Plus, ArrowLeft, User, Package } from "lucide-react"
 import {
   AlertDialog,
@@ -30,10 +32,11 @@ import { PanelSection } from "../../panel-section"
 // ─── 管理员订单上下文面板 ──────────────────────────────────────────────────────
 
 function AdminOrderContextSection({ orderId, designId }: { orderId: string; designId: string | null }) {
+  const t = useTranslations("Design.designList")
   const { data: order, isLoading } = useAdminOrder(orderId)
 
   return (
-    <PanelSection title="客户方案" first collapsible defaultOpen>
+    <PanelSection title={t("customerPlans")} first collapsible defaultOpen>
       {isLoading ? (
         <div className="space-y-2 py-1">
           <Skeleton className="h-3 w-3/4" />
@@ -44,7 +47,7 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 py-2">
             <User size={12} className="shrink-0 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">客户</p>
+              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">{t("customer")}</p>
               <p className="truncate text-xs text-foreground">{order.user.email}</p>
             </div>
           </div>
@@ -52,7 +55,7 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 py-2">
             <Package size={12} className="shrink-0 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">订单号</p>
+              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">{t("orderNo")}</p>
               <p className="truncate font-mono text-xs text-foreground">{order.orderNo}</p>
             </div>
           </div>
@@ -87,11 +90,11 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
             className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <ArrowLeft size={11} />
-            返回订单详情
+            {t("backToOrder")}
           </a>
         </div>
       ) : (
-        <p className="py-1 text-[11px] text-muted-foreground">订单加载失败</p>
+        <p className="py-1 text-[11px] text-muted-foreground">{t("orderLoadFailed")}</p>
       )}
     </PanelSection>
   )
@@ -100,12 +103,13 @@ function AdminOrderContextSection({ orderId, designId }: { orderId: string; desi
 // ─── 企业主账号审阅子账号设计上下文面板 ──────────────────────────────────────────
 
 function EnterpriseDesignContextSection({ designId }: { designId: string }) {
+  const t = useTranslations("Design.designList")
   const { data: design, isLoading } = useDesign(designId)
-  const designerLabel = design?.user?.name ?? design?.user?.email ?? "设计师"
+  const designerLabel = design?.user?.name ?? design?.user?.email ?? t("designer")
 
   return (
     <PanelSection
-      title={`正在查看 ${designerLabel} 的设计`}
+      title={t("viewingDesigner", { name: designerLabel })}
       first
       collapsible
       defaultOpen
@@ -120,7 +124,7 @@ function EnterpriseDesignContextSection({ designId }: { designId: string }) {
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 py-2">
             <User size={12} className="shrink-0 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">设计师</p>
+              <p className="mb-0.5 text-[11px] leading-none text-muted-foreground">{t("designer")}</p>
               {design.user?.name ? (
                 <>
                   <p className="truncate text-xs font-medium text-foreground">{design.user.name}</p>
@@ -154,11 +158,11 @@ function EnterpriseDesignContextSection({ designId }: { designId: string }) {
             className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <ArrowLeft size={11} />
-            返回团队设计
+            {t("backToTeam")}
           </a>
         </div>
       ) : (
-        <p className="py-1 text-[11px] text-muted-foreground">设计加载失败</p>
+        <p className="py-1 text-[11px] text-muted-foreground">{t("designLoadFailed")}</p>
       )}
     </PanelSection>
   )
@@ -171,6 +175,7 @@ export function DesignListSection() {
 }
 
 function FullstackDesignListSection() {
+  const t = useTranslations("Design.designList")
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentDesignId = searchParams.get("id")
@@ -216,7 +221,7 @@ function FullstackDesignListSection() {
   return (
     <>
       <PanelSection
-        title="我的设计"
+        title={t("myDesigns")}
         first
         collapsible
         defaultOpen
@@ -225,7 +230,7 @@ function FullstackDesignListSection() {
             type="button"
             variant="ghost"
             size="icon-xs"
-            title="新建设计"
+            title={t("newDesign")}
             onClick={() => handleNavigate("/design")}
           >
             <Plus size={12} />
@@ -239,7 +244,7 @@ function FullstackDesignListSection() {
             <div className="flex flex-col items-center gap-2 py-4">
               <Keyboard size={20} className="text-muted-foreground/40" />
               <p className="text-[11px] text-muted-foreground/50 text-center">
-                还没有设计，点击 + 新建
+                {t("empty")}
               </p>
             </div>
           ) : (
@@ -251,7 +256,7 @@ function FullstackDesignListSection() {
                     <Keyboard size={12} className="text-accent-foreground/50" />
                   </div>
                   <span className="flex-1 min-w-0 text-xs truncate font-medium">
-                    未保存的新设计
+                    {t("unsavedNew")}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-accent-foreground/60 shrink-0" />
                 </div>
@@ -321,18 +326,18 @@ function FullstackDesignListSection() {
       >
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>设计尚未保存</AlertDialogTitle>
+            <AlertDialogTitle>{t("unsavedTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              当前新设计有未保存的改动，切换后这些改动将会丢失。确定要继续吗？
+              {t("unsavedBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>继续编辑</AlertDialogCancel>
+            <AlertDialogCancel>{t("keepEditing")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmLeave}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              放弃并切换
+              {t("discardAndSwitch")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench, Boxes, AlertTriangle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
@@ -16,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
+import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher"
 import type { ExportArtboardParams } from "@/modules/design/lib/design/exportArtboard"
 import {
   exportArtboardJson,
@@ -46,6 +48,8 @@ interface CanvasToolbarProps {
 
 type ExportingFormat = "png" | "svg" | "jig" | null
 
+const IMPORT_ERROR_KEYS = ["parseFailed", "notExportedFile", "incompatible", "invalidFormat"] as const
+
 function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
@@ -62,6 +66,8 @@ function ToolbarSeparator() {
 }
 
 function NoSaveHint() {
+  const t = useTranslations("Design.toolbar")
+  const tCommon = useTranslations("Common")
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -74,7 +80,7 @@ function NoSaveHint() {
   return (
     <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-background/90 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur">
       <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />
-      <span>设计不会自动保存，刷新后会丢失，请及时导出 JSON。</span>
+      <span>{t("noSaveHint")}</span>
       <Button
         type="button"
         variant="ghost"
@@ -86,7 +92,7 @@ function NoSaveHint() {
           setVisible(false)
         }}
       >
-        我知道了
+        {tCommon("gotIt")}
       </Button>
     </div>
   )
@@ -101,6 +107,8 @@ export function CanvasToolbar({
   getExportParams,
   onAfterImport,
 }: CanvasToolbarProps) {
+  const t = useTranslations("Design")
+  const tCommon = useTranslations("Common")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<ImportPayload | null>(null)
@@ -115,7 +123,11 @@ export function CanvasToolbar({
 
     const result = await parseImportJson(file)
     if (!result.ok) {
-      setErrorMsg(result.error)
+      setErrorMsg(
+        (IMPORT_ERROR_KEYS as readonly string[]).includes(result.error)
+          ? t(`errors.${result.error as (typeof IMPORT_ERROR_KEYS)[number]}`)
+          : result.error,
+      )
     } else {
       setPendingImport(result.data)
     }
@@ -200,9 +212,9 @@ export function CanvasToolbar({
       const msg =
         err instanceof ApiError
           ? err.message
-          : "治具 SVG 生成时发生错误，请检查控制台。"
+          : t("toolbar.jigError")
       setErrorMsg(
-        err instanceof ApiError ? `治具 SVG 生成失败：${msg}` : msg,
+        err instanceof ApiError ? t("toolbar.jigErrorWithMsg", { msg }) : msg,
       )
     } finally {
       setExporting(null)
@@ -216,7 +228,7 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="icon-xs"
-        title="撤销 (Ctrl+Z)"
+        title={t("toolbar.undo")}
         disabled={!canUndo}
         onClick={(e) => { e.stopPropagation(); onUndo() }}
       >
@@ -226,7 +238,7 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="icon-xs"
-        title="重做 (Ctrl+Y)"
+        title={t("toolbar.redo")}
         disabled={!canRedo}
         onClick={(e) => { e.stopPropagation(); onRedo() }}
       >
@@ -239,7 +251,7 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="icon-xs"
-        title={show3dPreview ? "关闭 3D 预览" : "显示 3D 预览"}
+        title={show3dPreview ? t("toolbar.hide3d") : t("toolbar.show3d")}
         className={show3dPreview ? "text-foreground bg-accent" : undefined}
         onClick={(e) => {
           e.stopPropagation()
@@ -257,7 +269,7 @@ export function CanvasToolbar({
             type="button"
             variant="ghost"
             size="icon-xs"
-            title="重置为原始布局"
+            title={t("toolbar.resetLayout")}
             className="hover:text-destructive"
             onClick={(e) => e.stopPropagation()}
           >
@@ -266,15 +278,15 @@ export function CanvasToolbar({
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>重置为原始布局？</AlertDialogTitle>
+            <AlertDialogTitle>{t("toolbar.resetTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              此操作将清除所有键帽覆盖样式、全局样式修改、画板背景及画布图片，恢复到初始默认状态。此操作无法撤销。
+              {t("toolbar.resetBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={onReset}>
-              确认重置
+              {t("toolbar.confirmReset")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -286,7 +298,7 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
-        title="导出 PNG"
+        title={t("toolbar.exportPng")}
         disabled={exporting !== null}
         onClick={handleExportPng}
       >
@@ -298,7 +310,7 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
-        title="导出 SVG（字体转曲）"
+        title={t("toolbar.exportSvg")}
         disabled={exporting !== null}
         onClick={handleExportSvg}
       >
@@ -310,7 +322,7 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
-        title="导出 JSON"
+        title={t("toolbar.exportJson")}
         onClick={handleExportJson}
       >
         <FileJson2 className="size-3.5" />
@@ -321,11 +333,11 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
-        title="导入 JSON"
+        title={t("toolbar.importJson")}
         onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
       >
         <FolderOpen className="size-3.5" />
-        导入
+        {t("toolbar.import")}
       </Button>
 
       <ToolbarSeparator />
@@ -334,13 +346,16 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
-        title="生成治具 SVG（字体转曲）"
+        title={t("toolbar.jigTitle")}
         disabled={exporting !== null}
         onClick={handleGenerateJig}
       >
         {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
-        治具
+        {t("toolbar.jig")}
       </Button>
+
+      <ToolbarSeparator />
+      <LocaleSwitcher />
 
       <input
         ref={fileInputRef}
@@ -356,13 +371,13 @@ export function CanvasToolbar({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>导入失败</AlertDialogTitle>
+            <AlertDialogTitle>{t("toolbar.importFailed")}</AlertDialogTitle>
             <AlertDialogDescription className="whitespace-pre-line">
               {errorMsg}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setErrorMsg(null)}>确定</AlertDialogAction>
+            <AlertDialogAction onClick={() => setErrorMsg(null)}>{tCommon("confirm")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -373,13 +388,13 @@ export function CanvasToolbar({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>导入设计方案？</AlertDialogTitle>
+            <AlertDialogTitle>{t("toolbar.importConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              此操作将覆盖当前所有设计数据（键帽样式、图层设置与画布图片），且无法通过撤销还原。
+              {t("toolbar.importConfirmBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingImport(null)}>取消</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setPendingImport(null)}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (pendingImport) {
@@ -389,7 +404,7 @@ export function CanvasToolbar({
                 }
               }}
             >
-              确认导入
+              {t("toolbar.confirmImport")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

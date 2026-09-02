@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { UserX, UserCheck, Loader2, Users, KeyRound } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { zhCN } from "date-fns/locale"
+import { enUS, zhCN } from "date-fns/locale"
+import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -29,6 +30,10 @@ interface SubAccountsTableProps {
 }
 
 export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccountsTableProps) {
+  const t = useTranslations("Enterprise")
+  const tCommon = useTranslations("Common")
+  const locale = useLocale()
+  const dateLocale = locale === "zh" ? zhCN : enUS
   const { data: subAccounts, isLoading } = useSubAccounts()
   const { mutate: updateSubAccount, isPending: isUpdating } = useUpdateSubAccount()
   const [toggleTarget, setToggleTarget] = useState<SubAccountSummary | null>(null)
@@ -49,19 +54,19 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
       ) : !subAccounts || subAccounts.length === 0 ? (
         <ProfileEmptyState
           icon={Users}
-          title="还没有子账号"
-          description="创建子账号后，设计师可独立登录设计并提交方案给你审核。"
+          title={t("noSubAccounts")}
+          description={t("emptyHint")}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs text-muted-foreground">
               <tr>
-                <th className="px-4 py-2.5 text-left font-medium">设计师</th>
-                <th className="px-4 py-2.5 text-left font-medium">状态</th>
-                <th className="px-4 py-2.5 text-left font-medium">设计统计</th>
-                <th className="px-4 py-2.5 text-left font-medium">创建时间</th>
-                <th className="px-4 py-2.5 text-right font-medium">操作</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("designer")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("status")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("stats")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("createdAt")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -74,22 +79,25 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
                   <td className="px-4 py-3">
                     {sub.isActive ? (
                       <Badge variant="secondary" className="font-normal">
-                        正常
+                        {t("active")}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="font-normal text-destructive/70">
-                        已禁用
+                        {t("disabled")}
                       </Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground/80">
-                    草稿 {sub.draftCount} · 已提交 {sub.submittedCount} · 已下单{" "}
-                    {sub.orderedCount}
+                    {t("statsLine", {
+                      draft: sub.draftCount,
+                      submitted: sub.submittedCount,
+                      ordered: sub.orderedCount,
+                    })}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground/55">
                     {formatDistanceToNow(new Date(sub.createdAt), {
                       addSuffix: true,
-                      locale: zhCN,
+                      locale: dateLocale,
                     })}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -102,7 +110,7 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
                         className="cursor-pointer text-muted-foreground hover:text-foreground"
                       >
                         <KeyRound size={13} />
-                        重置密码
+                        {t("resetPassword")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -114,12 +122,12 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
                         {sub.isActive ? (
                           <>
                             <UserX size={13} />
-                            禁用
+                            {t("disable")}
                           </>
                         ) : (
                           <>
                             <UserCheck size={13} />
-                            启用
+                            {t("enable")}
                           </>
                         )}
                       </Button>
@@ -146,16 +154,14 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {toggleTarget?.isActive ? "禁用子账号" : "启用子账号"}
+              {toggleTarget?.isActive ? t("disable") : t("enable")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {toggleTarget?.isActive
-                ? `确认禁用「${toggleTarget?.name ?? toggleTarget?.email}」？禁用后该账号将无法登录，但历史设计数据保留。`
-                : `确认启用「${toggleTarget?.name ?? toggleTarget?.email}」？启用后该账号可重新登录。`}
+              {toggleTarget?.isActive ? t("disableConfirm") : t("enableConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isUpdating}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={isUpdating}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={isUpdating}
               onClick={(e) => {
@@ -163,7 +169,7 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
                 handleConfirmToggle()
               }}
             >
-              {isUpdating ? <Loader2 size={13} className="animate-spin" /> : "确认"}
+              {isUpdating ? <Loader2 size={13} className="animate-spin" /> : tCommon("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

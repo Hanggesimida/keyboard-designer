@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { Loader2, PackageCheck, ShieldCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { Alert, AlertDescription } from "@workspace/ui/components/alert"
 import { cn } from "@workspace/ui/lib/utils"
@@ -11,7 +11,8 @@ import { useCreateOrder } from "@/hooks/queries/orders/useOrders"
 import { usePayOrder } from "@/hooks/queries/payments/usePayOrder"
 import { useUserStore } from "@/store/userStore"
 import type { PaymentMethod } from "@/lib/api/payments"
-import { ApiError } from "@/lib/api/request"
+import { resolveErrorMessage } from "@/lib/api/request"
+import { useRouter } from "@/i18n/navigation"
 
 interface PaymentConfirmSectionProps {
   designId: string
@@ -23,11 +24,6 @@ interface PaymentConfirmSectionProps {
   onAddressRequired: () => void
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; desc: string }[] = [
-  { value: "ALIPAY", label: "支付宝", desc: "安全快捷" },
-  { value: "WECHAT", label: "微信支付", desc: "便捷支付" },
-]
-
 export function PaymentConfirmSection({
   designId,
   selectedAddressId,
@@ -35,6 +31,8 @@ export function PaymentConfirmSection({
   totalAmount,
   onAddressRequired,
 }: PaymentConfirmSectionProps) {
+  const t = useTranslations("Checkout")
+  const tErrors = useTranslations("Errors")
   const router = useRouter()
   const queryClient = useQueryClient()
   const accountType = useUserStore((s) => s.user?.accountType)
@@ -44,6 +42,11 @@ export function PaymentConfirmSection({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isPaying, setIsPaying] = useState(false)
   const [showWechatHint, setShowWechatHint] = useState(false)
+
+  const paymentMethods: { value: PaymentMethod; label: string; desc: string }[] = [
+    { value: "ALIPAY", label: t("alipay"), desc: t("alipayHint") },
+    { value: "WECHAT", label: t("wechatPay"), desc: t("wechatPayHint") },
+  ]
 
   function handleSelectMethod(value: PaymentMethod) {
     if (value === "WECHAT") {
@@ -93,7 +96,7 @@ export function PaymentConfirmSection({
         },
         onError: (err) => {
           setSubmitError(
-            err instanceof ApiError ? err.message : "创建订单失败，请重试",
+            resolveErrorMessage(err, t("createFailed"), tErrors("sessionExpired")),
           )
         },
       },
@@ -106,13 +109,13 @@ export function PaymentConfirmSection({
     <div className="space-y-4">
       {isEnterpriseMain ? (
         <p className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground/70">
-          企业主账号采用月结方式，确认后将直接生成订单，无需在线支付。
+          {t("monthlyHint")}
         </p>
       ) : (
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground/70">支付方式</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground/70">{t("payMethod")}</p>
           <div className="grid grid-cols-2 gap-2">
-            {PAYMENT_METHODS.map((m) => {
+            {paymentMethods.map((m) => {
               const isSelected = method === m.value
               return (
                 <button
@@ -135,7 +138,7 @@ export function PaymentConfirmSection({
           </div>
           {showWechatHint && (
             <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-              微信支付功能暂未开发完成，请使用支付宝支付
+              {t("wechatSoon")}
             </p>
           )}
         </div>
@@ -157,25 +160,23 @@ export function PaymentConfirmSection({
         {isProcessing ? (
           <>
             <Loader2 size={15} className="animate-spin" />
-            {isEnterpriseMain ? "下单中..." : isCreatingOrder ? "创建订单..." : "等待支付中..."}
+            {isEnterpriseMain ? t("ordering") : isCreatingOrder ? t("creatingOrder") : t("waitingPayment")}
           </>
         ) : isEnterpriseMain ? (
           <>
             <PackageCheck size={15} className="opacity-70" />
-            确认下单 {priceLabel}
+            {t("confirmPlace")} {priceLabel}
           </>
         ) : (
           <>
             <ShieldCheck size={15} className="opacity-70" />
-            立即支付 {priceLabel}
+            {t("payNow")} {priceLabel}
           </>
         )}
       </Button>
 
       <p className="text-center text-xs leading-relaxed text-muted-foreground/55">
-        {isEnterpriseMain
-          ? "点击「确认下单」即表示同意相关服务协议"
-          : "点击「立即支付」即表示同意相关服务协议"}
+        {isEnterpriseMain ? t("agreePlace") : t("agreePay")}
       </p>
     </div>
   )

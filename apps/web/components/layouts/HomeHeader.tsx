@@ -1,22 +1,25 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Menu, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { Logo } from "@/components/layouts/Logo"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
-
-const menuItems = [
-  { name: "首页", href: "/" },
-  { name: "功能特性", href: "#features" },
-  { name: "常见问题", href: "#faq" },
-]
+import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher"
 
 export function HomeHeader() {
+  const t = useTranslations("Nav")
   const [menuState, setMenuState] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+
+  const menuItems = [
+    { name: t("home"), href: "/" },
+    { name: t("features"), href: "#features" },
+    { name: t("faq"), href: "#faq" },
+  ]
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,10 +49,11 @@ export function HomeHeader() {
               </Link>
 
               <div className="flex items-center gap-1 lg:hidden">
+                <LocaleSwitcher />
                 <ThemeToggle />
                 <button
                   onClick={() => setMenuState(!menuState)}
-                  aria-label={menuState === true ? "关闭菜单" : "打开菜单"}
+                  aria-label={menuState === true ? t("closeMenu") : t("openMenu")}
                   className="relative z-20 -m-2.5 -mr-2 cursor-pointer p-2.5">
                   <Menu className="in-data-[state=active]:rotate-180 group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
                   <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
@@ -86,10 +90,11 @@ export function HomeHeader() {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:items-center sm:gap-3 sm:space-y-0 md:w-fit">
+                <LocaleSwitcher className="hidden lg:inline-flex" />
                 <ThemeToggle className="hidden lg:inline-flex" />
                 <Button asChild>
                   <Link href="/design">
-                    <span>开始设计</span>
+                    <span>{t("start")}</span>
                   </Link>
                 </Button>
               </div>

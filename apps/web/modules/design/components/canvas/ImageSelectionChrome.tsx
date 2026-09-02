@@ -1,6 +1,7 @@
 "use client"
 
 import type { CSSProperties, ReactNode } from "react"
+import { useTranslations } from "next-intl"
 import { type ResizeCorner, type ResizeEdge } from "./imageElementUtils"
 import { ResetRotationIcon, RestoreAspectIcon, LockAspectIcon } from "./ImageControlIcons"
 
@@ -115,6 +116,7 @@ export function ImageSelectionChrome({
   onRotatePointerMove,
   onRotatePointerUp,
 }: ImageSelectionChromeProps) {
+  const t = useTranslations("Design.imageChrome")
   const inv = 1 / zoom
 
   return (
@@ -162,10 +164,10 @@ export function ImageSelectionChrome({
               onPointerDown={stop}
               onMouseDown={stop}
               onClick={(e) => { stop(e); onClearKeycapRestriction?.() }}
-              title="清除键位限定，恢复自由浮层"
+              title={t("clearBinding")}
               style={textBtn(true)}
             >
-              <span>已限定 {clipToKeycapIdsCount} 个键</span>
+              <span>{t("boundKeys", { count: clipToKeycapIdsCount })}</span>
               <span style={{ opacity: 0.8 }}>✕</span>
             </button>
           ) : (
@@ -177,8 +179,8 @@ export function ImageSelectionChrome({
               disabled={selectedKeycapCount === 0}
               title={
                 selectedKeycapCount > 0
-                  ? `限定到选中的 ${selectedKeycapCount} 个键位`
-                  : "请先选中键位；若图片已选中，请按住 Shift 框选或点选键位"
+                  ? t("bindSelected", { count: selectedKeycapCount })
+                  : t("bindNeedSelection")
               }
               style={{
                 ...textBtn(false, selectedKeycapCount === 0),
@@ -188,7 +190,9 @@ export function ImageSelectionChrome({
                 color: selectedKeycapCount > 0 ? BORDER : "var(--muted-foreground)",
               }}
             >
-              限定到选中键位{selectedKeycapCount > 0 ? ` (${selectedKeycapCount})` : ""}
+              {selectedKeycapCount > 0
+                ? t("bindToSelectedCount", { count: selectedKeycapCount })
+                : t("bindToSelected")}
             </button>
           )
         )}
@@ -199,7 +203,7 @@ export function ImageSelectionChrome({
             onPointerDown={stop}
             onMouseDown={stop}
             onClick={(e) => { stop(e); onToggleClipToKeycaps() }}
-            title={isClippedToAllKeycaps ? "已裁剪到键帽（点击切换为自由浮层）" : "自由浮层（点击裁剪到键帽形状）"}
+            title={isClippedToAllKeycaps ? t("clippedToKeycaps") : t("freeOverlay")}
             style={chromeBtn(isClippedToAllKeycaps)}
           >
             <ClipGridIcon active={isClippedToAllKeycaps} />
@@ -216,7 +220,7 @@ export function ImageSelectionChrome({
             onPointerDown={stop}
             onMouseDown={stop}
             onClick={(e) => { stop(e); onResetRotation() }}
-            title="恢复水平（重置旋转）"
+            title={t("resetRotation")}
             style={chromeBtn()}
           >
             <ResetRotationIcon size={C.icon} />
@@ -229,7 +233,7 @@ export function ImageSelectionChrome({
             onPointerDown={stop}
             onMouseDown={stop}
             onClick={(e) => { stop(e); onRestoreAspect() }}
-            title="恢复原始比例"
+            title={t("resetAspect")}
             style={chromeBtn()}
           >
             <RestoreAspectIcon size={C.icon} />
@@ -241,7 +245,7 @@ export function ImageSelectionChrome({
           onPointerDown={stop}
           onMouseDown={stop}
           onClick={(e) => { stop(e); onToggleLockAspect() }}
-          title={lockAspect ? "等比缩放（点击切换为自由缩放）" : "自由缩放（点击切换为等比缩放）"}
+          title={lockAspect ? t("uniformScale") : t("freeScale")}
           style={chromeBtn(lockAspect)}
         >
           <LockAspectIcon size={C.icon} locked={lockAspect} />
@@ -264,7 +268,7 @@ export function ImageSelectionChrome({
             }}
           />
           <Handle
-            title="拖拽旋转"
+            title={t("dragRotate")}
             onPointerDown={onRotatePointerDown}
             onPointerMove={onRotatePointerMove}
             onPointerUp={onRotatePointerUp}

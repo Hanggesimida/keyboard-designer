@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { Eye, EyeOff, X } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -37,6 +38,8 @@ export function MultiKeycapEditor({
   layerOverrides,
   disabled,
 }: MultiKeycapEditorProps) {
+  const t = useTranslations("Design.inspector")
+  const tCommon = useTranslations("Common")
   const e = useMultiKeycapEditor({
     selectedIds,
     layerId,
@@ -93,7 +96,7 @@ export function MultiKeycapEditor({
       )}
     >
       <FontFamilySelect
-        label="字体族"
+        label={t("fontFamily")}
         effectiveFontFamily={e.fontFamily.value}
         isMixed={e.fontFamily.isMixed}
         disabled={disabled}
@@ -115,9 +118,9 @@ export function MultiKeycapEditor({
 
       <div className="flex flex-col gap-1.5">
         <Label className="text-[11px] font-normal text-muted-foreground">
-          字号 (px)
+          {t("fontSizePx")}
           {e.fontSize.isMixed && (
-            <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
+            <span className="ml-1.5 text-[10px] text-chart-4/80">{tCommon("mixed")}</span>
           )}
         </Label>
         <Input
@@ -142,9 +145,9 @@ export function MultiKeycapEditor({
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label className="text-[11px] font-normal text-muted-foreground">
-            字间距
+            {t("letterSpacing")}
             {letterSpacing.isMixed && (
-              <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
+              <span className="ml-1.5 text-[10px] text-chart-4/80">{tCommon("mixed")}</span>
             )}
           </Label>
           <Input
@@ -154,7 +157,7 @@ export function MultiKeycapEditor({
             max={10}
             step={0.5}
             value={letterSpacing.isMixed ? "" : letterSpacing.value}
-            placeholder={letterSpacing.isMixed ? "混合" : String(DEFAULT_LETTER_SPACING)}
+            placeholder={letterSpacing.isMixed ? tCommon("mixed") : String(DEFAULT_LETTER_SPACING)}
             onChange={(ev) =>
               e.applyPatch({ letterSpacing: Number(ev.target.value) })
             }
@@ -164,9 +167,9 @@ export function MultiKeycapEditor({
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <Label className="text-[11px] font-normal text-muted-foreground">
-            行距
+            {t("lineHeight")}
             {lineHeightRatio.isMixed && (
-              <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
+              <span className="ml-1.5 text-[10px] text-chart-4/80">{tCommon("mixed")}</span>
             )}
           </Label>
           <Input
@@ -176,7 +179,7 @@ export function MultiKeycapEditor({
             max={3}
             step={0.1}
             value={lineHeightRatio.isMixed ? "" : Number(lineHeightRatio.value.toFixed(1))}
-            placeholder={lineHeightRatio.isMixed ? "混合" : String(DEFAULT_LINE_HEIGHT_RATIO)}
+            placeholder={lineHeightRatio.isMixed ? tCommon("mixed") : String(DEFAULT_LINE_HEIGHT_RATIO)}
             onChange={(ev) =>
               e.applyPatch({ lineHeightRatio: Number(ev.target.value) })
             }
@@ -187,7 +190,7 @@ export function MultiKeycapEditor({
       </div>
 
       <div className="flex items-center justify-between">
-        <Label className="text-[11px] font-normal text-muted-foreground">文案</Label>
+        <Label className="text-[11px] font-normal text-muted-foreground">{t("legend")}</Label>
         <Button
           type="button"
           variant="ghost"
@@ -198,14 +201,14 @@ export function MultiKeycapEditor({
           tabIndex={-1}
         >
           <X className="h-3 w-3" />
-          清空文案
+          {t("clearLegends")}
         </Button>
       </div>
 
       <LabelAlignmentGrid disabled={disabled} onAlign={e.handleAlignMulti} />
 
       <ColorRow
-        label="文字颜色"
+        label={t("textColor")}
         value={e.labelColor.value}
         fallback={e.globalKeycapStyle.labelColor}
         isMixed={e.labelColor.isMixed}
@@ -213,7 +216,7 @@ export function MultiKeycapEditor({
         onChange={(next) => e.applyPatch({ labelColor: next })}
       />
       <ColorRow
-        label="键帽颜色"
+        label={t("keycapColor")}
         value={e.color.value}
         fallback={e.globalKeycapStyle.color}
         isMixed={e.color.isMixed}
@@ -227,7 +230,7 @@ export function MultiKeycapEditor({
         }}
       />
       <ColorRow
-        label="边框颜色"
+        label={t("borderColor")}
         value={e.borderColor.value}
         fallback={e.globalKeycapStyle.borderColor}
         isMixed={e.borderColor.isMixed}
@@ -240,7 +243,7 @@ export function MultiKeycapEditor({
             size="icon"
             className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
             disabled={disabled}
-            title={allBordersHidden ? "显示边框" : "隐藏边框"}
+            title={allBordersHidden ? t("showBorder") : t("hideBorder")}
             onClick={() => {
               if (allBordersHidden) {
                 if (e.globalKeycapStyle.borderHidden) {
@@ -270,7 +273,7 @@ export function MultiKeycapEditor({
         onClick={e.resetSelection}
         className="self-end"
       >
-        重置所有选中键帽
+        {t("resetSelected")}
       </Button>
     </div>
   )

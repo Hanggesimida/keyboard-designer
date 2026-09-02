@@ -1,3 +1,6 @@
+"use client"
+
+import { useTranslations } from "next-intl"
 import { ArrowUp, ArrowDown, Eye, EyeOff, Lock, LockOpen, Trash2, Info, CaseSensitive } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -49,6 +52,8 @@ export function LayerControls({
   onToggleLabelsHidden,
   onRemove,
 }: LayerControlsProps) {
+  const t = useTranslations("Design.layers")
+
   return (
     <span className="flex shrink-0 items-center -space-x-1">
       <Button
@@ -57,7 +62,7 @@ export function LayerControls({
         size="icon-xs"
         disabled={!canMoveUp}
         className="text-muted-foreground hover:text-foreground disabled:opacity-20 cursor-pointer"
-        title="上移一层"
+        title={t("moveUp")}
         onClick={onMoveUp}
       >
         <ArrowUp className="size-3" />
@@ -68,7 +73,7 @@ export function LayerControls({
         size="icon-xs"
         disabled={!canMoveDown}
         className="text-muted-foreground hover:text-foreground disabled:opacity-20 cursor-pointer"
-        title="下移一层"
+        title={t("moveDown")}
         onClick={onMoveDown}
       >
         <ArrowDown className="size-3" />
@@ -84,7 +89,7 @@ export function LayerControls({
               ? "text-chart-4 hover:text-chart-4/80"
               : "text-muted-foreground hover:text-foreground",
           )}
-          title={labelsHidden ? "显示文字" : "隐藏文字"}
+          title={labelsHidden ? t("showLabels") : t("hideLabels")}
           onClick={onToggleLabelsHidden}
         >
           <CaseSensitive className="size-3" />
@@ -95,7 +100,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         className="text-muted-foreground hover:text-foreground cursor-pointer"
-        title={isVisible ? "隐藏" : "显示"}
+        title={isVisible ? t("hide") : t("show")}
         onClick={onToggleVisible}
       >
         {isVisible ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
@@ -108,7 +113,7 @@ export function LayerControls({
           "hover:text-foreground cursor-pointer",
           isLocked ? "text-chart-4" : "text-muted-foreground",
         )}
-        title={isLocked ? "解锁" : "锁定"}
+        title={isLocked ? t("unlock") : t("lock")}
         onClick={onToggleLocked}
       >
         {isLocked ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
@@ -119,7 +124,7 @@ export function LayerControls({
           variant="ghost"
           size="icon-xs"
           className="text-muted-foreground hover:text-destructive cursor-pointer"
-          title="删除"
+          title={t("delete")}
           onClick={onRemove}
         >
           <Trash2 className="size-3" />

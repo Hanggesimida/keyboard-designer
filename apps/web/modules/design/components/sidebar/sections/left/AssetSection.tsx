@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { ImagePlus, Trash2, Spline } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -21,6 +22,7 @@ interface AssetRowProps {
 }
 
 function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, onResize }: AssetRowProps) {
+  const t = useTranslations("Design.assets")
   const keyLabel = element.clipToKeycapId
     ? (keyLabelMap[element.clipToKeycapId] ?? element.clipToKeycapId)
     : null
@@ -86,7 +88,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
       <span className="min-w-0 flex-1 text-[11px]">
         {keyLabel !== null ? (
           <span className="flex items-baseline gap-1">
-            <span className="opacity-40">键帽</span>
+            <span className="opacity-40">{t("keycapSuffix")}</span>
             <span className="font-medium">{keyLabel}</span>
           </span>
         ) : (
@@ -99,7 +101,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
               onBlur={() => commitResize(wVal, hVal)}
               onKeyDown={handleWKeyDown}
               className="w-10 rounded bg-transparent px-0.5 text-center text-[11px] tabular-nums outline-none ring-1 ring-transparent focus:ring-border"
-              title="宽度（px）"
+              title={t("widthPx")}
             />
             <span className="opacity-40">×</span>
             <input
@@ -110,7 +112,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
               onBlur={() => commitResize(wVal, hVal)}
               onKeyDown={handleHKeyDown}
               className="w-10 rounded bg-transparent px-0.5 text-center text-[11px] tabular-nums outline-none ring-1 ring-transparent focus:ring-border"
-              title="高度（px）"
+              title={t("heightPx")}
             />
           </span>
         )}
@@ -123,7 +125,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
           variant="ghost"
           size="icon-xs"
           className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
-          title="删除图片"
+          title={t("deleteImage")}
           onClick={(e) => {
             e.stopPropagation()
             onDelete()
@@ -138,6 +140,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
 
 // ─── 素材区主组件 ──────────────────────────────────────
 export function AssetSection() {
+  const t = useTranslations("Design.assets")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const svgInputRef = useRef<HTMLInputElement>(null)
   const { allKeys } = useLayoutKeys()
@@ -223,7 +226,7 @@ export function AssetSection() {
 
   return (
     <PanelSection
-      title="素材"
+      title={t("title")}
       action={
         <div className="flex items-center gap-0.5">
           <Button
@@ -231,7 +234,7 @@ export function AssetSection() {
             variant="ghost"
             size="icon-xs"
             className="text-muted-foreground hover:text-foreground cursor-pointer"
-            title="上传矢量图形（SVG）"
+            title={t("uploadSvg")}
             onClick={() => svgInputRef.current?.click()}
           >
             <Spline className="size-3.5" />
@@ -241,7 +244,7 @@ export function AssetSection() {
             variant="ghost"
             size="icon-xs"
             className="text-muted-foreground hover:text-foreground cursor-pointer"
-            title="上传图片（PNG / JPG 等）"
+            title={t("uploadImage")}
             onClick={() => fileInputRef.current?.click()}
           >
             <ImagePlus className="size-3.5" />
@@ -273,7 +276,7 @@ export function AssetSection() {
           onClick={() => fileInputRef.current?.click()}
         >
           <ImagePlus className="size-5" />
-          <span className="text-[11px]">点击上传 / 拖入画布</span>
+          <span className="text-[11px]">{t("emptyHint")}</span>
         </button>
       ) : (
         <ul className="flex flex-col gap-px">

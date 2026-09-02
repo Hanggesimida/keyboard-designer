@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { X } from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
+import { enUS, zhCN } from "date-fns/locale"
 import {
   DataTable,
   DataTableFacetedFilter,
@@ -16,18 +18,10 @@ import { createUserColumns } from "./columns"
 
 const DEFAULT_PAGE_SIZE = 20
 
-const roleOptions: FacetedFilterOption[] = [
-  { value: "ADMIN", label: "管理员" },
-  { value: "USER", label: "普通用户" },
-]
-
-const accountTypeOptions: FacetedFilterOption[] = [
-  { value: "NORMAL", label: "普通账号" },
-  { value: "ENTERPRISE_MAIN", label: "企业主账号" },
-  { value: "ENTERPRISE_SUB", label: "企业子账号" },
-]
-
 export function UsersTable() {
+  const t = useTranslations("Admin.users")
+  const locale = useLocale()
+  const dateLocale = locale === "zh" ? zhCN : enUS
   const [page, setPage] = React.useState(1)
   const [roles, setRoles] = React.useState<UserRole[]>([])
   const [accountTypes, setAccountTypes] = React.useState<AccountType[]>([])
@@ -67,8 +61,30 @@ export function UsersTable() {
   const pageCount = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE))
 
   const columns = React.useMemo(
-    () => createUserColumns((message) => setError(message)),
-    [],
+    () =>
+      createUserColumns(
+        (message) => setError(message),
+        (key, values) => (t as (k: string, v?: Record<string, number>) => string)(key, values),
+        dateLocale,
+      ),
+    [t, dateLocale],
+  )
+
+  const roleOptions: FacetedFilterOption[] = React.useMemo(
+    () => [
+      { value: "ADMIN", label: t("admin") },
+      { value: "USER", label: t("regular") },
+    ],
+    [t],
+  )
+
+  const accountTypeOptions: FacetedFilterOption[] = React.useMemo(
+    () => [
+      { value: "NORMAL", label: t("personal") },
+      { value: "ENTERPRISE_MAIN", label: t("enterpriseMain") },
+      { value: "ENTERPRISE_SUB", label: t("enterpriseSub") },
+    ],
+    [t],
   )
 
   const { table } = useServerDataTable({
@@ -115,7 +131,7 @@ export function UsersTable() {
             className="ml-2 underline-offset-2 hover:underline"
             onClick={() => setError(null)}
           >
-            关闭
+            {t("close")}
           </button>
         </div>
       )}
@@ -124,23 +140,23 @@ export function UsersTable() {
         columns={columns}
         totalRows={total}
         isLoading={isLoading || isFetching}
-        emptyText="暂无用户数据"
+        emptyText={t("empty")}
         toolbar={
           <div className="flex items-center gap-2">
             <Input
-              placeholder="搜索邮箱…"
+              placeholder={t("searchEmail")}
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="h-8 w-[150px] lg:w-[250px] text-sm"
             />
             <DataTableFacetedFilter
               column={table.getColumn("role")}
-              title="角色"
+              title={t("role")}
               options={roleOptions}
             />
             <DataTableFacetedFilter
               column={table.getColumn("accountType")}
-              title="账号类型"
+              title={t("accountType")}
               options={accountTypeOptions}
             />
             {(isFiltered || search) && (
@@ -155,7 +171,7 @@ export function UsersTable() {
                 }}
                 className="h-8 px-2 lg:px-3"
               >
-                重置
+                {t("reset")}
                 <X className="ml-1 size-4" />
               </Button>
             )}

@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useTranslations } from "next-intl"
 import { Eye, EyeOff, X } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -35,6 +36,7 @@ export function SingleKeycapEditor({
   layerId,
   disabled,
 }: SingleKeycapEditorProps) {
+  const t = useTranslations("Design.inspector")
   const e = useSingleKeycapEditor({
     layerId,
     keyDef,
@@ -80,7 +82,7 @@ export function SingleKeycapEditor({
             htmlFor="keycap-label-input"
             className="text-[11px] font-normal text-muted-foreground"
           >
-            文案
+            {t("legend")}
           </Label>
           <Button
             variant="ghost"
@@ -91,7 +93,7 @@ export function SingleKeycapEditor({
             tabIndex={-1}
           >
             <X className="h-3 w-3" />
-            清空
+            {t("clear")}
           </Button>
         </div>
         <Textarea
@@ -112,7 +114,7 @@ export function SingleKeycapEditor({
       </div>
 
       <FontFamilySelect
-        label="字体族（本键）"
+        label={t("fontFamilyKey")}
         triggerId="keycap-font-family-trigger"
         effectiveFontFamily={e.effectiveFontFamily}
         disabled={disabled}
@@ -135,7 +137,7 @@ export function SingleKeycapEditor({
           htmlFor="keycap-fontsize-input"
           className="text-[11px] font-normal text-muted-foreground"
         >
-          字号 (px)
+          {t("fontSizePx")}
         </Label>
         <Input
           id="keycap-fontsize-input"
@@ -160,7 +162,7 @@ export function SingleKeycapEditor({
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label className="text-[11px] font-normal text-muted-foreground">
-            字间距
+            {t("letterSpacing")}
           </Label>
           <Input
             type="number"
@@ -178,7 +180,7 @@ export function SingleKeycapEditor({
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <Label className="text-[11px] font-normal text-muted-foreground">
-            行距
+            {t("lineHeight")}
           </Label>
           <Input
             type="number"
@@ -199,14 +201,14 @@ export function SingleKeycapEditor({
       <LabelAlignmentGrid disabled={disabled} onAlign={e.handleAlign} />
 
       <ColorRow
-        label="文字颜色"
+        label={t("textColor")}
         value={override?.labelColor ?? ""}
         fallback={e.globalKeycapStyle.labelColor}
         disabled={disabled}
         onChange={(next) => e.patchOverride({ labelColor: next })}
       />
       <ColorRow
-        label="键帽颜色"
+        label={t("keycapColor")}
         value={override?.color ?? ""}
         fallback={e.globalKeycapStyle.color}
         disabled={disabled}
@@ -223,7 +225,7 @@ export function SingleKeycapEditor({
         }}
       />
       <ColorRow
-        label="边框颜色"
+        label={t("borderColor")}
         value={override?.borderColor ?? ""}
         fallback={e.globalKeycapStyle.borderColor}
         disabled={disabled}
@@ -235,7 +237,7 @@ export function SingleKeycapEditor({
             size="icon"
             className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
             disabled={disabled}
-            title={borderEffectivelyHidden ? "显示边框" : "隐藏边框"}
+            title={borderEffectivelyHidden ? t("showBorder") : t("hideBorder")}
             onClick={() => {
               if (borderEffectivelyHidden) {
                 if (e.globalKeycapStyle.borderHidden) {
@@ -265,7 +267,7 @@ export function SingleKeycapEditor({
         onClick={e.resetKeycap}
         className="self-end cursor-pointer"
       >
-        重置该键
+        {t("resetKey")}
       </Button>
     </div>
   )

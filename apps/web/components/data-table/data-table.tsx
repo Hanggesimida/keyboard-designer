@@ -23,7 +23,6 @@ interface DataTableProps<TData> {
   totalRows?: number
   /** 加载状态，为 true 时表格主体显示骨架屏 */
   isLoading?: boolean
-  /** 空数据文案，默认"暂无数据" */
   emptyText?: string
   /** 每页行数选项，透传给 DataTablePagination */
   pageSizeOptions?: number[]

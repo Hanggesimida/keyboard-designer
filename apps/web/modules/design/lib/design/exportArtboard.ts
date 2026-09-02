@@ -428,13 +428,13 @@ export async function parseImportJson(
     const text = await file.text()
     raw = JSON.parse(text)
   } catch {
-    return { ok: false, error: "文件解析失败，请确认选择的是有效的 JSON 文件。" }
+    return { ok: false, error: "parseFailed" }
   }
 
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return {
       ok: false,
-      error: "该文件不是本网站导出的设计文件，请使用【导出 JSON】功能导出后再导入。",
+      error: "notExportedFile",
     }
   }
 
@@ -443,7 +443,7 @@ export async function parseImportJson(
   if (obj["version"] !== 1) {
     return {
       ok: false,
-      error: "该文件不是本网站导出的设计文件，或版本不兼容。\n请使用本网站【导出 JSON】功能导出的文件再导入。",
+      error: "incompatible",
     }
   }
 
@@ -451,7 +451,7 @@ export async function parseImportJson(
   if (typeof obj["templateId"] !== "string" || !validTemplateIds.includes(obj["templateId"])) {
     return {
       ok: false,
-      error: "该文件不是本网站导出的设计文件，请使用【导出 JSON】功能导出后再导入。",
+      error: "notExportedFile",
     }
   }
 
@@ -466,7 +466,7 @@ export async function parseImportJson(
   ) {
     return {
       ok: false,
-      error: "该文件格式不正确，请使用本网站【导出 JSON】功能导出的文件再导入。",
+      error: "invalidFormat",
     }
   }
 

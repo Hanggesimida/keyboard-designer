@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Keyboard, PackageCheck, Pencil } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { zhCN } from "date-fns/locale"
+import { enUS, zhCN } from "date-fns/locale"
+import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -18,19 +18,23 @@ import {
 import { useTeamDesigns } from "@/hooks/queries/enterprise/useEnterprise"
 import { ProfileEmptyState } from "@/modules/profile"
 import type { DesignStatus } from "@/lib/api/designs"
+import { useRouter } from "@/i18n/navigation"
 import { DesignStatusBadge } from "./DesignStatusBadge"
 import { BatchOrderDialog } from "./BatchOrderDialog"
 
 const ORDERABLE_STATUSES: DesignStatus[] = ["SUBMITTED", "ORDERED"]
 
-const STATUS_TABS: { value: DesignStatus | "ALL"; label: string }[] = [
-  { value: "ALL", label: "全部" },
-  { value: "DRAFT", label: "草稿" },
-  { value: "SUBMITTED", label: "已提交" },
-  { value: "ORDERED", label: "已下单" },
+const STATUS_TAB_VALUES: (DesignStatus | "ALL")[] = [
+  "ALL",
+  "DRAFT",
+  "SUBMITTED",
+  "ORDERED",
 ]
 
 export function TeamDesignsTable() {
+  const t = useTranslations("Enterprise")
+  const locale = useLocale()
+  const dateLocale = locale === "zh" ? zhCN : enUS
   const router = useRouter()
   const [statusTab, setStatusTab] = useState<DesignStatus | "ALL">("ALL")
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -70,6 +74,13 @@ export function TeamDesignsTable() {
     )
   }
 
+  function tabLabel(value: DesignStatus | "ALL") {
+    if (value === "ALL") return t("all")
+    if (value === "DRAFT") return t("draft")
+    if (value === "SUBMITTED") return t("submitted")
+    return t("ordered")
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -78,9 +89,9 @@ export function TeamDesignsTable() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STATUS_TABS.map((tab) => (
-              <SelectItem key={tab.value} value={tab.value}>
-                {tab.label}
+            {STATUS_TAB_VALUES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {tabLabel(value)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -90,8 +101,8 @@ export function TeamDesignsTable() {
           <Button size="sm" className="cursor-pointer" onClick={() => setBatchOpen(true)}>
             <PackageCheck size={14} />
             {selectedDesigns.length === 1
-              ? "下单"
-              : `批量下单（已选 ${selectedDesigns.length}）`}
+              ? t("placeOrder")
+              : t("batchOrder", { count: selectedDesigns.length })}
           </Button>
         )}
       </div>
@@ -101,8 +112,8 @@ export function TeamDesignsTable() {
       ) : !designs || designs.length === 0 ? (
         <ProfileEmptyState
           icon={Keyboard}
-          title="暂无团队设计"
-          description="设计师提交设计后将出现在这里，等待你审核并下单。"
+          title={t("noTeamDesigns")}
+          description={t("teamEmptyHint")}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border">
@@ -119,11 +130,11 @@ export function TeamDesignsTable() {
                     />
                   )}
                 </th>
-                <th className="px-2 py-2.5 text-left font-medium">设计</th>
-                <th className="px-4 py-2.5 text-left font-medium">设计师</th>
-                <th className="px-4 py-2.5 text-left font-medium">状态</th>
-                <th className="px-4 py-2.5 text-left font-medium">更新时间</th>
-                <th className="px-4 py-2.5 text-right font-medium">操作</th>
+                <th className="px-2 py-2.5 text-left font-medium">{t("design")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("designer")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("status")}</th>
+                <th className="px-4 py-2.5 text-left font-medium">{t("updatedAt")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -165,7 +176,7 @@ export function TeamDesignsTable() {
                   <td className="px-4 py-3 text-xs text-muted-foreground/55">
                     {formatDistanceToNow(new Date(design.updatedAt), {
                       addSuffix: true,
-                      locale: zhCN,
+                      locale: dateLocale,
                     })}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -176,7 +187,7 @@ export function TeamDesignsTable() {
                       className="cursor-pointer text-muted-foreground hover:text-foreground"
                     >
                       <Pencil size={13} />
-                      查看/编辑
+                      {t("view")}/{t("edit")}
                     </Button>
                   </td>
                 </tr>

@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronDown, LayoutGrid } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
@@ -32,24 +33,40 @@ function getBaseKeysBounds(templateId: string) {
   }
 }
 
+const LAYOUT_IDS = [
+  "ansi-104",
+  "ansi-87",
+  "ansi-108",
+  "ansi-61",
+  "ansi-68",
+  "ansi-81",
+  "ansi-144",
+] as const
+
 export function TemplateSection() {
+  const t = useTranslations("Design")
+  const tCommon = useTranslations("Common")
   const templateId = useDesignUIStore((s) => s.templateId)
   const setTemplateId = useDesignUIStore((s) => s.setTemplateId)
   const [open, setOpen] = useState(false)
 
-  const currentLabel =
-    TEMPLATES.find((t) => t.id === templateId)?.label ?? "未知"
+  const layoutLabel = (id: string) =>
+    (LAYOUT_IDS as readonly string[]).includes(id)
+      ? t(`layouts.${id as (typeof LAYOUT_IDS)[number]}`)
+      : tCommon("unknown")
+
+  const currentLabel = layoutLabel(templateId)
 
   const baseBounds = useMemo(() => getBaseKeysBounds(templateId), [templateId])
 
   return (
-    <PanelSection title="模板" first>
+    <PanelSection title={t("templates.title")} first>
       <div className="flex flex-col gap-2">
         <Label
           htmlFor="template-trigger"
           className="text-[11px] font-normal text-muted-foreground"
         >
-          键盘布局
+          {t("templates.layout")}
         </Label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -97,7 +114,7 @@ export function TemplateSection() {
                       }}
                     >
                       <LayoutGrid className="size-3.5 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1 truncate">{t.label}</span>
+                      <span className="min-w-0 flex-1 truncate">{layoutLabel(t.id)}</span>
                       {selected && t.enabled ? (
                         <Check className="size-3.5 shrink-0 opacity-80" />
                       ) : (
@@ -112,7 +129,7 @@ export function TemplateSection() {
         </Popover>
 
         <p className="text-[10px] text-muted-foreground/50 tabular-nums select-none">
-          主键盘区（不含增补区）：{baseBounds.w} × {baseBounds.h} px
+          {t("templates.mainAreaSize", { width: baseBounds.w, height: baseBounds.h })}
         </p>
       </div>
     </PanelSection>

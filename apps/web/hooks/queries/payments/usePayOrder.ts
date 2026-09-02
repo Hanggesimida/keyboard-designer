@@ -1,14 +1,17 @@
+"use client"
+
 import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { getOrder } from '@/lib/api/orders';
 import { initiatePayment, type PaymentMethod } from '@/lib/api/payments';
-import { ApiError } from '@/lib/api/request';
+import { resolveErrorMessage } from '@/lib/api/request';
 import {
   isRealAlipayPayment,
   openAlipayPayment,
   pollOrderUntilPaid,
 } from '@/lib/payment/alipay';
 import { useMockCallback } from '@/hooks/queries/payments/usePayments';
+import { useRouter } from '@/i18n/navigation';
 
 interface PayOrderOptions {
   orderId: string;
@@ -21,6 +24,7 @@ interface PayOrderOptions {
 /** 发起支付：真实支付宝跳转或开发环境 mock */
 export function usePayOrder() {
   const router = useRouter();
+  const tErrors = useTranslations('Errors');
   const { mutate: mockCallback } = useMockCallback();
 
   const payOrder = useCallback(
@@ -32,19 +36,17 @@ export function usePayOrder() {
           if (isRealAlipayPayment(payment)) {
             try {
               openAlipayPayment(payment.payData!.formHtml!);
-            } catch (err) {
-              onError?.(
-                err instanceof Error ? err.message : '无法打开支付宝支付窗口',
-              );
+            } catch {
+              onError?.(tErrors('alipayWindow'));
               return;
             }
 
             pollOrderUntilPaid(getOrder, orderId, {
               onPaid: () => router.push(target),
               onTimeout: () =>
-                onError?.('支付处理中，请在订单详情查看支付状态'),
+                onError?.(tErrors('paymentProcessing')),
               onError: () =>
-                onError?.('查询支付状态失败，请在订单详情查看'),
+                onError?.(tErrors('paymentQueryFailed')),
             });
             return;
           }
@@ -53,17 +55,25 @@ export function usePayOrder() {
             onSuccess: () => router.push(target),
             onError: (err) =>
               onError?.(
-                err instanceof ApiError ? err.message : '支付回调失败，请联系客服',
+                resolveErrorMessage(
+                  err,
+                  tErrors('paymentCallbackFailed'),
+                  tErrors('sessionExpired'),
+                ),
               ),
           });
         })
         .catch((err) => {
           onError?.(
-            err instanceof ApiError ? err.message : '发起支付失败，请重试',
+            resolveErrorMessage(
+              err,
+              tErrors('paymentStartFailed'),
+              tErrors('sessionExpired'),
+            ),
           );
         });
     },
-    [mockCallback, router],
+    [mockCallback, router, tErrors],
   );
 
   return { payOrder };

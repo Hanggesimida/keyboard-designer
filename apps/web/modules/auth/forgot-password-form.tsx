@@ -1,18 +1,20 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, ArrowLeft } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { LogoIcon } from "@/components/layouts/Logo"
+import { Link, useRouter } from "@/i18n/navigation"
 
 import {
   forgotPassword,
-  forgotPasswordSchema,
+  createForgotPasswordSchema,
   type ForgotPasswordInput,
 } from "@/lib/api/auth"
+import { resolveErrorMessage } from "@/lib/api/request"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -24,11 +26,20 @@ import {
 } from "@workspace/ui/components/field"
 
 export function ForgotPasswordForm() {
+  const t = useTranslations("Auth")
+  const tCommon = useTranslations("Common")
+  const tValidation = useTranslations("Validation")
+  const tErrors = useTranslations("Errors")
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") ?? "/"
   const [serverError, setServerError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+
+  const forgotPasswordSchema = useMemo(
+    () => createForgotPasswordSchema(tValidation),
+    [tValidation],
+  )
 
   const {
     register,
@@ -49,8 +60,7 @@ export function ForgotPasswordForm() {
         `/login/reset-password?redirect=${encodeURIComponent(redirect)}`,
       )
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "发送失败，请稍后重试"
-      setServerError(msg)
+      setServerError(resolveErrorMessage(err, t("sendFailed"), tErrors("sessionExpired")))
     }
   }
 
@@ -61,18 +71,18 @@ export function ForgotPasswordForm() {
           <div className="flex size-8 items-center justify-center rounded-md">
             <LogoIcon className="size-6" />
           </div>
-          <span className="sr-only">键盘设计器</span>
+          <span className="sr-only">{tCommon("appName")}</span>
         </Link>
-        <h1 className="text-xl font-bold">忘记密码</h1>
+        <h1 className="text-xl font-bold">{t("forgotTitle")}</h1>
         <FieldDescription>
-          输入注册邮箱，我们将发送验证码用于重置密码
+          {t("forgotSubtitle")}
         </FieldDescription>
       </div>
 
       <form>
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="email">邮箱</FieldLabel>
+            <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
             <Input
               id="email"
               type="email"
@@ -97,12 +107,12 @@ export function ForgotPasswordForm() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={15} className="animate-spin opacity-70" />
-                  发送中…
+                  {t("sending")}
                 </>
               ) : sent ? (
-                "已发送，正在跳转…"
+                t("sentRedirecting")
               ) : (
-                "发送验证码"
+                t("sendCode")
               )}
             </Button>
           </Field>
@@ -115,7 +125,7 @@ export function ForgotPasswordForm() {
               onClick={() => router.push("/login")}
             >
               <ArrowLeft size={15} />
-              返回登录
+              {t("backToSignIn")}
             </Button>
           </Field>
         </FieldGroup>
@@ -123,7 +133,7 @@ export function ForgotPasswordForm() {
 
       {sent && getValues("email") && (
         <FieldDescription className="text-center">
-          若邮箱已注册，验证码已发送至 {getValues("email")}
+          {t("codeSentIfRegistered", { email: getValues("email") })}
         </FieldDescription>
       )}
     </div>

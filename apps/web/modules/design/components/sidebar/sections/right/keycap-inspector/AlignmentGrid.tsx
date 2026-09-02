@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useTranslations } from "next-intl"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 import {
@@ -35,27 +36,46 @@ interface LabelAlignmentGridProps {
   hideLabel?: boolean
 }
 
+function alignTitleKey(alignH: AlignH, alignV: AlignV) {
+  if (alignV === "top") {
+    if (alignH === "left") return "topLeft" as const
+    if (alignH === "center") return "topCenter" as const
+    return "topRight" as const
+  }
+  if (alignV === "middle") {
+    if (alignH === "left") return "middleLeft" as const
+    if (alignH === "center") return "center" as const
+    return "middleRight" as const
+  }
+  if (alignH === "left") return "bottomLeft" as const
+  if (alignH === "center") return "bottomCenter" as const
+  return "bottomRight" as const
+}
+
 export function LabelAlignmentGrid({
   disabled,
   onAlign,
   hideLabel,
 }: LabelAlignmentGridProps) {
+  const t = useTranslations("Design.inspector")
+  const tAlign = useTranslations("Design.align")
+
   return (
     <div className="flex flex-col gap-1.5">
       {!hideLabel && (
         <Label className="text-[11px] font-normal text-muted-foreground">
-          文字位置
+          {t("textPosition")}
         </Label>
       )}
       <div
         className="grid grid-cols-3 gap-0.5"
         style={{ width: "fit-content" }}
       >
-        {ALIGN_POSITIONS.map(({ alignH, alignV, title }) => (
+        {ALIGN_POSITIONS.map(({ alignH, alignV }) => (
           <button
             key={`${alignH}-${alignV}`}
             type="button"
-            title={title}
+            title={tAlign(alignTitleKey(alignH, alignV))}
             disabled={disabled}
             onClick={() => onAlign(alignH, alignV)}
             className={cn(

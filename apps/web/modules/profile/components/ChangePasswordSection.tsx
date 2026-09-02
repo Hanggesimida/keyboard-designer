@@ -1,16 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, Eye, EyeOff } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   changePassword,
-  changePasswordSchema,
-  changePasswordWithCurrentSchema,
+  createChangePasswordSchema,
+  createChangePasswordWithCurrentSchema,
   type ChangePasswordInput,
   type ChangePasswordWithCurrentInput,
 } from "@/lib/api/auth"
+import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
 import { userKeys } from "@/hooks/queries/users/useUsers"
@@ -34,6 +36,10 @@ export function ChangePasswordSection({
   hasPassword,
   forceChange = false,
 }: ChangePasswordSectionProps) {
+  const t = useTranslations("Profile.password")
+  const tAuth = useTranslations("Auth")
+  const tValidation = useTranslations("Validation")
+  const tErrors = useTranslations("Errors")
   const accessToken = useUserStore((s) => s.accessToken)
   const setToken = useUserStore((s) => s.setToken)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -42,12 +48,21 @@ export function ChangePasswordSection({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
+  const schemaWithCurrent = useMemo(
+    () => createChangePasswordWithCurrentSchema(tValidation),
+    [tValidation],
+  )
+  const schemaWithoutCurrent = useMemo(
+    () => createChangePasswordSchema(tValidation),
+    [tValidation],
+  )
+
   const formWithCurrent = useForm<ChangePasswordWithCurrentInput>({
-    resolver: zodResolver(changePasswordWithCurrentSchema),
+    resolver: zodResolver(schemaWithCurrent),
   })
 
   const formWithoutCurrent = useForm<ChangePasswordInput>({
-    resolver: zodResolver(changePasswordSchema),
+    resolver: zodResolver(schemaWithoutCurrent),
   })
 
   const isSubmitting = hasPassword
@@ -69,7 +84,7 @@ export function ChangePasswordSection({
       formWithCurrent.reset()
       setSuccess(true)
     } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : "修改失败，请重试")
+      setServerError(resolveErrorMessage(err, t("changeFailed"), tErrors("sessionExpired")))
     }
   }
 
@@ -85,15 +100,15 @@ export function ChangePasswordSection({
       formWithoutCurrent.reset()
       setSuccess(true)
     } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : "设置失败，请重试")
+      setServerError(resolveErrorMessage(err, t("setFailed"), tErrors("sessionExpired")))
     }
   }
 
   return (
-    <ProfileSection title={hasPassword ? "修改密码" : "设置密码"}>
+    <ProfileSection title={hasPassword ? t("changeTitle") : t("setTitle")}>
       {forceChange && (
         <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3.5 py-2.5 text-sm text-amber-600 dark:text-amber-400">
-          您的密码已被重置，请先设置新密码后再继续使用。
+          {t("forceHint")}
         </div>
       )}
 
@@ -102,13 +117,13 @@ export function ChangePasswordSection({
           <form>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="currentPassword">当前密码</FieldLabel>
+                <FieldLabel htmlFor="currentPassword">{t("current")}</FieldLabel>
                 <div className="relative">
                   <Input
                     id="currentPassword"
                     type={showCurrent ? "text" : "password"}
                     autoComplete="current-password"
-                    placeholder="请输入当前密码"
+                    placeholder={t("current")}
                     aria-invalid={!!formWithCurrent.formState.errors.currentPassword}
                     disabled={isSubmitting}
                     className="pr-10"
@@ -129,13 +144,13 @@ export function ChangePasswordSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="password">新密码</FieldLabel>
+                <FieldLabel htmlFor="password">{t("new")}</FieldLabel>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="至少 8 位"
+                    placeholder={tAuth("passwordPlaceholder")}
                     aria-invalid={!!formWithCurrent.formState.errors.password}
                     disabled={isSubmitting}
                     className="pr-10"
@@ -154,13 +169,13 @@ export function ChangePasswordSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="confirm">确认新密码</FieldLabel>
+                <FieldLabel htmlFor="confirm">{t("confirm")}</FieldLabel>
                 <div className="relative">
                   <Input
                     id="confirm"
                     type={showConfirm ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="再次输入新密码"
+                    placeholder={tAuth("confirmPlaceholder")}
                     aria-invalid={!!formWithCurrent.formState.errors.confirm}
                     disabled={isSubmitting}
                     className="pr-10"
@@ -181,7 +196,7 @@ export function ChangePasswordSection({
               {serverError && <FieldError>{serverError}</FieldError>}
               {success && (
                 <FieldDescription className="text-emerald-600 dark:text-emerald-400">
-                  密码已更新
+                  {t("updated")}
                 </FieldDescription>
               )}
 
@@ -195,10 +210,10 @@ export function ChangePasswordSection({
                   {isSubmitting ? (
                     <>
                       <Loader2 size={15} className="animate-spin opacity-70" />
-                      保存中…
+                      {t("saving")}
                     </>
                   ) : (
-                    "保存新密码"
+                    t("saveNew")
                   )}
                 </Button>
               </Field>
@@ -208,17 +223,17 @@ export function ChangePasswordSection({
           <form>
             <FieldGroup>
               <FieldDescription className="mb-2">
-                您当前使用验证码登录，设置密码后可直接用密码登录。
+                {t("otpHint")}
               </FieldDescription>
 
               <Field>
-                <FieldLabel htmlFor="new-password">新密码</FieldLabel>
+                <FieldLabel htmlFor="new-password">{t("new")}</FieldLabel>
                 <div className="relative">
                   <Input
                     id="new-password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="至少 8 位"
+                    placeholder={tAuth("passwordPlaceholder")}
                     aria-invalid={!!formWithoutCurrent.formState.errors.password}
                     disabled={isSubmitting}
                     className="pr-10"
@@ -239,13 +254,13 @@ export function ChangePasswordSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="new-confirm">确认密码</FieldLabel>
+                <FieldLabel htmlFor="new-confirm">{t("confirm")}</FieldLabel>
                 <div className="relative">
                   <Input
                     id="new-confirm"
                     type={showConfirm ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="再次输入密码"
+                    placeholder={tAuth("confirmPlaceholder")}
                     aria-invalid={!!formWithoutCurrent.formState.errors.confirm}
                     disabled={isSubmitting}
                     className="pr-10"
@@ -268,7 +283,7 @@ export function ChangePasswordSection({
               {serverError && <FieldError>{serverError}</FieldError>}
               {success && (
                 <FieldDescription className="text-emerald-600 dark:text-emerald-400">
-                  密码已设置
+                  {t("set")}
                 </FieldDescription>
               )}
 
@@ -282,10 +297,10 @@ export function ChangePasswordSection({
                   {isSubmitting ? (
                     <>
                       <Loader2 size={15} className="animate-spin opacity-70" />
-                      保存中…
+                      {t("saving")}
                     </>
                   ) : (
-                    "设置密码"
+                    t("setPassword")
                   )}
                 </Button>
               </Field>

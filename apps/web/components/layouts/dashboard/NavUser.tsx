@@ -1,7 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { UserCircle, LogOut, MoreVertical, ShieldCheck, Building2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useUserStore } from "@/store/userStore"
 import type { AccountType } from "@/lib/api/users"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
@@ -21,8 +21,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar"
+import { useRouter } from "@/i18n/navigation"
 
 function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
+  const t = useTranslations("Dashboard")
   if (accountType === "ENTERPRISE_MAIN") {
     return (
       <Badge
@@ -30,7 +32,7 @@ function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
         className="h-4 gap-0.5 border-blue-400/30 px-1 py-0 text-[10px] font-normal text-blue-500"
       >
         <Building2 size={9} />
-        企业主账号
+        {t("enterpriseMain")}
       </Badge>
     )
   }
@@ -40,7 +42,7 @@ function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
         variant="outline"
         className="h-4 px-1 py-0 text-[10px] font-normal text-muted-foreground"
       >
-        企业子账号
+        {t("enterpriseSub")}
       </Badge>
     )
   }
@@ -48,6 +50,7 @@ function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
 }
 
 export function NavUser() {
+  const t = useTranslations("Dashboard")
   const router = useRouter()
   const { isMobile } = useSidebar()
   const user = useUserStore((s) => s.user)
@@ -55,7 +58,7 @@ export function NavUser() {
 
   const isAdmin = user?.role === "ADMIN"
   const accountType = user?.accountType
-  const displayName = user?.email?.split("@")[0] ?? "用户"
+  const displayName = user?.email?.split("@")[0] ?? t("user")
   const email = user?.email ?? ""
   const initials = displayName.slice(0, 2).toUpperCase()
 
@@ -116,11 +119,11 @@ export function NavUser() {
                 <DropdownMenuGroup>
                   <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
                     <UserCircle className="text-muted-foreground" />
-                    个人页面
+                    {t("profile")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
                     <ShieldCheck className="text-muted-foreground" />
-                    管理员后台
+                    {t("admin")}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -128,7 +131,7 @@ export function NavUser() {
             )}
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <LogOut className="text-muted-foreground" />
-              退出登录
+              {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

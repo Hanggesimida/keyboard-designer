@@ -1,6 +1,7 @@
 'use client'
 
 import { Keyboard } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   Card,
   CardContent,
@@ -8,40 +9,11 @@ import {
 } from '@workspace/ui/components/card'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar'
 
-const testimonials = [
-  {
-    featured: true,
-    quote:
-      '键盘设计器彻底改变了我的设计流程。以前要在 Photoshop 里一个个键帽画，现在拖拽调色、实时预览，十分钟就能出一套完整配色方案。',
-    name: '张明',
-    role: '机械键盘爱好者',
-    initials: 'ZM',
-  },
-  {
-    featured: false,
-    wide: true,
-    quote:
-      '界面直观、上手极快，不用学复杂软件就能做出专业级配色，非常方便简单！',
-    name: '李雅',
-    role: '客制化玩家',
-    initials: 'LY',
-  },
-  {
-    featured: false,
-    quote:
-      '终于有一个专门为键帽设计做的工具了，支持多种布局切换，太方便了！',
-    name: '王浩',
-    role: '键盘社区博主',
-    initials: 'WH',
-  },
-  {
-    featured: false,
-    quote:
-      '从灵感到成品只用了一下午，配色方案和导出质量都很满意，强烈推荐。',
-    name: '陈思',
-    role: 'UI 设计师',
-    initials: 'CS',
-  },
+const TESTIMONIALS = [
+  { id: '0', featured: true, wide: false, initials: 'ZM' },
+  { id: '1', featured: false, wide: true, initials: 'LY' },
+  { id: '2', featured: false, wide: false, initials: 'WH' },
+  { id: '3', featured: false, wide: false, initials: 'SC' },
 ] as const
 
 function TestimonialAuthor({
@@ -67,17 +39,20 @@ function TestimonialAuthor({
 }
 
 export function TestimonialsSection() {
-  const [featured, wide, ...rest] = testimonials
+  const t = useTranslations('Home.testimonials')
+  const featured = TESTIMONIALS[0]
+  const wide = TESTIMONIALS[1]
+  const rest = TESTIMONIALS.slice(2)
 
   return (
     <section id="testimonials" className="py-16 md:py-32">
       <div className="mx-auto max-w-6xl space-y-8 px-6 md:space-y-16">
         <div className="relative z-10 mx-auto max-w-xl space-y-6 text-center md:space-y-12">
           <h2 className="text-4xl font-medium lg:text-5xl">
-            为定制玩家而生，深受键盘爱好者喜爱
+            {t('title')}
           </h2>
           <p className="text-muted-foreground text-balance">
-            从配色灵感、布局适配到文件导出，帮助机械键盘玩家在浏览器中免费完成整套键帽设计。
+            {t('subtitle')}
           </p>
         </div>
 
@@ -88,8 +63,12 @@ export function TestimonialsSection() {
             </CardHeader>
             <CardContent>
               <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                <p className="text-xl font-medium">{featured.quote}</p>
-                <TestimonialAuthor {...featured} />
+                <p className="text-xl font-medium">{t(`items.${featured.id}.quote`)}</p>
+                <TestimonialAuthor
+                  name={t(`items.${featured.id}.name`)}
+                  role={t(`items.${featured.id}.role`)}
+                  initials={featured.initials}
+                />
               </blockquote>
             </CardContent>
           </Card>
@@ -97,18 +76,26 @@ export function TestimonialsSection() {
           <Card className="md:col-span-2">
             <CardContent className="h-full pt-6">
               <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                <p className="text-xl font-medium">{wide.quote}</p>
-                <TestimonialAuthor {...wide} />
+                <p className="text-xl font-medium">{t(`items.${wide.id}.quote`)}</p>
+                <TestimonialAuthor
+                  name={t(`items.${wide.id}.name`)}
+                  role={t(`items.${wide.id}.role`)}
+                  initials={wide.initials}
+                />
               </blockquote>
             </CardContent>
           </Card>
 
           {rest.map((item) => (
-            <Card key={item.name}>
+            <Card key={item.id}>
               <CardContent className="h-full pt-6">
                 <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                  <p>{item.quote}</p>
-                  <TestimonialAuthor {...item} />
+                  <p>{t(`items.${item.id}.quote`)}</p>
+                  <TestimonialAuthor
+                    name={t(`items.${item.id}.name`)}
+                    role={t(`items.${item.id}.role`)}
+                    initials={item.initials}
+                  />
                 </blockquote>
               </CardContent>
             </Card>

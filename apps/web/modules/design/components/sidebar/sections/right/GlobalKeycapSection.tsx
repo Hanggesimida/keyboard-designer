@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Eye, EyeOff, RotateCcw } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -17,6 +18,7 @@ const FONT_SIZE_MIN = 6
 const FONT_SIZE_MAX = 32
 
 export function GlobalKeycapSection() {
+  const t = useTranslations("Design.inspector")
   const artboardBackground = useDesignUIStore((s) => s.artboardBackground)
   const setArtboardBackground = useDesignUIStore((s) => s.setArtboardBackground)
   const globalKeycapStyle = useDesignUIStore((s) => s.globalKeycapStyle)
@@ -58,7 +60,7 @@ export function GlobalKeycapSection() {
 
   return (
     <PanelSection
-      title="全局键盘样式"
+      title={t("globalTitle")}
       first={selectedKeycapIds.length !== 1}
       collapsible
       defaultOpen={false}
@@ -66,7 +68,7 @@ export function GlobalKeycapSection() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <FontFamilySelect
-            label="字体族"
+            label={t("fontFamily")}
             triggerId="global-keycap-font-family-trigger"
             effectiveFontFamily={fontFamily}
             open={fontFamilyOpen}
@@ -87,7 +89,7 @@ export function GlobalKeycapSection() {
               fontStyle,
             }}
           >
-            AaBbCc 键帽文字
+            {t("fontPreview")}
           </div>
 
           <BoldItalicToggle
@@ -104,7 +106,7 @@ export function GlobalKeycapSection() {
             htmlFor="global-keycap-fontsize"
             className="text-[11px] font-normal text-muted-foreground"
           >
-            字号 (px)
+            {t("fontSizePx")}
           </Label>
           <Input
             id="global-keycap-fontsize"
@@ -136,23 +138,23 @@ export function GlobalKeycapSection() {
         </div>
 
         <ColorRow
-          label="键盘颜色"
+          label={t("keyboardColor")}
           value={artboardBackground}
           onChange={setArtboardBackground}
         />
         <ColorRow
-          label="文字颜色"
+          label={t("textColor")}
           value={globalKeycapStyle.labelColor}
           onChange={(next) => setGlobalKeycapStyle({ labelColor: next })}
         />
         <ColorRow
-          label="键帽颜色"
+          label={t("keycapColor")}
           value={globalKeycapStyle.color}
           // 渐变表示整盘按方向分配纯色；渲染侧 resolveKeycapBodyColor 采样
           onChange={(next) => setGlobalKeycapStyle({ color: next })}
         />
         <ColorRow
-          label="边框颜色"
+          label={t("borderColor")}
           value={globalKeycapStyle.borderColor}
           onChange={(next) => setGlobalKeycapStyle({ borderColor: next })}
           action={
@@ -161,7 +163,7 @@ export function GlobalKeycapSection() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
-              title={globalKeycapStyle.borderHidden ? "显示边框" : "隐藏边框"}
+              title={globalKeycapStyle.borderHidden ? t("showBorder") : t("hideBorder")}
               onClick={() =>
                 setGlobalKeycapStyle({
                   borderHidden: !globalKeycapStyle.borderHidden,
@@ -187,7 +189,7 @@ export function GlobalKeycapSection() {
           }}
         >
           <RotateCcw className="size-3.5 opacity-70" />
-          重置所有样式设置
+          {t("resetAll")}
         </Button>
       </div>
     </PanelSection>

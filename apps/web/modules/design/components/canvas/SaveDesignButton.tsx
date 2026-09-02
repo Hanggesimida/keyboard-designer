@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
+import { useSearchParams } from "next/navigation"
 import { Save, Cloud, CloudOff, Pencil } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Button } from "@workspace/ui/components/button"
@@ -61,6 +63,8 @@ function extractDesignData(): DesignData {
 }
 
 export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
+  const t = useTranslations("Design.save")
+  const tCommon = useTranslations("Common")
   const router = useRouter()
   const searchParams = useSearchParams()
   const designId = searchParams.get("id")
@@ -75,12 +79,12 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
         type="button"
         variant="ghost"
         size="xs"
-        title="管理员审阅模式，不可保存"
+        title={t("adminReadonlyTitle")}
         disabled
         className="text-muted-foreground/40"
       >
         <CloudOff className="size-3.5" />
-        只读
+        {t("readonly")}
       </Button>
     )
   }
@@ -177,12 +181,12 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
         type="button"
         variant="ghost"
         size="xs"
-        title="请先登录后再保存设计"
+        title={t("loginToSave")}
         disabled
         className="text-muted-foreground/40"
       >
         <CloudOff className="size-3.5" />
-        保存
+        {t("save")}
       </Button>
     )
   }
@@ -193,7 +197,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
         type="button"
         variant="ghost"
         size="xs"
-        title={designId ? "保存设计 (Ctrl+S)" : "另存为新设计"}
+        title={designId ? t("saveTitle") : t("saveAsNew")}
         disabled={isSaving}
         onClick={handleSaveClick}
         className={saveSuccess ? "text-primary" : undefined}
@@ -205,7 +209,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
         ) : (
           <Save className="size-3.5" />
         )}
-        {saveSuccess ? "已保存" : "保存"}
+        {saveSuccess ? t("saved") : t("save")}
       </Button>
 
       {designId && (
@@ -213,7 +217,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
           type="button"
           variant="ghost"
           size="icon-xs"
-          title="重命名设计"
+          title={t("rename")}
           disabled={isSaving}
           onClick={handleRenameClick}
         >
@@ -228,9 +232,9 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
       >
         <DialogContent showCloseButton={false} onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>保存设计方案</DialogTitle>
+            <DialogTitle>{t("dialogTitle")}</DialogTitle>
             <DialogDescription>
-              请为此键盘设计方案起一个名称，便于后续查找。
+              {t("dialogBody")}
             </DialogDescription>
           </DialogHeader>
 
@@ -242,7 +246,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreate()
               }}
-              placeholder="例如：无题键盘方案 1"
+              placeholder={t("placeholder")}
               maxLength={100}
               autoFocus
             />
@@ -254,7 +258,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
               disabled={isSaving}
               onClick={() => setNameDialogOpen(false)}
             >
-              取消
+              {tCommon("cancel")}
             </Button>
             <Button
               disabled={!nameInput.trim() || isSaving}
@@ -263,7 +267,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
                 handleCreate()
               }}
             >
-              {isSaving ? "保存中..." : "确认保存"}
+              {isSaving ? t("saving") : t("confirmSave")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -276,9 +280,9 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
       >
         <DialogContent showCloseButton={false} onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>重命名设计方案</DialogTitle>
+            <DialogTitle>{t("renameTitle")}</DialogTitle>
             <DialogDescription>
-              为此键盘设计方案输入新名称。
+              {t("renameBody")}
             </DialogDescription>
           </DialogHeader>
 
@@ -290,7 +294,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleRename()
               }}
-              placeholder="请输入设计名称"
+              placeholder={t("renamePlaceholder")}
               maxLength={100}
               autoFocus
             />
@@ -302,7 +306,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
               disabled={isSaving}
               onClick={() => setRenameDialogOpen(false)}
             >
-              取消
+              {tCommon("cancel")}
             </Button>
             <Button
               disabled={!renameInput.trim() || isSaving}
@@ -311,7 +315,7 @@ export function SaveDesignButton({ getExportParams }: SaveDesignButtonProps) {
                 handleRename()
               }}
             >
-              {isSaving ? "保存中..." : "确认重命名"}
+              {isSaving ? t("saving") : t("confirmRename")}
             </Button>
           </DialogFooter>
         </DialogContent>

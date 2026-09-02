@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Copy, Check, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { useCreateSubAccount } from "@/hooks/queries/enterprise/useEnterprise"
 import type { CreateSubAccountResult } from "@/lib/api/enterprise"
-import { ApiError } from "@/lib/api/request"
+import { resolveErrorMessage } from "@/lib/api/request"
 
 interface CreateSubAccountDialogProps {
   open: boolean
@@ -24,6 +25,9 @@ export function CreateSubAccountDialog({
   open,
   onOpenChange,
 }: CreateSubAccountDialogProps) {
+  const t = useTranslations("Enterprise")
+  const tCommon = useTranslations("Common")
+  const tErrors = useTranslations("Errors")
   const [email, setEmail] = useState("")
   const [displayName, setDisplayName] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -53,7 +57,7 @@ export function CreateSubAccountDialog({
       {
         onSuccess: (result) => setCreated(result),
         onError: (err) => {
-          setError(err instanceof ApiError ? err.message : "创建失败，请重试")
+          setError(resolveErrorMessage(err, t("createFailed"), tErrors("sessionExpired")))
         },
       },
     )
@@ -62,7 +66,7 @@ export function CreateSubAccountDialog({
   function handleCopy() {
     if (!created) return
     navigator.clipboard
-      .writeText(`邮箱：${created.email}\n初始密码：${created.initialPassword}`)
+      .writeText(t("clipboard", { email: created.email, password: created.initialPassword }))
       .then(() => {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
@@ -79,19 +83,19 @@ export function CreateSubAccountDialog({
         {created ? (
           <>
             <DialogHeader>
-              <DialogTitle>子账号已创建</DialogTitle>
+              <DialogTitle>{t("created")}</DialogTitle>
               <DialogDescription>
-                请将以下登录信息转告设计师，密码仅在此展示一次，请妥善保存。
+                {t("shareHint")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
               <div>
-                <p className="text-[11px] text-muted-foreground">邮箱</p>
+                <p className="text-[11px] text-muted-foreground">{t("email")}</p>
                 <p className="font-mono text-sm text-foreground">{created.email}</p>
               </div>
               <div>
-                <p className="text-[11px] text-muted-foreground">初始密码</p>
+                <p className="text-[11px] text-muted-foreground">{t("initialPassword")}</p>
                 <p className="font-mono text-sm font-semibold text-foreground">
                   {created.initialPassword}
                 </p>
@@ -106,29 +110,29 @@ export function CreateSubAccountDialog({
                 className="cursor-pointer"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? "已复制" : "复制登录信息"}
+                {copied ? t("copied") : t("copyLogin")}
               </Button>
               <Button
                 type="button"
                 onClick={() => handleOpenChange(false)}
                 className="cursor-pointer"
               >
-                完成
+                {t("done")}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>新增子账号</DialogTitle>
+              <DialogTitle>{t("addTitle")}</DialogTitle>
               <DialogDescription>
-                子账号（设计师）可独立登录、设计并提交方案，等待你审核下单。
+                {t("addBody")}
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="mt-2 space-y-4">
               <div>
-                <label className={labelCls}>登录邮箱</label>
+                <label className={labelCls}>{t("loginEmail")}</label>
                 <input
                   type="email"
                   required
@@ -140,14 +144,14 @@ export function CreateSubAccountDialog({
                 />
               </div>
               <div>
-                <label className={labelCls}>显示名称</label>
+                <label className={labelCls}>{t("displayName")}</label>
                 <input
                   type="text"
                   required
                   maxLength={50}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="用于团队内部展示的名称"
+                  placeholder={t("displayNameHint")}
                   disabled={isPending}
                   className={inputCls}
                 />
@@ -168,16 +172,16 @@ export function CreateSubAccountDialog({
                   onClick={() => handleOpenChange(false)}
                   className="cursor-pointer"
                 >
-                  取消
+                  {tCommon("cancel")}
                 </Button>
                 <Button type="submit" size="sm" disabled={isPending} className="cursor-pointer">
                   {isPending ? (
                     <>
                       <Loader2 size={13} className="animate-spin" />
-                      创建中...
+                      {t("creating")}
                     </>
                   ) : (
-                    "创建子账号"
+                    t("create")
                   )}
                 </Button>
               </div>

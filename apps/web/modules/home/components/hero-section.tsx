@@ -1,6 +1,7 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
+import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
 import type { Variants } from "motion/react"
 import { Button } from "@workspace/ui/components/button"
@@ -27,6 +28,8 @@ const transitionVariants: { item: Variants } = {
 }
 
 export function HeroSection() {
+  const t = useTranslations("Home.hero")
+
   return (
     <main className="overflow-hidden">
       <div
@@ -85,7 +88,7 @@ export function HeroSection() {
                   href="/design"
                   className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-black/5 transition-all duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
                 >
-                  <span className="text-foreground text-sm">完全免费，无需注册</span>
+                  <span className="text-foreground text-sm">{t("badge")}</span>
                   <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700" />
 
                   <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
@@ -101,12 +104,12 @@ export function HeroSection() {
                 </Link>
 
                 <h1 className="mt-8 max-w-4xl mx-auto text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]">
-                  为你的键盘
+                  {t("titleLine1")}
                   <br />
-                  设计专属键帽
+                  {t("titleLine2")}
                 </h1>
                 <p className="mx-auto mt-8 max-w-2xl text-balance text-lg">
-                  完全免费的键帽编辑器，自定义键帽，所见即所得。无需注册，打开即可设计。
+                  {t("subtitle")}
                 </p>
               </AnimatedGroup>
 
@@ -134,7 +137,7 @@ export function HeroSection() {
                     className="rounded-xl px-5 text-base"
                   >
                     <Link href="/design">
-                      <span className="text-nowrap">打开设计编辑器</span>
+                      <span className="text-nowrap">{t("openEditor")}</span>
                     </Link>
                   </Button>
                 </div>
@@ -146,7 +149,7 @@ export function HeroSection() {
                   className="h-10.5 rounded-xl px-5"
                 >
                   <Link href="#features">
-                    <span className="text-nowrap">了解更多</span>
+                    <span className="text-nowrap">{t("learnMore")}</span>
                   </Link>
                 </Button>
               </AnimatedGroup>
@@ -175,14 +178,14 @@ export function HeroSection() {
                 <img
                   className="bg-background aspect-15/8 relative rounded-2xl dark:hidden"
                   src="/images/hero_light.png"
-                  alt="键帽设计编辑器界面"
+                  alt={t("previewAlt")}
                   width="2700"
                   height="1440"
                 />
                 <img
                   className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
                   src="/images/hero_dark.png"
-                  alt="键帽设计编辑器界面"
+                  alt={t("previewAlt")}
                   width="2700"
                   height="1440"
                 />

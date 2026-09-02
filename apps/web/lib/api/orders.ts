@@ -25,9 +25,9 @@ export interface OrderPaymentSummary {
 }
 
 export const PAYMENT_METHOD_LABEL: Record<OrderPaymentSummary['method'], string> = {
-  ALIPAY: '支付宝',
-  WECHAT: '微信支付',
-  MONTHLY: '月结',
+  ALIPAY: 'ALIPAY',
+  WECHAT: 'WECHAT',
+  MONTHLY: 'MONTHLY',
 };
 
 export interface AddressSnapshot {

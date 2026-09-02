@@ -2,7 +2,8 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react"
 import dynamic from "next/dynamic"
-import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
 import { Home } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
@@ -377,6 +378,7 @@ function KeyboardTemplate({
 
 // ─── 画布主组件 ────────────────────────────────────────
 export function DesignCanvas() {
+  const t = useTranslations("Design.canvas")
   const containerRef = useRef<HTMLDivElement>(null)
   const artboardRef = useRef<HTMLDivElement>(null)
   const artboardBg = useDesignUIStore((s) => s.artboardBackground)
@@ -740,7 +742,7 @@ export function DesignCanvas() {
         >
           <Link
             href="/"
-            title="返回首页"
+            title={t("backHome")}
             onClick={(e) => e.stopPropagation()}
           >
             <Home className="size-3.5" />
@@ -774,8 +776,8 @@ export function DesignCanvas() {
             aria-valuemin={PREVIEW_3D_HEIGHT_MIN}
             aria-valuemax={PREVIEW_3D_HEIGHT_MAX}
             aria-valuenow={preview3dHeight}
-            aria-label="调整 3D 预览高度"
-            title="拖动调整高度"
+            aria-label={t("resize3d")}
+            title={t("dragResize")}
             className="absolute bottom-0 left-0 right-0 z-20 flex h-2 cursor-ns-resize items-center justify-center border-b border-border bg-transparent hover:bg-border/40 active:bg-border/60"
             onPointerDown={handlePreviewResizePointerDown}
             onPointerMove={handlePreviewResizePointerMove}
@@ -849,7 +851,7 @@ export function DesignCanvas() {
               className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-sm border-2 border-dashed border-primary/70 bg-primary/10"
             >
               <span className="rounded bg-popover/90 px-3 py-1.5 text-[13px] text-primary select-none backdrop-blur-sm border border-border">
-                释放以添加图片
+                {t("dropToAdd")}
               </span>
             </div>
           )}
@@ -871,7 +873,7 @@ export function DesignCanvas() {
         {/* 多选计数徽标 */}
         {selectedKeycapIds.length > 1 && (
           <div className="absolute bottom-4 right-4 rounded bg-primary/80 px-2 py-0.5 text-[11px] text-primary-foreground select-none backdrop-blur-sm">
-            已选 {selectedKeycapIds.length} 个键帽
+            {t("selectedCount", { count: selectedKeycapIds.length })}
           </div>
         )}
 
@@ -879,7 +881,7 @@ export function DesignCanvas() {
         {!keycapEditTarget && (
           <div
             className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 select-none rounded bg-popover/90 border border-border px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur-sm"
-            title="Ctrl+0 适配  Ctrl+1 实际尺寸"
+            title={t("zoomHint")}
           >
             <span>{Math.round(viewport.zoom * 100)}%</span>
             <span className="opacity-40">·</span>
@@ -889,7 +891,7 @@ export function DesignCanvas() {
               className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
               onClick={(e) => { e.stopPropagation(); fitToScreen() }}
             >
-              适配
+              {t("fit")}
             </Button>
           </div>
         )}

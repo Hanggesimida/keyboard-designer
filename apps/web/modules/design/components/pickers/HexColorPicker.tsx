@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { colord } from "colord"
 import { Pipette, Trash2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -196,6 +197,7 @@ function GradientStopsBar({
   onAddStop,
   onRemoveStop,
 }: GradientStopsBarProps) {
+  const t = useTranslations("Design.color")
   const containerRef = useRef<HTMLDivElement>(null)
   const draggingId = useRef<string | null>(null)
   const onMoveRef = useRef(onMoveStop)
@@ -276,7 +278,7 @@ function GradientStopsBar({
         })}
       </div>
       <p className="text-[10px] text-muted-foreground/60">
-        单击渐变条添加色标，双击色标删除
+        {t("gradientHint")}
       </p>
     </div>
   )
@@ -291,6 +293,7 @@ function AngleInput({
   angle: number
   onChange: (a: number) => void
 }) {
+  const t = useTranslations("Design.color")
   const [inputVal, setInputVal] = useState(String(angle))
 
   useEffect(() => {
@@ -306,7 +309,7 @@ function AngleInput({
   return (
     <div className="flex items-center gap-1.5">
       <span className="whitespace-nowrap text-[11px] text-muted-foreground">
-        方向角
+        {t("angle")}
       </span>
       <Input
         type="number"
@@ -342,6 +345,8 @@ function ColorInputRow({
   onEyeDropper,
   supportsEyeDropper,
 }: ColorInputRowProps) {
+  const t = useTranslations("Design.color")
+
   return (
     <div className="flex items-center gap-2">
       <div
@@ -365,7 +370,7 @@ function ColorInputRow({
           type="button"
           variant="ghost"
           size="icon-xs"
-          title="从屏幕取色"
+          title={t("pickFromScreen")}
           onClick={onEyeDropper}
           className="shrink-0 text-muted-foreground"
         >
@@ -385,6 +390,8 @@ export interface HexColorPickerProps {
 }
 
 export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
+  const t = useTranslations("Design.color")
+
   // ── Mode ──────────────────────────────────────────────────────────────────
 
   const [mode, setMode] = useState<ColorMode>(
@@ -650,7 +657,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="选择颜色"
+          aria-label={t("chooseColor")}
           className="size-7 shrink-0 cursor-pointer rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           style={triggerStyle}
         />
@@ -677,7 +684,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
               }`}
               onClick={() => handleModeSwitch(m)}
             >
-              {m === "solid" ? "纯色" : "渐变"}
+              {m === "solid" ? t("solid") : t("gradient")}
             </button>
           ))}
         </div>
@@ -732,7 +739,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                title="删除选中色标"
+                title={t("deleteStop")}
                 disabled={gradient.stops.length <= 2}
                 onClick={() => handleRemoveStop(selectedStopId)}
                 className="shrink-0 text-muted-foreground"

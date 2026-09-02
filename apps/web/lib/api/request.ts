@@ -17,6 +17,17 @@ export class ApiError extends Error {
   }
 }
 
+/** Map API errors for UI; translates the `sessionExpired` sentinel. */
+export function resolveErrorMessage(
+  err: unknown,
+  fallback: string,
+  sessionExpiredLabel: string,
+): string {
+  const message = err instanceof Error ? err.message : '';
+  if (message === 'sessionExpired') return sessionExpiredLabel;
+  return message || fallback;
+}
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return useUserStore.getState().accessToken;
@@ -76,9 +87,10 @@ export async function request<T = unknown>(
     if (typeof window !== 'undefined') {
       useUserStore.getState().logout();
       const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login?redirect=${redirect}&reason=expired`;
+      const prefix = window.location.pathname === '/zh' || window.location.pathname.startsWith('/zh/') ? '/zh' : '';
+      window.location.href = `${prefix}/login?redirect=${redirect}&reason=expired`;
     }
-    throw new ApiError(401, { message: '登录已过期，请重新登录' });
+    throw new ApiError(401, { message: 'sessionExpired' });
   }
 
   if (!response.ok) {
@@ -151,9 +163,10 @@ export async function requestBlob(
       const redirect = encodeURIComponent(
         window.location.pathname + window.location.search,
       );
-      window.location.href = `/login?redirect=${redirect}&reason=expired`;
+      const prefix = window.location.pathname === '/zh' || window.location.pathname.startsWith('/zh/') ? '/zh' : '';
+      window.location.href = `${prefix}/login?redirect=${redirect}&reason=expired`;
     }
-    throw new ApiError(401, { message: '登录已过期，请重新登录' });
+    throw new ApiError(401, { message: 'sessionExpired' });
   }
 
   if (!response.ok) {

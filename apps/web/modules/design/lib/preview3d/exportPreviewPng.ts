@@ -12,13 +12,13 @@ const EXPORT_MIN_PIXEL_RATIO = 2
 export interface Preview3dCaptureSource {
   gl: {
     domElement: HTMLCanvasElement
-    render: (scene: unknown, camera: unknown) => void
+    render: (scene: any, camera: any) => void
     getPixelRatio: () => number
     setPixelRatio: (ratio: number) => void
     setSize: (width: number, height: number, updateStyle?: boolean) => void
   }
-  scene: unknown
-  camera: unknown
+  scene: any
+  camera: any
 }
 
 export function buildPreview3dPngFilename(templateId?: string): string {

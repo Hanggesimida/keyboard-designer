@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { canRefundOrder, type AdminOrder } from "@/lib/api/admin-orders"
 import { useRefundOrder } from "@/hooks/queries/admin/useAdminOrders"
+import { resolveErrorMessage } from "@/lib/api/request"
 
 interface RefundActionButtonProps {
   order: AdminOrder
@@ -21,6 +23,9 @@ interface RefundActionButtonProps {
 }
 
 export function RefundActionButton({ order, onError }: RefundActionButtonProps) {
+  const t = useTranslations("Admin.actions")
+  const tCommon = useTranslations("Common")
+  const tErrors = useTranslations("Errors")
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState("")
   const { mutate: refund, isPending } = useRefundOrder()
@@ -38,7 +43,7 @@ export function RefundActionButton({ order, onError }: RefundActionButtonProps) 
           setReason("")
         },
         onError: (err) => {
-          onError?.(err instanceof Error ? err.message : "退款失败，请重试")
+          onError?.(resolveErrorMessage(err, t("refundFailed"), tErrors("sessionExpired")))
         },
       },
     )
@@ -53,29 +58,29 @@ export function RefundActionButton({ order, onError }: RefundActionButtonProps) 
         className="inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-amber-500/[0.1] hover:bg-amber-500/[0.15] text-amber-400/80 border-amber-500/[0.2] w-full sm:w-auto"
       >
         {isPending && <Loader2 size={12} className="animate-spin" />}
-        退款
+        {t("refund")}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认退款</DialogTitle>
+            <DialogTitle>{t("confirmRefund")}</DialogTitle>
             <DialogDescription>
-              将向用户全额退款 ¥{Number(order.totalAmount).toFixed(2)}，退款将通过支付宝原路退回，此操作不可撤销。
+              {t("refundBody")} ¥{Number(order.totalAmount).toFixed(2)}
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="退款原因（可选）"
+            placeholder={t("refundReason")}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
           />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              取消
+              {tCommon("cancel")}
             </Button>
             <Button type="button" variant="destructive" disabled={isPending} onClick={handleRefund}>
-              {isPending ? "退款中..." : "确认退款"}
+              {isPending ? t("refunding") : t("confirmRefund")}
             </Button>
           </DialogFooter>
         </DialogContent>

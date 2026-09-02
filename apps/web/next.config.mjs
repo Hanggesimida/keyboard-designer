@@ -1,19 +1,32 @@
+import createNextIntlPlugin from "next-intl/plugin"
+
+const withNextIntl = createNextIntlPlugin()
+
+const redirectedSources = [
+  "/login/:path*",
+  "/register",
+  "/profile/:path*",
+  "/checkout",
+  "/admin/:path*",
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
   async redirects() {
     return [
-      "/login/:path*",
-      "/register",
-      "/profile/:path*",
-      "/checkout",
-      "/admin/:path*",
-    ].map((source) => ({
-      source,
-      destination: "/design",
-      permanent: false,
-    }))
+      ...redirectedSources.map((source) => ({
+        source,
+        destination: "/design",
+        permanent: false,
+      })),
+      ...redirectedSources.map((source) => ({
+        source: `/zh${source}`,
+        destination: "/zh/design",
+        permanent: false,
+      })),
+    ]
   },
 }
 
-export default nextConfig
+export default withNextIntl(nextConfig)

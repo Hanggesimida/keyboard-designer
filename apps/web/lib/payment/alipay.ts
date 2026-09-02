@@ -7,7 +7,7 @@ const INTERVAL_MS = 3000;
 export function openAlipayPayment(formHtml: string): void {
   const win = window.open('', '_blank');
   if (!win) {
-    throw new Error('无法打开支付窗口，请允许浏览器弹窗后重试');
+    throw new Error('alipayWindow');
   }
   win.document.write(formHtml);
   win.document.close();

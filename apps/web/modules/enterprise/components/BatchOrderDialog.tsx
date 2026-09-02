@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Loader2, PackageCheck, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,8 @@ export function BatchOrderDialog({
   designs,
   onCompleted,
 }: BatchOrderDialogProps) {
+  const t = useTranslations("Enterprise")
+  const tCommon = useTranslations("Common")
   const { data: addresses } = useMyAddresses()
   const { mutate: batchCreateOrder, isPending } = useBatchCreateOrder()
 
@@ -102,9 +105,9 @@ export function BatchOrderDialog({
         {result ? (
           <>
             <DialogHeader>
-              <DialogTitle>批量下单完成</DialogTitle>
+              <DialogTitle>{t("batchDone")}</DialogTitle>
               <DialogDescription>
-                成功 {result.success.length} 个，失败 {result.failed.length} 个。
+                {t("batchResult", { ok: result.success.length, fail: result.failed.length })}
               </DialogDescription>
             </DialogHeader>
 
@@ -116,7 +119,7 @@ export function BatchOrderDialog({
                 >
                   <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
                   <span className="truncate">
-                    {order.design.name} · {order.quantity} 套 · {order.orderNo}
+                    {order.design.name} · {t("setCount", { count: order.quantity })} · {order.orderNo}
                   </span>
                 </div>
               ))}
@@ -142,27 +145,27 @@ export function BatchOrderDialog({
                 onClick={() => handleOpenChange(false)}
                 className="cursor-pointer"
               >
-                完成
+                {t("done")}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>批量下单</DialogTitle>
+              <DialogTitle>{t("batchTitle")}</DialogTitle>
               <DialogDescription>
-                已选 {designs.length} 个设计，为每个设计选择收货地址后确认下单（月结免支付）。
+                {t("batchSubtitle", { count: designs.length })}
               </DialogDescription>
             </DialogHeader>
 
             {!hasAddresses ? (
               <p className="rounded-lg border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
-                暂无收货地址，请先在地址管理中添加地址。
+                {t("noAddress")}
               </p>
             ) : (
               <>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
-                  <span className="text-xs text-muted-foreground">批量设置数量</span>
+                  <span className="text-xs text-muted-foreground">{t("batchQty")}</span>
                   <QuantitySelector
                     value={quantityByDesign[designs[0]?.id ?? ""] ?? 1}
                     onChange={applyQuantityToAll}
@@ -170,10 +173,10 @@ export function BatchOrderDialog({
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
-                  <span className="text-xs text-muted-foreground">批量设置收货地址</span>
+                  <span className="text-xs text-muted-foreground">{t("batchAddress")}</span>
                   <Select onValueChange={applyToAll}>
                     <SelectTrigger size="sm" className="w-44">
-                      <SelectValue placeholder="选择地址应用到全部" />
+                      <SelectValue placeholder={t("applyAddress")} />
                     </SelectTrigger>
                     <SelectContent>
                       {addresses.map((addr) => (
@@ -213,7 +216,7 @@ export function BatchOrderDialog({
                           }
                         >
                           <SelectTrigger size="sm" className="min-w-0 flex-1">
-                            <SelectValue placeholder="选择地址" />
+                            <SelectValue placeholder={t("selectAddress")} />
                           </SelectTrigger>
                           <SelectContent>
                             {addresses.map((addr) => (
@@ -238,7 +241,7 @@ export function BatchOrderDialog({
                 onClick={() => handleOpenChange(false)}
                 className="cursor-pointer"
               >
-                取消
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="button"
@@ -249,12 +252,12 @@ export function BatchOrderDialog({
                 {isPending ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    下单中...
+                    {t("ordering")}
                   </>
                 ) : (
                   <>
                     <PackageCheck size={14} />
-                    确认批量下单
+                    {t("confirmBatch")}
                   </>
                 )}
               </Button>

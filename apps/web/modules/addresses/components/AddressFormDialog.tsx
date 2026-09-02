@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { X, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -15,17 +16,29 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import type { Address } from "@/lib/api/addresses"
 
-export const addressSchema = z.object({
-  name: z.string().min(1, "请填写收件人姓名").max(50),
-  phone: z
-    .string()
-    .regex(/^1[3-9]\d{9}$/, "手机号格式不正确，请输入 11 位大陆手机号"),
-  province: z.string().min(1, "请填写省份").max(50),
-  city: z.string().min(1, "请填写城市").max(50),
-  district: z.string().min(1, "请填写区/县").max(50),
-  detail: z.string().min(1, "请填写详细地址").max(200),
-  isDefault: z.boolean().optional(),
-})
+type Translate = (
+  key:
+    | "recipientRequired"
+    | "phoneInvalid"
+    | "provinceRequired"
+    | "cityRequired"
+    | "districtRequired"
+    | "detailRequired",
+) => string
+
+export function createAddressSchema(t: Translate) {
+  return z.object({
+    name: z.string().min(1, t("recipientRequired")).max(50),
+    phone: z.string().regex(/^1[3-9]\d{9}$/, t("phoneInvalid")),
+    province: z.string().min(1, t("provinceRequired")).max(50),
+    city: z.string().min(1, t("cityRequired")).max(50),
+    district: z.string().min(1, t("districtRequired")).max(50),
+    detail: z.string().min(1, t("detailRequired")).max(200),
+    isDefault: z.boolean().optional(),
+  })
+}
+
+export const addressSchema = createAddressSchema((key) => key)
 
 export type AddressFormValues = z.infer<typeof addressSchema>
 
@@ -46,7 +59,11 @@ export function AddressFormDialog({
   isSubmitting,
   submitError,
 }: AddressFormDialogProps) {
+  const t = useTranslations("AddressForm")
+  const tVal = useTranslations("Validation")
+  const tCommon = useTranslations("Common")
   const isEdit = !!editAddress
+  const schema = useMemo(() => createAddressSchema(tVal), [tVal])
 
   const {
     register,
@@ -54,7 +71,7 @@ export function AddressFormDialog({
     reset,
     formState: { errors },
   } = useForm<AddressFormValues>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(schema),
   })
 
   useEffect(() => {
@@ -96,10 +113,10 @@ export function AddressFormDialog({
       >
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">
-            {isEdit ? "编辑收货地址" : "新增收货地址"}
+            {isEdit ? t("editTitle") : t("addTitle")}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {isEdit ? "修改已有收货地址的收件人、联系方式与详细地址" : "填写收件人、联系方式与详细地址"}
+            {t("subtitle")}
           </DialogDescription>
           <button
             type="button"
@@ -112,10 +129,10 @@ export function AddressFormDialog({
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-2 space-y-4">
           <div>
-            <label className={labelCls}>收件人</label>
+            <label className={labelCls}>{t("recipient")}</label>
             <input
               {...register("name")}
-              placeholder="请输入收件人姓名"
+              placeholder={t("recipientPh")}
               disabled={isSubmitting}
               className={inputCls}
             />
@@ -123,10 +140,10 @@ export function AddressFormDialog({
           </div>
 
           <div>
-            <label className={labelCls}>手机号</label>
+            <label className={labelCls}>{t("phone")}</label>
             <input
               {...register("phone")}
-              placeholder="请输入手机号"
+              placeholder={t("phonePh")}
               disabled={isSubmitting}
               className={inputCls}
             />
@@ -135,10 +152,10 @@ export function AddressFormDialog({
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className={labelCls}>省份</label>
+              <label className={labelCls}>{t("province")}</label>
               <input
                 {...register("province")}
-                placeholder="省"
+                placeholder={t("provincePh")}
                 disabled={isSubmitting}
                 className={inputCls}
               />
@@ -147,20 +164,20 @@ export function AddressFormDialog({
               )}
             </div>
             <div>
-              <label className={labelCls}>城市</label>
+              <label className={labelCls}>{t("city")}</label>
               <input
                 {...register("city")}
-                placeholder="市"
+                placeholder={t("cityPh")}
                 disabled={isSubmitting}
                 className={inputCls}
               />
               {errors.city && <p className={errorCls}>{errors.city.message}</p>}
             </div>
             <div>
-              <label className={labelCls}>区/县</label>
+              <label className={labelCls}>{t("district")}</label>
               <input
                 {...register("district")}
-                placeholder="区/县"
+                placeholder={t("districtPh")}
                 disabled={isSubmitting}
                 className={inputCls}
               />
@@ -171,10 +188,10 @@ export function AddressFormDialog({
           </div>
 
           <div>
-            <label className={labelCls}>详细地址</label>
+            <label className={labelCls}>{t("detail")}</label>
             <textarea
               {...register("detail")}
-              placeholder="街道、门牌号等详细信息"
+              placeholder={t("detailPh")}
               rows={2}
               disabled={isSubmitting}
               className="w-full px-3 py-2 rounded-lg border border-border bg-muted/40 text-sm text-foreground placeholder:text-muted-foreground/45 outline-none transition-colors hover:border-border focus:border-ring focus:bg-muted/50 disabled:opacity-50 resize-none"
@@ -191,7 +208,7 @@ export function AddressFormDialog({
               disabled={isSubmitting}
               className="w-4 h-4 rounded border-border bg-muted/50 accent-primary cursor-pointer"
             />
-            <span className="text-sm text-muted-foreground">设为默认地址</span>
+            <span className="text-sm text-muted-foreground">{t("setDefault")}</span>
           </label>
 
           {submitError && (
@@ -209,7 +226,7 @@ export function AddressFormDialog({
               onClick={() => onOpenChange(false)}
               className="cursor-pointer"
             >
-              取消
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -220,10 +237,10 @@ export function AddressFormDialog({
               {isSubmitting ? (
                 <>
                   <Loader2 size={13} className="animate-spin" />
-                  保存中...
+                  {t("saving")}
                 </>
               ) : (
-                isEdit ? "保存修改" : "添加地址"
+                isEdit ? t("save") : t("add")
               )}
             </Button>
           </div>

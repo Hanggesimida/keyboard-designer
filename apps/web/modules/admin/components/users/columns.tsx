@@ -4,7 +4,8 @@ import { useState } from "react"
 import { MoreHorizontal, Shield, ShieldOff, Building2, Loader2 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { formatDistanceToNow } from "date-fns"
-import { zhCN } from "date-fns/locale"
+import type { Locale } from "date-fns"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import {
@@ -33,26 +34,26 @@ import type {
   UserRole,
   AccountType,
 } from "@/lib/api/admin-users"
-import { ApiError } from "@/lib/api/request"
-
-// ─── 角色 / 账号类型展示 ───────────────────────────────────────────────────────
+import { resolveErrorMessage } from "@/lib/api/request"
 
 function RoleBadge({ role }: { role: UserRole }) {
+  const t = useTranslations("Admin.users")
   if (role === "ADMIN") {
     return (
       <Badge variant="default" className="font-normal">
-        管理员
+        {t("admin")}
       </Badge>
     )
   }
   return (
     <Badge variant="secondary" className="font-normal">
-      普通用户
+      {t("regular")}
     </Badge>
   )
 }
 
 function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
+  const t = useTranslations("Admin.users")
   if (accountType === "ENTERPRISE_MAIN") {
     return (
       <Badge
@@ -60,14 +61,14 @@ function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
         className="gap-1 border-blue-400/30 font-normal text-blue-500"
       >
         <Building2 size={11} />
-        企业主账号
+        {t("enterpriseMain")}
       </Badge>
     )
   }
   if (accountType === "ENTERPRISE_SUB") {
     return (
       <Badge variant="outline" className="font-normal text-muted-foreground">
-        企业子账号
+        {t("enterpriseSub")}
       </Badge>
     )
   }
@@ -75,8 +76,6 @@ function AccountTypeBadge({ accountType }: { accountType: AccountType }) {
     <span className="text-xs text-muted-foreground/50">—</span>
   )
 }
-
-// ─── 操作菜单 ─────────────────────────────────────────────────────────────────
 
 type PendingAction =
   | { type: "role"; value: UserRole }
@@ -89,6 +88,9 @@ function UserActionsMenu({
   user: AdminUserSummary
   onError?: (message: string) => void
 }) {
+  const t = useTranslations("Admin.users")
+  const tCommon = useTranslations("Common")
+  const tErrors = useTranslations("Errors")
   const currentUserId = useUserStore((s) => s.user?.id)
   const { mutate: updateRole, isPending: isRolePending } = useUpdateUserRole()
   const { mutate: updateAccountType, isPending: isAccountTypePending } =
@@ -105,13 +107,7 @@ function UserActionsMenu({
     const onSettled = {
       onSuccess: () => setPendingAction(null),
       onError: (err: unknown) => {
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : "操作失败，请重试"
-        onError?.(message)
+        onError?.(resolveErrorMessage(err, t("actionFailed"), tErrors("sessionExpired")))
         setPendingAction(null)
       },
     }
@@ -130,24 +126,12 @@ function UserActionsMenu({
     if (!pendingAction) return { title: "", description: "" }
     if (pendingAction.type === "role") {
       return pendingAction.value === "ADMIN"
-        ? {
-            title: "设为管理员",
-            description: `确认将「${user.email}」设为管理员？对方将可以访问管理后台。`,
-          }
-        : {
-            title: "设为普通用户",
-            description: `确认将「${user.email}」降为普通用户？对方将失去管理后台访问权限。`,
-          }
+        ? { title: t("makeAdmin"), description: t("confirmMakeAdmin") }
+        : { title: t("makeRegular"), description: t("confirmMakeRegular") }
     }
     return pendingAction.value === "ENTERPRISE_MAIN"
-      ? {
-          title: "设为企业主账号",
-          description: `确认将「${user.email}」设为企业主账号？对方将可以创建子账号并批量下单（月结免支付）。`,
-        }
-      : {
-          title: "取消企业主账号",
-          description: `确认取消「${user.email}」的企业主账号身份？若其名下仍有子账号，操作将被拒绝。`,
-        }
+      ? { title: t("makeEnterpriseMain"), description: t("confirmMakeMain") }
+      : { title: t("unsetEnterpriseMain"), description: t("confirmUnsetMain") }
   }
 
   const copy = dialogCopy()
@@ -167,7 +151,7 @@ function UserActionsMenu({
             ) : (
               <MoreHorizontal size={15} />
             )}
-            <span className="sr-only">打开菜单</span>
+            <span className="sr-only">{t("openMenu")}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
@@ -176,14 +160,14 @@ function UserActionsMenu({
               onClick={() => setPendingAction({ type: "role", value: "ADMIN" })}
             >
               <Shield size={14} className="text-muted-foreground" />
-              设为管理员
+              {t("makeAdmin")}
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
               onClick={() => setPendingAction({ type: "role", value: "USER" })}
             >
               <ShieldOff size={14} className="text-muted-foreground" />
-              设为普通用户
+              {t("makeRegular")}
             </DropdownMenuItem>
           )}
           {user.accountType === "ENTERPRISE_MAIN" ? (
@@ -193,7 +177,7 @@ function UserActionsMenu({
               }
             >
               <Building2 size={14} className="text-muted-foreground" />
-              取消企业主账号
+              {t("unsetEnterpriseMain")}
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
@@ -202,7 +186,7 @@ function UserActionsMenu({
               }
             >
               <Building2 size={14} className="text-muted-foreground" />
-              设为企业主账号
+              {t("makeEnterpriseMain")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -220,7 +204,7 @@ function UserActionsMenu({
             <AlertDialogDescription>{copy.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPending}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={isPending}
               onClick={(e) => {
@@ -228,7 +212,7 @@ function UserActionsMenu({
                 handleConfirm()
               }}
             >
-              {isPending ? "处理中…" : "确认"}
+              {isPending ? t("processing") : t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -237,15 +221,15 @@ function UserActionsMenu({
   )
 }
 
-// ─── 列定义 ───────────────────────────────────────────────────────────────────
-
 export function createUserColumns(
-  onError?: (message: string) => void,
+  onError: ((message: string) => void) | undefined,
+  t: (key: string, values?: Record<string, number>) => string,
+  dateLocale: Locale,
 ): ColumnDef<AdminUserSummary>[] {
   return [
     {
       accessorKey: "email",
-      header: "邮箱",
+      header: t("email"),
       cell: ({ row }) => (
         <span className="text-sm text-foreground/80 truncate block max-w-[280px]">
           {row.getValue("email")}
@@ -255,7 +239,7 @@ export function createUserColumns(
     },
     {
       accessorKey: "role",
-      header: "角色",
+      header: t("role"),
       filterFn: (row, id, value) => {
         return (value as string[]).includes(row.getValue(id))
       },
@@ -264,7 +248,7 @@ export function createUserColumns(
     },
     {
       accessorKey: "accountType",
-      header: "账号类型",
+      header: t("accountType"),
       filterFn: (row, id, value) => {
         return (value as string[]).includes(row.getValue(id))
       },
@@ -275,12 +259,12 @@ export function createUserColumns(
     },
     {
       accessorKey: "createdAt",
-      header: "注册时间",
+      header: t("registeredAt"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground/55">
           {formatDistanceToNow(new Date(row.getValue("createdAt")), {
             addSuffix: true,
-            locale: zhCN,
+            locale: dateLocale,
           })}
         </span>
       ),

@@ -10,12 +10,12 @@ export interface FontOption {
   italic: boolean
 }
 
-export const FONT_CATEGORIES: { key: FontCategory; label: string }[] = [
-  { key: "custom", label: "我的字体" },
-  { key: "sans", label: "无衬线" },
-  { key: "mono", label: "等宽" },
-  { key: "serif", label: "衬线" },
-  { key: "cjk", label: "中文" },
+export const FONT_CATEGORIES: { key: FontCategory }[] = [
+  { key: "custom" },
+  { key: "sans" },
+  { key: "mono" },
+  { key: "serif" },
+  { key: "cjk" },
 ]
 
 export const FONT_OPTIONS: FontOption[] = [

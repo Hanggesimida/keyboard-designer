@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
@@ -32,6 +33,8 @@ export function ColorRow({
   action,
   hideLabel,
 }: ColorRowProps) {
+  const tCommon = useTranslations("Common")
+  const t = useTranslations("Design.inspector")
   const display = value || fallback
   const [hexInput, setHexInput] = useState(display)
 
@@ -59,7 +62,7 @@ export function ColorRow({
         <Label className="text-[11px] font-normal text-muted-foreground">
           {label}
           {isMixed && (
-            <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
+            <span className="ml-1.5 text-[10px] text-chart-4/80">{tCommon("mixed")}</span>
           )}
         </Label>
       )}
@@ -67,7 +70,7 @@ export function ColorRow({
         <HexColorPicker value={display} onChange={handlePickerChange} />
         <Input
           type="text"
-          value={isMixed ? "混合" : isGradient ? "渐变" : hexInput}
+          value={isMixed ? tCommon("mixed") : isGradient ? t("gradient") : hexInput}
           onChange={isGradient ? undefined : handleHexChange}
           readOnly={isGradient}
           onFocus={() => {

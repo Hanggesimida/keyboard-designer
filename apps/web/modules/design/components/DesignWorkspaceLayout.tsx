@@ -1,7 +1,8 @@
 ﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
 import { Home, Monitor } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { DesignSidebarLeft } from "./sidebar/SidebarLeft"
@@ -15,6 +16,8 @@ import { DESIGN_EXPORTED_EVENT } from "@/modules/design/lib/session-events"
 import { useSessionFontStore } from "@/lib/fonts/sessionFontStore"
 
 export function DesignWorkspaceLayout() {
+  const t = useTranslations("Design.mobile")
+  const tCommon = useTranslations("Common")
   const undo = useTemporalDesignStore((s) => s.undo)
   const redo = useTemporalDesignStore((s) => s.redo)
   const historyPosition = useTemporalDesignStore(
@@ -84,14 +87,14 @@ export function DesignWorkspaceLayout() {
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-card border border-border">
           <Monitor size={28} className="text-muted-foreground" />
         </div>
-        <h1 className="mb-3 text-xl font-semibold text-foreground">需要更大的屏幕</h1>
+        <h1 className="mb-3 text-xl font-semibold text-foreground">{t("title")}</h1>
         <p className="mb-8 max-w-xs text-sm leading-relaxed text-muted-foreground">
-          设计编辑器需要在 768px 以上的屏幕上使用，请切换到桌面端或平板横屏模式。
+          {t("body")}
         </p>
         <Button variant="outline" asChild>
           <Link href="/" className="gap-2">
             <Home size={15} />
-            返回首页
+            {tCommon("backHome")}
           </Link>
         </Button>
       </div>

@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useTranslations, useLocale } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
+import { useSearchParams } from "next/navigation"
 import { ShoppingCart, Send, Check } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
@@ -74,6 +76,8 @@ function SubmitDesignButton({
   designId: string | null
   accessToken: string | null
 }) {
+  const t = useTranslations("Design.order")
+  const locale = useLocale()
   const [submitted, setSubmitted] = useState(false)
   const { mutate: createDesign, isPending: isCreating } = useCreateDesign()
   const { mutate: updateDesign, isPending: isUpdating } = useUpdateDesign()
@@ -97,7 +101,7 @@ function SubmitDesignButton({
     } else {
       createDesign(
         {
-          name: `键盘方案 ${new Date().toLocaleDateString("zh-CN")}`,
+          name: t("defaultName", { date: new Date().toLocaleDateString(locale) }),
           data: extractDesignData(),
         },
         {
@@ -115,12 +119,12 @@ function SubmitDesignButton({
         type="button"
         variant="ghost"
         size="xs"
-        title="请先登录后再提交"
+        title={t("loginToSubmit")}
         disabled
         className="text-muted-foreground/40"
       >
         <Send className="size-3.5" />
-        提交
+        {t("submit")}
       </Button>
     )
   }
@@ -130,7 +134,7 @@ function SubmitDesignButton({
       type="button"
       variant="ghost"
       size="xs"
-      title="保存并提交给主账号审核"
+      title={t("submitTitle")}
       disabled={isPending}
       onClick={handleSubmit}
       className="hover:text-primary"
@@ -142,7 +146,7 @@ function SubmitDesignButton({
       ) : (
         <Send className="size-3.5" />
       )}
-      {isPending ? "提交中..." : submitted ? "已提交" : "提交"}
+      {isPending ? t("submitting") : submitted ? t("submitted") : t("submit")}
     </Button>
   )
 }
@@ -155,6 +159,8 @@ function CheckoutButton({
   designId: string | null
   accessToken: string | null
 }) {
+  const t = useTranslations("Design.order")
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isNavigating, setIsNavigating] = useState(false)
@@ -185,7 +191,7 @@ function CheckoutButton({
       setIsNavigating(true)
       createDesign(
         {
-          name: `键盘方案 ${new Date().toLocaleDateString('zh-CN')}`,
+          name: t("defaultName", { date: new Date().toLocaleDateString(locale) }),
           data: extractDesignData(),
         },
         {
@@ -209,12 +215,12 @@ function CheckoutButton({
         type="button"
         variant="ghost"
         size="xs"
-        title="请先登录后再下单"
+        title={t("loginToOrder")}
         disabled
         className="text-muted-foreground/40"
       >
         <ShoppingCart className="size-3.5" />
-        下单
+        {t("order")}
       </Button>
     )
   }
@@ -224,7 +230,7 @@ function CheckoutButton({
       type="button"
       variant="ghost"
       size="xs"
-      title="保存并下单"
+      title={t("orderTitle")}
       disabled={isPending}
       onClick={handleOrderClick}
       className="hover:text-primary"
@@ -234,7 +240,7 @@ function CheckoutButton({
       ) : (
         <ShoppingCart className="size-3.5" />
       )}
-      {isPending ? "处理中..." : "下单"}
+      {isPending ? t("processing") : t("order")}
     </Button>
   )
 }

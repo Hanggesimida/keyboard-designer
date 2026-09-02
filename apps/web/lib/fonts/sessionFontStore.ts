@@ -23,17 +23,17 @@ const MAX_FONT_SIZE = 20 * 1024 * 1024
 const SUPPORTED_FONT_EXTENSION = /\.(ttf|otf)$/i
 
 function displayNameFromFile(file: File): string {
-  return file.name.replace(SUPPORTED_FONT_EXTENSION, "") || "本地字体"
+  return file.name.replace(SUPPORTED_FONT_EXTENSION, "") || "localFont"
 }
 
 export const useSessionFontStore = create<SessionFontState>((set, get) => ({
   fonts: [],
   async addFont(file) {
     if (!SUPPORTED_FONT_EXTENSION.test(file.name)) {
-      throw new Error("仅支持 .ttf 或 .otf 字体文件")
+      throw new Error("ttfOnly")
     }
     if (file.size > MAX_FONT_SIZE) {
-      throw new Error("字体文件不能超过 20 MB")
+      throw new Error("tooLarge")
     }
 
     const font: SessionFont = {
@@ -45,7 +45,7 @@ export const useSessionFontStore = create<SessionFontState>((set, get) => ({
     try {
       await loadUserFonts([font])
       if (!isUserFontLoaded(font.id)) {
-        throw new Error("字体文件无法解析，请确认文件未损坏")
+        throw new Error("parseFailed")
       }
       set({ fonts: [...get().fonts, font] })
       return font

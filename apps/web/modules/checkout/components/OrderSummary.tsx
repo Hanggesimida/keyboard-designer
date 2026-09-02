@@ -1,6 +1,7 @@
 "use client"
 
 import { Keyboard } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Card,
   CardContent,
@@ -33,6 +34,7 @@ export function OrderSummary({
   mode = "full",
   className,
 }: OrderSummaryProps) {
+  const t = useTranslations("Checkout")
   const showProduct = mode === "compact" || mode === "full"
   const showPricing = mode === "pricing" || mode === "full"
 
@@ -67,7 +69,9 @@ export function OrderSummary({
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground/85">{design.name}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground/60">定制键帽 · {quantity} 套</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/60">
+              {t("customKeycaps", { count: quantity })}
+            </p>
           </div>
 
           {mode === "full" && (
@@ -102,7 +106,7 @@ export function OrderSummary({
 
           <Separator />
           <CardFooter className="flex items-center justify-between border-t-0 bg-transparent px-4 py-3">
-            <span className="text-xs text-muted-foreground/60">商品合计</span>
+            <span className="text-xs text-muted-foreground/60">{t("subtotal")}</span>
             {isLoading ? (
               <Skeleton className="h-4 w-16" />
             ) : (
@@ -126,6 +130,7 @@ function PricingBreakdown({
   totalAmount: number | undefined
   isLoading?: boolean
 }) {
+  const t = useTranslations("Checkout")
   return (
     <div className="space-y-3">
       {!isLoading && breakdown && breakdown.length > 0 && (
@@ -142,7 +147,7 @@ function PricingBreakdown({
       <Separator />
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground/70">商品合计</span>
+        <span className="text-sm font-medium text-foreground/70">{t("subtotal")}</span>
         {isLoading ? (
           <Skeleton className="h-5 w-20" />
         ) : (

@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { Home, Keyboard, type LucideIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +16,7 @@ import {
 } from "@workspace/ui/components/sidebar"
 import type { NavGroup } from "./types"
 import { NavUser } from "./NavUser"
+import { Link, usePathname } from "@/i18n/navigation"
 
 interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
   navGroups: NavGroup[]
@@ -26,8 +26,11 @@ interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
   headerRight?: React.ReactNode
 }
 
-export function DashboardSidebar({ navGroups, title = "键盘设计器", headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", headerRight, ...props }: DashboardSidebarProps) {
+export function DashboardSidebar({ navGroups, title, headerIcon: HeaderIcon = Keyboard, headerHref = "/profile", headerRight, ...props }: DashboardSidebarProps) {
+  const t = useTranslations("Common")
+  const tDash = useTranslations("Dashboard")
   const pathname = usePathname()
+  const resolvedTitle = title ?? t("appName")
 
   function isActive(href: string, exact?: boolean) {
     if (exact || href === "/profile") return pathname === href
@@ -46,7 +49,7 @@ export function DashboardSidebar({ navGroups, title = "键盘设计器", headerI
               >
                 <Link href={headerHref}>
                   <HeaderIcon className="size-5!" />
-                  <span className="text-base font-semibold">{title}</span>
+                  <span className="text-base font-semibold">{resolvedTitle}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -82,7 +85,7 @@ export function DashboardSidebar({ navGroups, title = "键盘设计器", headerI
               <SidebarMenuButton asChild>
                 <Link href="/">
                   <Home />
-                  <span>返回首页</span>
+                  <span>{tDash("backHome")}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

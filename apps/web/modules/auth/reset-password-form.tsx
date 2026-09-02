@@ -1,18 +1,20 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { LogoIcon } from "@/components/layouts/Logo"
+import { Link, useRouter } from "@/i18n/navigation"
 
 import {
   resetPassword,
-  resetPasswordSchema,
+  createResetPasswordSchema,
   type ResetPasswordInput,
 } from "@/lib/api/auth"
+import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
 import { Button } from "@workspace/ui/components/button"
@@ -26,6 +28,10 @@ import {
 } from "@workspace/ui/components/field"
 
 export function ResetPasswordForm() {
+  const t = useTranslations("Auth")
+  const tCommon = useTranslations("Common")
+  const tValidation = useTranslations("Validation")
+  const tErrors = useTranslations("Errors")
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") ?? "/"
@@ -35,6 +41,11 @@ export function ResetPasswordForm() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+
+  const resetPasswordSchema = useMemo(
+    () => createResetPasswordSchema(tValidation),
+    [tValidation],
+  )
 
   useEffect(() => {
     const stored = sessionStorage.getItem("reset_password_email")
@@ -62,8 +73,7 @@ export function ResetPasswordForm() {
       sessionStorage.removeItem("reset_password_email")
       router.push(redirect)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "重置失败，请重试"
-      setServerError(msg)
+      setServerError(resolveErrorMessage(err, t("resetFailed"), tErrors("sessionExpired")))
     }
   }
 
@@ -74,12 +84,12 @@ export function ResetPasswordForm() {
           <div className="flex size-8 items-center justify-center rounded-md">
             <LogoIcon className="size-6" />
           </div>
-          <span className="sr-only">键盘设计器</span>
+          <span className="sr-only">{tCommon("appName")}</span>
         </Link>
-        <h1 className="text-xl font-bold">重置密码</h1>
+        <h1 className="text-xl font-bold">{t("resetPassword")}</h1>
         {email && (
           <FieldDescription>
-            验证码已发送至 <span className="text-foreground font-medium">{email}</span>
+            {t("codeSentTo")} <span className="text-foreground font-medium">{email}</span>
           </FieldDescription>
         )}
       </div>
@@ -87,7 +97,7 @@ export function ResetPasswordForm() {
       <form>
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="otp">6 位验证码</FieldLabel>
+            <FieldLabel htmlFor="otp">{t("sixDigitCode")}</FieldLabel>
             <Input
               id="otp"
               type="text"
@@ -100,18 +110,18 @@ export function ResetPasswordForm() {
               disabled={isSubmitting}
               {...register("otp")}
             />
-            <FieldDescription>验证码有效期 5 分钟</FieldDescription>
+            <FieldDescription>{t("codeExpires")}</FieldDescription>
             <FieldError errors={[errors.otp]} />
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="password">新密码</FieldLabel>
+            <FieldLabel htmlFor="password">{t("newPassword")}</FieldLabel>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="至少 8 位"
+                placeholder={t("passwordPlaceholder")}
                 aria-invalid={!!errors.password}
                 disabled={isSubmitting}
                 className="pr-10"
@@ -130,13 +140,13 @@ export function ResetPasswordForm() {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="confirm">确认密码</FieldLabel>
+            <FieldLabel htmlFor="confirm">{t("confirmPassword")}</FieldLabel>
             <div className="relative">
               <Input
                 id="confirm"
                 type={showConfirm ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="再次输入密码"
+                placeholder={t("confirmPlaceholder")}
                 aria-invalid={!!errors.confirm}
                 disabled={isSubmitting}
                 className="pr-10"
@@ -166,10 +176,10 @@ export function ResetPasswordForm() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={15} className="animate-spin opacity-70" />
-                  重置中…
+                  {t("resetting")}
                 </>
               ) : (
-                "确认重置"
+                t("confirmReset")
               )}
             </Button>
           </Field>
@@ -182,7 +192,7 @@ export function ResetPasswordForm() {
               onClick={() => router.push("/login/forgot-password")}
             >
               <ArrowLeft size={15} />
-              返回重新发送
+              {t("backToResend")}
             </Button>
           </Field>
         </FieldGroup>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { MapPin, Plus, Check, Star, Pencil, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { Badge } from "@workspace/ui/components/badge"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -15,7 +16,7 @@ import {
 import type { Address } from "@/lib/api/addresses"
 import { AddressFormDialog, type AddressFormValues } from "@/modules/addresses"
 import { ProfileEmptyState } from "@/modules/profile"
-import { ApiError } from "@/lib/api/request"
+import { resolveErrorMessage } from "@/lib/api/request"
 
 interface AddressSelectorProps {
   selectedId: string | null
@@ -23,6 +24,9 @@ interface AddressSelectorProps {
 }
 
 export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) {
+  const t = useTranslations("Checkout")
+  const tCommon = useTranslations("Common")
+  const tErrors = useTranslations("Errors")
   const { data: addresses, isLoading } = useMyAddresses()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -55,7 +59,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
         {
           onSuccess: () => setDialogOpen(false),
           onError: (err) => {
-            setFormError(err instanceof ApiError ? err.message : "保存失败，请重试")
+            setFormError(resolveErrorMessage(err, t("saveFailed"), tErrors("sessionExpired")))
           },
         },
       )
@@ -66,7 +70,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
           onSelect(addr.id)
         },
         onError: (err) => {
-          setFormError(err instanceof ApiError ? err.message : "创建失败，请重试")
+          setFormError(resolveErrorMessage(err, t("createAddressFailed"), tErrors("sessionExpired")))
         },
       })
     }
@@ -118,7 +122,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
                           className="h-5 gap-0.5 border-amber-400/25 px-1.5 text-[10px] text-amber-400/80"
                         >
                           <Star size={9} />
-                          默认
+                          {tCommon("default")}
                         </Badge>
                       )}
                     </div>
@@ -138,7 +142,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
                           setDefault(addr.id)
                         }}
                         disabled={isSettingDefault}
-                        title="设为默认"
+                        title={t("setDefault")}
                         className="text-muted-foreground/55 hover:text-amber-400/70"
                       >
                         {isSettingDefault ? (
@@ -157,7 +161,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
                         e.stopPropagation()
                         openEdit(addr)
                       }}
-                      title="编辑地址"
+                      title={t("editAddress")}
                       className="text-muted-foreground/55 hover:text-foreground/70"
                     >
                       <Pencil size={13} />
@@ -177,8 +181,8 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
       ) : (
         <ProfileEmptyState
           icon={MapPin}
-          title="还没有收货地址"
-          description="新增收货地址后即可完成下单。"
+          title={t("noAddress")}
+          description={t("addAddressHint")}
         />
       )}
 
@@ -190,7 +194,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
         className="w-full cursor-pointer border-dashed"
       >
         <Plus size={14} />
-        新增收货地址
+        {t("addAddress")}
       </Button>
 
       <AddressFormDialog

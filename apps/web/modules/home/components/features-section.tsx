@@ -1,33 +1,35 @@
 'use client'
 
 import { Download, Layout, Palette, Sparkles, Play } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@workspace/ui/components/card'
 
 export function FeaturesSection() {
+  const t = useTranslations('Home.features')
+
   return (
     <section id="features">
       <div className="py-24">
         <div className="mx-auto w-full max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* 大卡：所见即所得编辑器 */}
             <Card className="col-span-full overflow-hidden pl-6 pt-6 gap-0">
               <Layout className="text-primary size-5" />
-              <h3 className="mt-5 text-lg font-semibold">所见即所得编辑器</h3>
+              <h3 className="mt-5 text-lg font-semibold">{t('wysiwygTitle')}</h3>
               <p className="text-muted-foreground mt-3 max-w-xl text-balance">
-                直观的键帽编辑界面，实时预览每一个键帽的颜色、文字与图标，拖拽排布，设计结果即时呈现。
+                {t('wysiwygBody')}
               </p>
               <div className="[mask-image:linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)] -ml-2 -mt-2 mr-0.5 pl-2 pt-2">
                 <div className="bg-background rounded-tl-xl relative mx-auto mt-8 h-96 overflow-hidden border border-transparent shadow ring-1 ring-foreground/5">
                   <img
-                    src="/images/hero_light.png"
-                    alt="键帽设计编辑器界面"
+                    src="/images/feature_light.png"
+                    alt={t('previewAlt')}
                     width="2700"
                     height="1440"
                     className="object-top h-full w-full object-cover dark:hidden"
                   />
                   <img
-                    src="/images/hero_dark.png"
-                    alt="键帽设计编辑器界面"
+                    src="/images/feature_dark.png"
+                    alt={t('previewAlt')}
                     width="2700"
                     height="1440"
                     className="object-top hidden h-full w-full object-cover dark:block"
@@ -36,34 +38,31 @@ export function FeaturesSection() {
               </div>
             </Card>
 
-            {/* 中卡：丰富色彩系统 */}
             <Card className="overflow-hidden p-6 gap-0">
               <Palette className="text-primary size-5" />
-              <h3 className="mt-5 text-lg font-semibold">丰富色彩系统</h3>
+              <h3 className="mt-5 text-lg font-semibold">{t('colorTitle')}</h3>
               <p className="text-muted-foreground mt-3 text-balance">
-                支持自定义颜色与渐变，完整色盘覆盖机械键盘主流配色方案。
+                {t('colorBody')}
               </p>
               <ColorPaletteIllustration />
             </Card>
 
-            {/* 中卡：导出 SVG / 图片 */}
             <Card className="group overflow-hidden px-6 pt-6 gap-0">
               <Download className="text-primary size-5" />
-              <h3 className="mt-5 text-lg font-semibold">导出 SVG / 图片</h3>
+              <h3 className="mt-5 text-lg font-semibold">{t('exportTitle')}</h3>
               <p className="text-muted-foreground mt-3 text-balance">
-                一键导出为 SVG 矢量图或高清 PNG，随时用于设计稿分享或打印预览。
+                {t('exportBody')}
               </p>
-              <ExportIllustration />
+              <ExportIllustration label={t('exportFileLabel')} />
             </Card>
 
-            {/* 中卡：智能布局适配 */}
             <Card className="group overflow-hidden px-6 pt-6 gap-0">
               <Sparkles className="text-primary size-5" />
-              <h3 className="mt-5 text-lg font-semibold">智能布局适配</h3>
+              <h3 className="mt-5 text-lg font-semibold">{t('layoutTitle')}</h3>
               <p className="text-muted-foreground mt-3 text-balance">
-                自动识别 60%、75%、TKL 等主流键盘布局，键位一键对齐排列。
+                {t('layoutBody')}
               </p>
-              <LayoutIllustration />
+              <LayoutIllustration label={t('chooseLayoutLabel')} />
             </Card>
           </div>
         </div>
@@ -98,7 +97,7 @@ const ColorPaletteIllustration = () => {
   )
 }
 
-const ExportIllustration = () => {
+const ExportIllustration = ({ label }: { label: string }) => {
   return (
     <div aria-hidden className="relative mt-7">
       <Card className="aspect-video w-4/5 translate-y-4 p-4 transition-transform duration-200 ease-in-out group-hover:-rotate-3 gap-0">
@@ -106,7 +105,7 @@ const ExportIllustration = () => {
           <div className="bg-primary/10 flex size-6 items-center justify-center rounded-md">
             <Download className="text-primary size-3.5" />
           </div>
-          <span className="text-muted-foreground text-sm font-medium">导出文件</span>
+          <span className="text-muted-foreground text-sm font-medium">{label}</span>
         </div>
         <div className="ml-8 space-y-2">
           <div className="flex items-center gap-2">
@@ -132,7 +131,7 @@ const ExportIllustration = () => {
   )
 }
 
-const LayoutIllustration = () => {
+const LayoutIllustration = ({ label }: { label: string }) => {
   const layouts = [
     { label: '100%', keys: 12, active: false },
     { label: 'TKL', keys: 10, active: false },
@@ -146,7 +145,7 @@ const LayoutIllustration = () => {
       aria-hidden
       className="mt-6 translate-y-2 p-4 pb-6 transition-transform duration-200 group-hover:translate-y-0 gap-0"
     >
-      <p className="text-muted-foreground mb-3 text-xs">选择键盘布局</p>
+      <p className="text-muted-foreground mb-3 text-xs">{label}</p>
       <div className="space-y-2">
         {layouts.map((layout) => (
           <div

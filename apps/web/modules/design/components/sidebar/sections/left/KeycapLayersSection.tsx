@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -31,6 +32,8 @@ interface KeycapSubRowProps {
 }
 
 function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect, onEnterEdit }: KeycapSubRowProps) {
+  const t = useTranslations("Design.layers")
+
   return (
     <li
       onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey) }}
@@ -56,7 +59,7 @@ function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect, on
             <ImageIcon className="size-2.5 shrink-0 text-chart-2/70" />
           </TooltipTrigger>
           <TooltipContent side="right" className="text-[11px]">
-            该键帽有内嵌图片
+            {t("hasEmbeddedImage")}
           </TooltipContent>
         </Tooltip>
       )}
@@ -65,7 +68,7 @@ function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect, on
           variant="outline"
           className="h-3.5 border-primary/35 bg-primary/10 px-1 text-[8px] font-normal text-primary"
         >
-          已改
+          {t("modified")}
         </Badge>
       )}
     </li>
@@ -104,6 +107,9 @@ function KeycapLayerRow({
   onToggleLabelsHidden,
   onRemove,
 }: KeycapLayerRowProps) {
+  const t = useTranslations("Design.layers")
+  const displayName = layer.id === "layer-default-keycap" ? t("defaultName") : layer.name
+
   return (
     <li
       onClick={onActivate}
@@ -121,7 +127,7 @@ function KeycapLayerRow({
         variant="ghost"
         size="icon-xs"
         className="shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
-        title={isExpanded ? "折叠子键帽" : "展开子键帽"}
+        title={isExpanded ? t("collapseKeys") : t("expandKeys")}
         onClick={onToggleExpand}
       >
         {isExpanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
@@ -133,7 +139,7 @@ function KeycapLayerRow({
           !layer.visible && "opacity-40",
         )}
       >
-        {layer.name}
+        {displayName}
       </span>
 
       {!layer.visible && (
@@ -141,7 +147,7 @@ function KeycapLayerRow({
           variant="outline"
           className="h-4 border-border px-1 text-[9px] font-normal text-muted-foreground shrink-0"
         >
-          隐藏
+          {t("hidden")}
         </Badge>
       )}
       {layer.locked && (
@@ -149,7 +155,7 @@ function KeycapLayerRow({
           variant="outline"
           className="h-4 border-chart-4/35 bg-chart-4/10 px-1 text-[9px] font-normal text-chart-4 shrink-0"
         >
-          锁定
+          {t("locked")}
         </Badge>
       )}
 
@@ -262,6 +268,7 @@ function KeycapLayerTreeNode({
 // ─── 键帽设计层区 ──────────────────────────────────────
 // layers[0] = 最顶层，面板中正序展示
 export function KeycapLayersSection() {
+  const t = useTranslations("Design.layers")
   const { allKeys: ALL_KEYS } = useLayoutKeys()
   const layers = useDesignUIStore((s) => s.layers)
   const activeLayerId = useDesignUIStore((s) => s.activeLayerId)
@@ -315,12 +322,12 @@ export function KeycapLayersSection() {
   return (
     <div className="flex flex-col gap-px">
       <SectionHeader
-        label="键帽设计层"
-        tooltip="键帽设计层影响整个键盘的样式。列表中越靠上表示层叠越高（覆盖下方图层）。键帽设计层整体位于画布图片之下。"
+        label={t("keycapGroup")}
+        tooltip={t("keycapGroupHint")}
       />
       {layers.length === 0 && (
         <p className="py-2 text-center text-[11px] text-muted-foreground">
-          暂无键帽设计层
+          {t("noKeycapLayers")}
         </p>
       )}
       <div className="flex flex-col gap-px">

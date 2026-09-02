@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useRef, useState, type ReactNode, type MouseEvent, type KeyboardEvent } from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronDown, Trash2, Upload } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
@@ -14,6 +15,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import {
   FONT_CATEGORIES,
   FONT_OPTIONS,
+  type FontCategory,
   type FontOption,
 } from "@/modules/design/components/sidebar/sections/right/font-options"
 import { toCssFontFamily, toUserFontRef } from "@/lib/fonts/fontRef"
@@ -41,6 +43,9 @@ export function FontFamilySelect({
   onOpenChange,
   onPick,
 }: FontFamilySelectProps) {
+  const t = useTranslations("Design.fonts")
+  const tCommon = useTranslations("Common")
+  const tFonts = useTranslations("Fonts")
   const sessionFonts = useSessionFontStore((state) => state.fonts)
   const addSessionFont = useSessionFontStore((state) => state.addFont)
   const removeSessionFont = useSessionFontStore((state) => state.removeFont)
@@ -48,9 +53,18 @@ export function FontFamilySelect({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isSessionFontLoading, setIsSessionFontLoading] = useState(false)
 
+  const FONT_ERROR_KEYS = ["ttfOnly", "tooLarge", "parseFailed"] as const
+  const CATEGORY_I18N: Record<FontCategory, "myFonts" | "sans" | "mono" | "serif" | "cjk"> = {
+    custom: "myFonts",
+    sans: "sans",
+    mono: "mono",
+    serif: "serif",
+    cjk: "cjk",
+  }
+
   const customOptions: FontOption[] = sessionFonts.map((f) => ({
     value: toUserFontRef(f.id),
-    label: f.displayName,
+    label: f.displayName === "localFont" ? t("localFont") : f.displayName,
     category: "custom",
     bold: false,
     italic: false,
@@ -59,8 +73,8 @@ export function FontFamilySelect({
   const allOptions = [...customOptions, ...FONT_OPTIONS]
 
   const currentLabel = isMixed
-    ? "混合"
-    : (allOptions.find((f) => f.value === effectiveFontFamily)?.label ?? "自定义")
+    ? tCommon("mixed")
+    : (allOptions.find((f) => f.value === effectiveFontFamily)?.label ?? tCommon("custom"))
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -73,9 +87,12 @@ export function FontFamilySelect({
       onPick(toUserFontRef(font.id))
       onOpenChange(false)
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "上传失败，请确认文件为 .ttf / .otf"
-      setUploadError(msg)
+      const msg = err instanceof Error ? err.message : ""
+      setUploadError(
+        (FONT_ERROR_KEYS as readonly string[]).includes(msg)
+          ? tFonts(msg as (typeof FONT_ERROR_KEYS)[number])
+          : t("uploadFailed"),
+      )
     } finally {
       setIsSessionFontLoading(false)
     }
@@ -83,7 +100,7 @@ export function FontFamilySelect({
 
   const handleDelete = async (e: MouseEvent, id: string, ref: string) => {
     e.stopPropagation()
-    if (!confirm("确定从「我的字体」中移除该字体？已使用该字体的设计仍保留引用。")) {
+    if (!confirm(t("removeConfirm"))) {
       return
     }
     try {
@@ -104,7 +121,7 @@ export function FontFamilySelect({
       >
         {label}
         {isMixed && (
-          <span className="ml-1.5 text-[10px] text-chart-4/80">混合</span>
+            <span className="ml-1.5 text-[10px] text-chart-4/80">{tCommon("mixed")}</span>
         )}
       </Label>
       <Popover
@@ -150,7 +167,7 @@ export function FontFamilySelect({
                 <div key={cat.key}>
                   <div className="flex items-center justify-between gap-1 px-2 py-1">
                     <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
-                      {cat.label}
+                      {t(CATEGORY_I18N[cat.key])}
                     </span>
                     {cat.key === "custom" && (
                       <button
@@ -158,21 +175,21 @@ export function FontFamilySelect({
                         className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50"
                         disabled={isSessionFontLoading}
                         onClick={() => fileInputRef.current?.click()}
-                        title="上传 .ttf / .otf"
+                        title={t("uploadTitle")}
                       >
                         {isSessionFontLoading ? (
                           <Spinner className="size-3" />
                         ) : (
                           <Upload className="size-3" />
                         )}
-                        上传
+                        {t("upload")}
                       </button>
                     )}
                   </div>
 
                   {cat.key === "custom" && items.length === 0 && (
                     <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
-                      可临时加载 .ttf / .otf；刷新后会移除（请确保拥有使用授权）
+                      {t("emptyHint")}
                     </div>
                   )}
 
@@ -200,7 +217,7 @@ export function FontFamilySelect({
                             role="button"
                             tabIndex={0}
                             className="rounded p-0.5 opacity-0 transition-opacity hover:bg-destructive/15 group-hover:opacity-100"
-                            title="移除"
+                            title={t("remove")}
                             onClick={(e) => handleDelete(e, userId, f.value)}
                             onKeyDown={(e: KeyboardEvent) => {
                               if (e.key === "Enter" || e.key === " ") {

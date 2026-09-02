@@ -7,6 +7,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -33,6 +34,7 @@ export function DataTablePagination<TData>({
   totalRows,
   pageSizeOptions = [10, 20, 30, 50],
 }: DataTablePaginationProps<TData>) {
+  const t = useTranslations("DataTable")
   const { pageIndex, pageSize } = table.getState().pagination
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length
@@ -43,10 +45,10 @@ export function DataTablePagination<TData>({
       {/* 统计信息：移动端显示在顶部居中，桌面端靠左 */}
       <div className="text-center text-sm text-muted-foreground sm:flex-1 sm:text-left">
         {totalRows !== undefined ? (
-          <span>共 {totalRows} 条</span>
+          <span>{t("total", { count: totalRows })}</span>
         ) : (
           <span>
-            已选 {selectedCount} / {filteredCount} 行
+            {t("selectedOf", { selected: selectedCount, total: filteredCount })}
           </span>
         )}
       </div>
@@ -54,7 +56,7 @@ export function DataTablePagination<TData>({
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:flex-nowrap sm:space-x-6 lg:space-x-8">
         {/* 每页行数：移动端隐藏文字标签，仅显示 Select */}
         <div className="flex items-center space-x-2">
-          <p className="hidden text-sm font-medium whitespace-nowrap sm:block">每页行数</p>
+          <p className="hidden text-sm font-medium whitespace-nowrap sm:block">{t("rowsPerPage")}</p>
           <Select
             value={String(pageSize)}
             onValueChange={(value) => table.setPageSize(Number(value))}
@@ -74,7 +76,7 @@ export function DataTablePagination<TData>({
 
         {/* 页码信息 */}
         <div className="flex min-w-[80px] items-center justify-center text-sm font-medium">
-          {pageIndex + 1} / {table.getPageCount()} 页
+          {t("page", { page: pageIndex + 1, total: table.getPageCount() })}
         </div>
 
         {/* 翻页按钮 */}
@@ -86,7 +88,7 @@ export function DataTablePagination<TData>({
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
           >
-            <span className="sr-only">跳转到第一页</span>
+            <span className="sr-only">{t("firstPage")}</span>
             <ChevronsLeft />
           </Button>
           <Button
@@ -96,7 +98,7 @@ export function DataTablePagination<TData>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            <span className="sr-only">上一页</span>
+            <span className="sr-only">{t("prevPage")}</span>
             <ChevronLeft />
           </Button>
           <Button
@@ -106,7 +108,7 @@ export function DataTablePagination<TData>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            <span className="sr-only">下一页</span>
+            <span className="sr-only">{t("nextPage")}</span>
             <ChevronRight />
           </Button>
           <Button
@@ -116,7 +118,7 @@ export function DataTablePagination<TData>({
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
           >
-            <span className="sr-only">跳转到最后一页</span>
+            <span className="sr-only">{t("lastPage")}</span>
             <ChevronsRight />
           </Button>
         </div>

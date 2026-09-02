@@ -1,6 +1,7 @@
 "use client"
 
 import { flexRender, type Table } from "@tanstack/react-table"
+import { useTranslations } from "next-intl"
 
 import {
   Table as UITable,
@@ -32,9 +33,11 @@ export function DataTableCore<TData>({
   table,
   columnCount,
   isLoading = false,
-  emptyText = "暂无数据",
+  emptyText,
   onRowClick,
 }: DataTableCoreProps<TData>) {
+  const t = useTranslations("DataTable")
+  const resolvedEmpty = emptyText ?? t("empty")
   return (
     <div className="overflow-hidden rounded-md border">
       <UITable>
@@ -76,7 +79,7 @@ export function DataTableCore<TData>({
           ) : (
             <TableRow>
               <TableCell colSpan={columnCount} className="h-24 text-center text-muted-foreground">
-                {emptyText}
+                {resolvedEmpty}
               </TableCell>
             </TableRow>
           )}

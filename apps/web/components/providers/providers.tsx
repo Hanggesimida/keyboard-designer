@@ -13,6 +13,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="dark"
       enableSystem={false}
       disableTransitionOnChange
+      // Locale switches remount this client provider. React 19 errors if
+      // next-themes' FOUC <script> is rendered on the client; SSR still emits JS.
+      scriptProps={
+        typeof window === 'undefined'
+          ? undefined
+          : { type: 'application/json' }
+      }
     >
       <QueryClientProvider client={queryClient}>
         {children}

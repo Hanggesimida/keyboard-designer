@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useTranslations } from "next-intl"
 import { EyeOff, Lock } from "lucide-react"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
@@ -8,6 +9,7 @@ import { MultiKeycapEditor } from "./keycap-inspector/MultiKeycapEditor"
 import { SingleKeycapEditor } from "./keycap-inspector/SingleKeycapEditor"
 
 export function KeycapInspectorSection() {
+  const t = useTranslations("Design.inspector")
   const { keysById: KEYS_BY_ID } = useLayoutKeys()
   const selectedKeycapIds = useDesignUIStore((s) => s.selectedKeycapIds)
   const layers = useDesignUIStore((s) => s.layers)
@@ -25,15 +27,15 @@ export function KeycapInspectorSection() {
   const editorDisabled = noActiveLayer || isLayerLocked || isLayerHidden
 
   let disabledReason: string | null = null
-  if (noActiveLayer) disabledReason = "未选中图层"
-  else if (isLayerLocked) disabledReason = "当前图层已锁定"
-  else if (isLayerHidden) disabledReason = "当前图层已隐藏"
+  if (noActiveLayer) disabledReason = t("noLayer")
+  else if (isLayerLocked) disabledReason = t("layerLocked")
+  else if (isLayerHidden) disabledReason = t("layerHidden")
 
   if (selectedKeycapIds.length === 0) {
     return (
-      <PanelSection title="键帽样式">
+      <PanelSection title={t("keycapStyle")}>
         <p className="py-1 text-center text-[11px] text-muted-foreground">
-          未选中键帽
+          {t("noKeycap")}
         </p>
       </PanelSection>
     )
@@ -41,16 +43,12 @@ export function KeycapInspectorSection() {
 
   if (selectedKeycapIds.length > 1) {
     return (
-      <PanelSection title="键帽样式">
+      <PanelSection title={t("keycapStyle")}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">
-            已选中{" "}
-            <span className="font-medium text-foreground">
-              {selectedKeycapIds.length}
-            </span>{" "}
-            个键帽
+            {t("selectedCount", { count: selectedKeycapIds.length })}
           </span>
-          <span className="text-[10px] text-muted-foreground/60">批量编辑</span>
+          <span className="text-[10px] text-muted-foreground/60">{t("batchEdit")}</span>
         </div>
 
         {editorDisabled && disabledReason && (
@@ -82,16 +80,16 @@ export function KeycapInspectorSection() {
 
   if (!key) {
     return (
-      <PanelSection title="键帽样式">
+      <PanelSection title={t("keycapStyle")}>
         <p className="py-1 text-center text-[11px] text-muted-foreground">
-          未选中键帽
+          {t("noKeycap")}
         </p>
       </PanelSection>
     )
   }
 
   return (
-    <PanelSection title="键帽样式">
+    <PanelSection title={t("keycapStyle")}>
       {editorDisabled && disabledReason && (
         <div className="mt-3 flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
           {isLayerLocked && <Lock className="size-3 shrink-0" />}

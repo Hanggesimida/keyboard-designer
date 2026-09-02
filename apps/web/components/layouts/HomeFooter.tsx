@@ -1,5 +1,8 @@
-import Link from "next/link"
+"use client"
+
+import { Link } from "@/i18n/navigation"
 import type { ComponentType } from "react"
+import { useTranslations } from "next-intl"
 import { Globe, Keyboard, LayoutGrid } from "lucide-react"
 import { Logo } from "@/components/layouts/Logo"
 
@@ -24,37 +27,39 @@ type FooterLink = {
   external?: boolean
 }
 
-const footerLinks: { title: string; links: FooterLink[] }[] = [
-  {
-    title: "产品",
-    links: [
-      { name: "功能特性", href: "#features", icon: LayoutGrid },
-      { name: "设计编辑器", href: "/design", icon: Keyboard },
-    ],
-  },
-  {
-    title: "关于",
-    links: [
-      {
-        name: "GitHub",
-        href: "https://github.com/Hanggesimida/keyboard-designer",
-        icon: GitHubIcon,
-        external: true,
-      },
-      {
-        name: "作者网站",
-        href: "https://www.weihangli.dev/",
-        icon: Globe,
-        external: true,
-      },
-    ],
-  },
-]
-
 const linkClassName =
   "text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors duration-150"
 
 export function HomeFooter() {
+  const t = useTranslations("Home.footer")
+
+  const footerLinks: { title: string; links: FooterLink[] }[] = [
+    {
+      title: t("product"),
+      links: [
+        { name: t("features"), href: "#features", icon: LayoutGrid },
+        { name: t("editor"), href: "/design", icon: Keyboard },
+      ],
+    },
+    {
+      title: t("about"),
+      links: [
+        {
+          name: "GitHub",
+          href: "https://github.com/Hanggesimida/keyboard-designer",
+          icon: GitHubIcon,
+          external: true,
+        },
+        {
+          name: t("authorSite"),
+          href: "https://www.weihangli.dev/",
+          icon: Globe,
+          external: true,
+        },
+      ],
+    },
+  ]
+
   return (
     <footer id="about" className="border-t border-border">
       <div className="mx-auto max-w-6xl px-6 py-12">
@@ -64,7 +69,7 @@ export function HomeFooter() {
               <Logo />
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              在浏览器中设计键盘键帽，所见即所得。完全免费，无需注册。
+              {t("blurb")}
             </p>
           </div>
 

@@ -3,12 +3,12 @@ import type { NavGroup } from "@/components/layouts/dashboard"
 
 export const adminNavGroups: NavGroup[] = [
   {
-    title: "管理",
+    title: "group",
     items: [
-      { href: "/admin", label: "概览", icon: LayoutDashboard, exact: true },
-      { href: "/admin/orders", label: "订单管理", icon: ShoppingBag },
-      { href: "/admin/production-board", label: "生产看板", icon: Kanban },
-      { href: "/admin/users", label: "用户管理", icon: Users },
+      { href: "/admin", label: "overview", icon: LayoutDashboard, exact: true },
+      { href: "/admin/orders", label: "orders", icon: ShoppingBag },
+      { href: "/admin/production-board", label: "board", icon: Kanban },
+      { href: "/admin/users", label: "users", icon: Users },
     ],
   },
 ]

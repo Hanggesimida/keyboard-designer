@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useId, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { X, ImagePlus, Trash2, Move, Crosshair } from "lucide-react"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import type { KeyDef } from "@/modules/design/types/design"
@@ -59,6 +60,7 @@ interface Props {
 }
 
 export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClose }: Props) {
+  const t = useTranslations("Design.editorModal")
   // 2. 从 Zustand Store 中获取状态与操作方法
   const override = useDesignUIStore((s) => s.layerKeycapOverrides[layerId]?.[keyId])
   const globalDefaults = useDesignUIStore((s) => s.globalKeycapStyle)
@@ -519,7 +521,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
         {/* 顶部状态栏 */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground select-none">键帽编辑</span>
+            <span className="text-[11px] text-muted-foreground select-none">{t("title")}</span>
             <span className="text-[11px] text-muted-foreground/50">/</span>
             <span className="text-[12px] font-medium text-foreground select-none">
               {labelText || keyDef.keyId}
@@ -530,7 +532,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
             variant="ghost"
             size="icon-sm"
             onClick={onClose}
-            title="关闭 (Esc)"
+            title={t("closeEsc")}
           >
             <X className="size-3.5" />
           </Button>
@@ -776,7 +778,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                 className="pointer-events-none absolute inset-0 flex items-center justify-center rounded border-2 border-dashed border-primary/70 bg-primary/10"
               >
                 <span className="rounded border border-border bg-popover/90 px-2 py-1 text-xs text-primary select-none backdrop-blur-sm">
-                  释放文件以上传
+                  {t("dropToUpload")}
                 </span>
               </div>
             )}
@@ -789,13 +791,13 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
           >
             {/* 刻字内容 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-muted-foreground select-none">刻字</span>
+              <span className="text-[11px] text-muted-foreground select-none">{t("legend")}</span>
               <Textarea
                 value={labelText}
                 onChange={(e) =>
                   setKeycapOverride(layerId, keyId, { labelText: e.target.value })
                 }
-                placeholder="输入刻字，支持换行"
+                placeholder={t("legendPlaceholder")}
                 style={{ fontFamily: labelFontFamily, lineHeight: "1.5" }}
                 className="text-xs"
               />
@@ -803,7 +805,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
             {/* 字间距 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-muted-foreground select-none">字间距</span>
+              <span className="text-[11px] text-muted-foreground select-none">{t("letterSpacing")}</span>
               <Input
                 type="number"
                 min={-3}
@@ -819,7 +821,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
             {/* 行距 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-muted-foreground select-none">行距</span>
+              <span className="text-[11px] text-muted-foreground select-none">{t("lineHeight")}</span>
               <Input
                 type="number"
                 min={0.8}
@@ -835,15 +837,15 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
             {/* 文字位置九宫格 */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-muted-foreground select-none">文字位置</span>
+              <span className="text-[11px] text-muted-foreground select-none">{t("textPosition")}</span>
               <LabelAlignmentGrid hideLabel onAlign={handleAlign} />
             </div>
 
             {/* 文字颜色 */}
             <div className="flex flex-col gap-2">
-              <span className="text-[11px] text-muted-foreground select-none">文字颜色</span>
+              <span className="text-[11px] text-muted-foreground select-none">{t("textColor")}</span>
               <ColorRow
-                label="文字颜色"
+                label={t("textColor")}
                 hideLabel
                 value={override?.labelColor ?? ""}
                 fallback={globalDefaults.labelColor ?? DEFAULT_KEYCAP_COLORS.labelColor}
@@ -861,10 +863,10 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
             size="sm"
             className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px]"
             onClick={() => fileInputRef.current?.click()}
-            title="添加本地图片"
+            title={t("addLocalImage")}
           >
             <ImagePlus className="size-3.5" />
-            上传图片
+            {t("uploadImage")}
           </Button>
 
           {!isIso && (
@@ -874,10 +876,10 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
               size="sm"
               className="h-auto gap-1.5 px-2.5 py-1.5 text-[12px]"
               onClick={() => setShowCrosshair((v) => !v)}
-              title="切换十字辅助线"
+              title={t("toggleGuides")}
             >
               <Crosshair className="size-3.5" />
-              辅助线
+              {t("guides")}
             </Button>
           )}
 
@@ -891,10 +893,10 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                 removeCanvasElement(selectedImageId)
                 setSelectedImageId(null)
               }}
-              title="删除图片 (Del)"
+              title={t("deleteImageDel")}
             >
               <Trash2 className="size-3.5" />
-              删除图片
+              {t("deleteImage")}
             </Button>
           )}
 
@@ -902,7 +904,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
 
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60 select-none">
             <Move className="size-3" />
-            <span>拖拽调整位置，选中后方向键微调</span>
+            <span>{t("hint")}</span>
           </div>
         </div>
 

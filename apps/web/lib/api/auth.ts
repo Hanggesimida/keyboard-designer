@@ -3,71 +3,111 @@ import { request } from './request';
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
-export const loginSchema = z.object({
-  email: z.string().email('请输入有效的邮箱地址'),
-  password: z.string().min(1, '请输入密码'),
-});
+type Translate = (
+  key:
+    | "invalidEmail"
+    | "passwordRequired"
+    | "otpLength"
+    | "otpDigits"
+    | "passwordMin"
+    | "passwordMax"
+    | "passwordMismatch"
+    | "currentPasswordRequired",
+) => string;
 
-export const sendOtpSchema = z.object({
-  email: z.string().email('请输入有效的邮箱地址'),
-});
+const defaultT: Translate = (key) => key;
 
-export const verifyOtpSchema = z.object({
-  otp: z
-    .string()
-    .length(6, '验证码为 6 位数字')
-    .regex(/^\d+$/, '验证码只能包含数字'),
-});
-
-export const setPasswordSchema = z
-  .object({
-    password: z.string().min(8, '密码至少 8 位').max(64, '密码最多 64 位'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: '两次密码不一致',
-    path: ['confirm'],
+export function createLoginSchema(t: Translate) {
+  return z.object({
+    email: z.string().email(t('invalidEmail')),
+    password: z.string().min(1, t('passwordRequired')),
   });
+}
 
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().optional(),
-    password: z.string().min(8, '密码至少 8 位').max(64, '密码最多 64 位'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: '两次密码不一致',
-    path: ['confirm'],
+export function createSendOtpSchema(t: Translate) {
+  return z.object({
+    email: z.string().email(t('invalidEmail')),
   });
+}
 
-export const changePasswordWithCurrentSchema = z
-  .object({
-    currentPassword: z.string().min(1, '请输入当前密码'),
-    password: z.string().min(8, '密码至少 8 位').max(64, '密码最多 64 位'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: '两次密码不一致',
-    path: ['confirm'],
-  });
-
-export const forgotPasswordSchema = z.object({
-  email: z.string().email('请输入有效的邮箱地址'),
-});
-
-export const resetPasswordSchema = z
-  .object({
+export function createVerifyOtpSchema(t: Translate) {
+  return z.object({
     otp: z
       .string()
-      .length(6, '验证码为 6 位数字')
-      .regex(/^\d+$/, '验证码只能包含数字'),
-    password: z.string().min(8, '密码至少 8 位').max(64, '密码最多 64 位'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: '两次密码不一致',
-    path: ['confirm'],
+      .length(6, t('otpLength'))
+      .regex(/^\d+$/, t('otpDigits')),
   });
+}
+
+export function createSetPasswordSchema(t: Translate) {
+  return z
+    .object({
+      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      confirm: z.string(),
+    })
+    .refine((v) => v.password === v.confirm, {
+      message: t('passwordMismatch'),
+      path: ['confirm'],
+    });
+}
+
+export function createChangePasswordSchema(t: Translate) {
+  return z
+    .object({
+      currentPassword: z.string().optional(),
+      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      confirm: z.string(),
+    })
+    .refine((v) => v.password === v.confirm, {
+      message: t('passwordMismatch'),
+      path: ['confirm'],
+    });
+}
+
+export function createChangePasswordWithCurrentSchema(t: Translate) {
+  return z
+    .object({
+      currentPassword: z.string().min(1, t('currentPasswordRequired')),
+      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      confirm: z.string(),
+    })
+    .refine((v) => v.password === v.confirm, {
+      message: t('passwordMismatch'),
+      path: ['confirm'],
+    });
+}
+
+export function createForgotPasswordSchema(t: Translate) {
+  return z.object({
+    email: z.string().email(t('invalidEmail')),
+  });
+}
+
+export function createResetPasswordSchema(t: Translate) {
+  return z
+    .object({
+      otp: z
+        .string()
+        .length(6, t('otpLength'))
+        .regex(/^\d+$/, t('otpDigits')),
+      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      confirm: z.string(),
+    })
+    .refine((v) => v.password === v.confirm, {
+      message: t('passwordMismatch'),
+      path: ['confirm'],
+    });
+}
+
+export const loginSchema = createLoginSchema(defaultT);
+export const sendOtpSchema = createSendOtpSchema(defaultT);
+export const verifyOtpSchema = createVerifyOtpSchema(defaultT);
+export const setPasswordSchema = createSetPasswordSchema(defaultT);
+export const changePasswordSchema = createChangePasswordSchema(defaultT);
+export const changePasswordWithCurrentSchema =
+  createChangePasswordWithCurrentSchema(defaultT);
+export const forgotPasswordSchema = createForgotPasswordSchema(defaultT);
+export const resetPasswordSchema = createResetPasswordSchema(defaultT);
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SendOtpInput = z.infer<typeof sendOtpSchema>;

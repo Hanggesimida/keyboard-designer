@@ -2,6 +2,7 @@
 
 import { forwardRef } from 'react';
 import { Bell } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@workspace/ui/lib/utils';
 
 interface NotificationBellProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,10 +12,11 @@ interface NotificationBellProps extends React.ButtonHTMLAttributes<HTMLButtonEle
 
 export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellProps>(
   ({ unreadCount, isOpen, className, ...props }, ref) => {
+    const t = useTranslations('Admin.notifications');
     return (
       <button
         ref={ref}
-        aria-label={`通知${unreadCount > 0 ? `（${unreadCount} 条未读）` : ''}`}
+        aria-label={unreadCount > 0 ? t('unread', { count: unreadCount }) : t('title')}
         className={cn(
           'relative flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
           isOpen

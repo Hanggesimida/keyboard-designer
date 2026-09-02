@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -24,6 +25,8 @@ export function BoldItalicToggle({
   boldMixed,
   italicMixed,
 }: BoldItalicToggleProps) {
+  const t = useTranslations("Design.type")
+
   return (
     <div className="flex gap-1.5">
       <Button
@@ -33,11 +36,11 @@ export function BoldItalicToggle({
         title={
           fontCaps.bold
             ? boldMixed
-              ? "混合（点击统一加粗）"
+              ? t("mixedBold")
               : isBold
-                ? "取消加粗"
-                : "加粗"
-            : "当前字体不支持加粗"
+                ? t("unbold")
+                : t("bold")
+            : t("boldUnsupported")
         }
         disabled={disabled || !fontCaps.bold}
         className={cn(
@@ -56,11 +59,11 @@ export function BoldItalicToggle({
         title={
           fontCaps.italic
             ? italicMixed
-              ? "混合（点击统一斜体）"
+              ? t("mixedItalic")
               : isItalic
-                ? "取消斜体"
-                : "斜体"
-            : "当前字体不支持斜体"
+                ? t("unitalic")
+                : t("italic")
+            : t("italicUnsupported")
         }
         disabled={disabled || !fontCaps.italic}
         className={cn(

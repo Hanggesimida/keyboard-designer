@@ -1,16 +1,16 @@
 "use client"
 
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { getAvailableTransitions, type UpdateOrderStatusPayload } from "@/lib/api/admin-orders"
-import { ORDER_STATUS_CONFIG } from "@/modules/orders"
 import type { OrderStatus } from "@/lib/api/orders"
 
-const ACTION_CONFIG: Partial<Record<OrderStatus, { label: string; variant: "primary" | "danger" | "warning" | "default" }>> = {
-  APPROVED: { label: "接单", variant: "primary" },
-  PROCESSING: { label: "开始生产", variant: "primary" },
-  SHIPPING: { label: "开始发货", variant: "primary" },
-  COMPLETED: { label: "确认完成", variant: "primary" },
-  CANCELLED: { label: "拒单", variant: "danger" },
+const ACTION_CONFIG: Partial<Record<OrderStatus, { key: "accept" | "startProduction" | "startShipping" | "complete" | "reject"; variant: "primary" | "danger" | "warning" | "default" }>> = {
+  APPROVED: { key: "accept", variant: "primary" },
+  PROCESSING: { key: "startProduction", variant: "primary" },
+  SHIPPING: { key: "startShipping", variant: "primary" },
+  COMPLETED: { key: "complete", variant: "primary" },
+  CANCELLED: { key: "reject", variant: "danger" },
 }
 
 const VARIANT_CLS = {
@@ -32,6 +32,8 @@ export function StatusActionButtons({
   isPending,
   onUpdate,
 }: StatusActionButtonsProps) {
+  const t = useTranslations("Admin.actions")
+  const tStatus = useTranslations("OrderStatus")
   const available = getAvailableTransitions(currentStatus)
 
   if (available.length === 0) return null
@@ -40,7 +42,7 @@ export function StatusActionButtons({
     <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:flex-wrap sm:w-auto">
       {available.map((target) => {
         const action = ACTION_CONFIG[target]
-        const label = action?.label ?? ORDER_STATUS_CONFIG[target]?.label ?? target
+        const label = action ? t(action.key) : tStatus(target)
         const variant = action?.variant ?? "default"
         const isLastOdd = available.length % 2 === 1 && target === available[available.length - 1]
 

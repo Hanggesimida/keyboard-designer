@@ -1,16 +1,19 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldDescription } from "@workspace/ui/components/field"
 
 type WechatAuthButtonProps = {
-  action: "登录" | "注册"
+  action: "signIn" | "signUp"
 }
 
 export function WechatAuthButton({ action }: WechatAuthButtonProps) {
+  const t = useTranslations("Auth")
   const [showHint, setShowHint] = useState(false)
+  const actionLabel = action === "signIn" ? t("signInAction") : t("signUpAction")
 
   function handleClick() {
     setShowHint(true)
@@ -26,11 +29,11 @@ export function WechatAuthButton({ action }: WechatAuthButtonProps) {
             fill="currentColor"
           />
         </svg>
-        微信{action}
+        {t("wechatAction", { action: actionLabel })}
       </Button>
       {showHint && (
         <FieldDescription className="text-center text-amber-600 dark:text-amber-400">
-          微信{action}功能暂未开放，请使用邮箱{action}
+          {t("wechatUnavailable", { action: actionLabel })}
         </FieldDescription>
       )}
     </Field>

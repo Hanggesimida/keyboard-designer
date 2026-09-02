@@ -1,6 +1,7 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
 import type { Variants } from 'motion/react'
 import { Button } from '@workspace/ui/components/button'
@@ -27,19 +28,21 @@ const transitionVariants: { item: Variants } = {
 }
 
 export function CtaSection() {
+  const t = useTranslations('Home.cta')
+
   return (
     <section className="relative overflow-hidden py-24">
 
       <div className="mx-auto max-w-5xl px-6 text-center">
         <AnimatedGroup variants={transitionVariants}>
           <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase mb-4">
-            立即开始
+            {t('eyebrow')}
           </p>
           <h2 className="text-4xl md:text-5xl font-bold text-balance mb-6">
-            开始设计你的专属键帽
+            {t('title')}
           </h2>
           <p className="text-muted-foreground text-lg text-balance max-w-xl mx-auto mb-10">
-            完全免费，无需注册，永不收费。打开编辑器，选好布局，调出你的专属配色，几分钟内完成设计。
+            {t('body')}
           </p>
         </AnimatedGroup>
 
@@ -60,14 +63,14 @@ export function CtaSection() {
           <div className="bg-foreground/10 rounded-[14px] border p-0.5">
             <Button asChild size="lg" className="rounded-xl px-6 text-base">
               <Link href="/design">
-                <span className="text-nowrap">打开设计编辑器</span>
+                <span className="text-nowrap">{t('openEditor')}</span>
                 <ArrowRight className="ml-2 size-4" />
               </Link>
             </Button>
           </div>
           <Button asChild size="lg" variant="ghost" className="h-10.5 rounded-xl px-6">
             <Link href="#features">
-              <span className="text-nowrap">查看功能介绍</span>
+              <span className="text-nowrap">{t('viewFeatures')}</span>
             </Link>
           </Button>
         </AnimatedGroup>
