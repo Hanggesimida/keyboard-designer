@@ -1,65 +1,67 @@
-# 已废弃的后端（legacy）
+# Retired backend (legacy)
 
-本目录保存 Keyboard Designer 的 **NestJS 后端与全栈 Docker 部署资源**。产品本身已是纯前端设计器，**默认构建、开发和 Vercel 部署都不会使用这里的代码**。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-有需要时可以自行恢复，但仓库不再提供 `standalone` / `fullstack` 双模式开关。恢复是一次手动接线，不是改环境变量。
+This directory keeps Keyboard Designer’s **NestJS API and full-stack Docker resources**. The product itself is a client-only designer. **Default install, development, and production builds do not use this code.**
 
-长期未运行的全栈路径可能存在依赖老化、迁移缺口、云服务配置漂移、密钥过期、回调失败、数据与隐私合规以及意外费用等风险。不要把数据库连接串、JWT 私钥或云服务密钥放进前端公开环境变量。
+You can restore it yourself if you need to, but the repo no longer ships a `standalone` / `fullstack` product-mode switch. Restore is a manual wiring job, not an environment-variable flip.
 
-## 目录
+A long-idle full-stack path can drift: stale dependencies, migration gaps, expired cloud credentials, broken callbacks, privacy/compliance issues, and surprise bills. Do not put database URLs, JWT secrets, or cloud keys into public `NEXT_PUBLIC_*` variables.
+
+## Layout
 
 ```text
 legacy/
-├── README.md              # 本文件
-├── api/                   # 原 apps/api（NestJS 11 + Prisma 7）
-├── docker/                # Dockerfile、nginx、证书
-├── docker-compose.yml     # 全栈编排（nginx / web / api / postgres / redis）
-└── .env.example           # Postgres、Redis、JWT、SES、COS、支付
+├── README.md              # this file
+├── api/                   # former apps/api (NestJS 11 + Prisma 7)
+├── docker/                # Dockerfiles, nginx, certificates
+├── docker-compose.yml     # nginx / web / api / postgres / redis
+└── .env.example           # Postgres, Redis, JWT, SES, COS, payments
 ```
 
-API 不依赖 `@workspace/*` 业务包，与前端只通过 HTTP 契约交互。
+The API does not depend on `@workspace/*` business packages. It talks to the frontend over HTTP only.
 
-## 已有后端功能
+## What the backend already implements
 
-| 领域 | 能力 |
-|------|------|
-| **鉴权** | 邮箱 OTP 注册/登录、设密/改密/找回、强制改密；JWT 三策略（login / setup / change-password） |
-| **用户** | `GET /users/me`；Role（`USER` / `ADMIN`）；AccountType（`NORMAL` / `ENTERPRISE_MAIN` / `ENTERPRISE_SUB`） |
-| **设计方案** | CRUD、企业子账号提交审核、缩略图上传腾讯云 COS |
-| **字体库** | 上传 TTF/OTF（≤15MB）、SHA-256 去重、批量 resolve、软删除；COS |
-| **导出** | `POST /texts-to-paths`、`POST /generate-jig`（opentype.js）。当前产品已改用浏览器实现，见 `apps/web/lib/export/browser/` |
-| **地址** | 收货地址 CRUD、设默认 |
-| **报价与订单** | 下单前报价、单笔下单、企业批量下单（月结）、取消；订单状态机 |
-| **支付** | 支付宝 / 微信发起与异步回调、开发 mock 回调、退款；`ALIPAY` / `WECHAT` / `MONTHLY` |
-| **企业** | 主账号管理子账号（禁用、重置密码）、团队设计列表 |
-| **管理后台** | 订单/生产看板、改状态、退款、用户角色与账号类型、通知列表 + SSE |
-| **基础设施** | PostgreSQL 17 + Prisma 7（无 seed，仅 `prisma/migrations`）、Redis 8（OTP / 令牌 jti）、腾讯云 SES、COS |
+| Area | Capability |
+|------|------------|
+| **Auth** | Email OTP sign-up/sign-in, set/change/reset password; JWT strategies (`login` / `setup` / `change-password`) |
+| **Users** | `GET /users/me`; Role (`USER` / `ADMIN`); AccountType (`NORMAL` / `ENTERPRISE_MAIN` / `ENTERPRISE_SUB`) |
+| **Designs** | CRUD, enterprise sub-account review, thumbnails on Tencent COS |
+| **Fonts** | Upload TTF/OTF (≤15MB), SHA-256 dedupe, batch resolve, soft delete; COS |
+| **Export** | `POST /texts-to-paths`, `POST /generate-jig` (opentype.js). The product now uses the browser path in `apps/web/lib/export/browser/` |
+| **Addresses** | Shipping-address CRUD, default address |
+| **Quotes & orders** | Pre-order quote, single order, enterprise batch (monthly), cancel; order state machine |
+| **Payments** | Alipay / WeChat initiate + async notify, mock notify in development, refunds; `ALIPAY` / `WECHAT` / `MONTHLY` |
+| **Enterprise** | Main account manages sub-accounts (disable, reset password), team design list |
+| **Admin** | Order/production board, status changes, refunds, roles and account types, notifications + SSE |
+| **Infra** | PostgreSQL 17 + Prisma 7 (no seed, `prisma/migrations` only), Redis 8 (OTP / token jti), Tencent SES, COS |
 
-模块源码在 [`api/src/modules/`](api/src/modules/)，接口细节见 [`api/README.md`](api/README.md)。
+Module source lives in [`api/src/modules/`](api/src/modules/). HTTP details are in [`api/README.md`](api/README.md).
 
-## 配套前端入口（仍在 apps/web）
+## Frontend leftovers (still in apps/web)
 
-这些页面和组件仍留在前端仓库，避免恢复时对不齐两套源码。当前 `apps/web/next.config.mjs` 把它们 redirect 到 `/design`：
+These pages and components stay in the web app so a restore does not have to realign two trees. `apps/web/next.config.mjs` currently redirects them to `/design` (and `/zh/design`):
 
-| 位置 | 作用 |
-|------|------|
-| `/login`、`/register` 及密码相关页 | 鉴权 |
-| `/profile/*` | 个人中心、订单、地址、团队 |
-| `/admin/*` | 管理后台 |
-| `/checkout` | 下单结账 |
-| `SaveDesignButton` / `OrderButton` | 设计器工具栏「保存设计 / 下单」 |
-| `DesignListSection` | 左侧「我的设计」云端列表（已从 `SidebarLeft` 卸载） |
-| `apps/web/lib/api/`、`hooks/queries/`、`userStore` | HTTP 客户端与 React Query |
+| Location | Role |
+|----------|------|
+| `/login`, `/register`, and password pages | Auth |
+| `/profile/*` | Account, orders, addresses, team |
+| `/admin/*` | Admin console |
+| `/checkout` | Checkout |
+| `SaveDesignButton` / `OrderButton` | Designer toolbar “save / order” |
+| `DesignListSection` | Left-sidebar cloud design list (unmounted from `SidebarLeft`) |
+| `apps/web/lib/api/`, `hooks/queries/`, `userStore` | HTTP client and React Query |
 
-浏览器导出客户端 `apps/web/lib/export/api.ts` 仍在，但产品路径固定走 `lib/export/browser`。
+The API export client `apps/web/lib/export/api.ts` is still there; the product path always uses `lib/export/browser`.
 
-## 自行恢复清单
+## Restore checklist
 
-以下步骤必须全部完成，缺一不可。不要只改一个变量就当全栈可用。
+Every step below is required. Changing one variable does not bring the full stack back.
 
-### 1. 把 API 加回 workspace
+### 1. Put the API back in the workspace
 
-在根目录 [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) 增加：
+Add this to the root [`pnpm-workspace.yaml`](../pnpm-workspace.yaml):
 
 ```yaml
 packages:
@@ -68,57 +70,57 @@ packages:
   - "legacy/api"
 ```
 
-如需在 Docker 中编译 Prisma / bcrypt，把它们加回 `allowBuilds`。然后：
+If you compile Prisma / bcrypt inside Docker, add them to `allowBuilds`. Then:
 
 ```bash
 pnpm install
 ```
 
-### 2. 配置 API 环境
+### 2. Configure API env
 
 ```bash
 cp legacy/.env.example .env
-# 以及
+# plus
 #   legacy/api/.env.development
-# 按 api/README.md 填写 Postgres、Redis、JWT、SES、COS、支付
+# fill Postgres, Redis, JWT, SES, COS, payments from api/README.md
 ```
 
-密钥不要写进任何 `NEXT_PUBLIC_*` 变量。
+Never put secrets in `NEXT_PUBLIC_*` variables.
 
-### 3. 迁移数据库并启动 API
+### 3. Migrate the database and start the API
 
 ```bash
 pnpm --filter api exec prisma migrate dev
 pnpm --filter api dev
 ```
 
-API 默认监听 `3001`，无全局路径前缀。生产 Nginx 把 `/api/*` 去掉前缀再转发。
+The API listens on `3001` with no global path prefix. Production nginx strips `/api/*` before proxying.
 
-### 4. 重新接通前端
+### 4. Reconnect the frontend
 
-在 [`apps/web/next.config.mjs`](../apps/web/next.config.mjs)：
+In [`apps/web/next.config.mjs`](../apps/web/next.config.mjs):
 
-- 删除对 `/login`、`/register`、`/profile`、`/checkout`、`/admin` 的 redirect。
-- 开发环境加回 `/api/:path*` → `http://localhost:3001/:path*` 的 rewrite。
-- 若用 Docker 跑 Web，设置 Next.js `output: "standalone"`（这是容器产物格式，与旧产品模式名无关）。
+- Remove redirects for `/login`, `/register`, `/profile`, `/checkout`, `/admin` (and the `/zh…` copies).
+- In development, restore `/api/:path*` → `http://localhost:3001/:path*` rewrites.
+- If you containerize Web, set Next.js `output: "standalone"` (that is an output layout, not a product-mode name).
 
-在设计器里按需挂回：
+In the designer, remount as needed:
 
-- `app/design/layout.tsx` 的登录门禁
-- `providers.tsx` 的 `UserInitializer`
-- `SidebarLeft` 中的 `DesignListSection`
-- 工具栏「保存设计 / 下单」
-- 云端字体（`FontFamilySelect` / `useFonts`）
-- 需要服务端转曲时，把 `apps/web/lib/export/index.ts` 改回调用 `./api`
+- Login gate in `app/[locale]/design/layout.tsx`
+- `UserInitializer` in `providers.tsx`
+- `DesignListSection` in `SidebarLeft`
+- Toolbar “save design / order”
+- Cloud fonts (`FontFamilySelect` / `useFonts`)
+- If you need server-side outlining, point `apps/web/lib/export/index.ts` back at `./api`
 
-### 5. Docker（可选）
+### 5. Docker (optional)
 
-当前 `legacy/docker*` **不能开箱构建**。恢复时至少要：
+Current `legacy/docker*` **does not build out of the box**. At minimum:
 
-- 工作区包含 `legacy/api`
-- compose 的 build context 指向**仓库根目录**
-- `dockerfile` 改为 `legacy/docker/api.Dockerfile`、`legacy/docker/web.Dockerfile`
-- Dockerfile 里 `COPY apps/api/...` 改为 `COPY legacy/api/...`
-- Web 构建注入全栈所需的后端地址与鉴权配置
+- Workspace includes `legacy/api`
+- Compose build context is the **repo root**
+- Dockerfiles are `legacy/docker/api.Dockerfile` and `legacy/docker/web.Dockerfile`
+- `COPY apps/api/...` becomes `COPY legacy/api/...`
+- Web build injects the backend URL and auth config the stack needs
 
-更细的模块启动说明见 [`api/README.md`](api/README.md)。
+Module-level start notes: [`api/README.md`](api/README.md).

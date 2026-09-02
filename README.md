@@ -1,98 +1,107 @@
 # Keyboard Designer
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/hero_dark.png">
     <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/hero_light.png">
-    <img alt="Keyboard Designer 键帽设计编辑器界面" src="apps/web/public/images/hero_light.png" width="900">
+    <img alt="Keyboard Designer editor" src="apps/web/public/images/hero_light.png" width="900">
   </picture>
 </p>
 
-Keyboard Designer 是一个浏览器端键帽设计器，可在页面中编辑布局、样式与贴图，并导出 PNG、SVG、JSON 与治具文件。
+Keyboard Designer is a browser-based keycap editor. Open it, pick a layout, paint colors and legends, then export PNG, SVG, JSON, or production jig files — no sign-up, no backend, no cloud storage.
 
-## 能力
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/feature_light.png">
+    <img alt="What-you-see-is-what-you-get keycap editor" src="apps/web/public/images/feature_light.png" width="900">
+  </picture>
+</p>
 
-- 无注册、登录、用户中心和管理后台。
-- 无服务端存储、自动保存或跨设备同步。
-- 设计状态只存在于当前浏览器页面内；**刷新、关闭标签页或浏览器崩溃都会丢失未导出的修改**。
-- 保存和恢复依靠手动导出、导入 JSON 文件。
-- 支持在浏览器内导出 PNG、SVG、JSON 和 JIG 治具 SVG，文字转曲不依赖 API。
-- 可在当前会话临时加载 TTF/OTF 字体；字体只保存在内存中，刷新后移除。
-- 不需要 API、PostgreSQL、Redis、Prisma、JWT、邮件、对象存储或支付配置。
+## What it does
 
-处理重要设计时，建议在关键步骤反复导出 JSON，并将文件纳入自己的备份流程。
+- **Live editor** — drag to pan, box-select keys, and preview every color, legend, and icon as you edit.
+- **Layouts** — built-in ANSI 60% / 68% / 81% / TKL 87 / 104 / 108 / 144 layouts, driven by JSON.
+- **Layers** — stack keycap color and style overrides, then manage them from the layer panel.
+- **Keycap styling** — legends, fonts, weight, solid colors, gradients, borders, padding, and alignment.
+- **Batch edit** — change many keys at once after a box or multi-select.
+- **Canvas artwork** — drop images onto the board, transform them, and layer them with the keys.
+- **Undo / redo** — full history in the current session (`Ctrl/⌘ + Z / Y`).
+- **Exports** — PNG, SVG (text outlined in the browser with opentype.js), JSON, and jig SVG. No API call.
+- **Session fonts** — load TTF/OTF for the current tab; they live in memory and disappear on refresh.
+- **English / 简体中文** — UI locale with `en` as the default.
 
-仓库里曾有一套 NestJS 全栈后端（鉴权、云端设计、订单支付、管理后台等），现已废弃并整包保留在 [`legacy/`](legacy/README.md)。默认构建不会使用它。若有需要，请按该文档自行恢复，而不是寻找产品模式开关。
+There is no account, user center, or admin console. Design state exists only in the current browser tab. **Refresh, close the tab, or crash the browser and unsaved work is gone.** Save by exporting JSON and keep those files in your own backup flow.
 
-## 本地运行
+The product does not need API, PostgreSQL, Redis, Prisma, JWT, email, object storage, or payment configuration.
 
-环境要求：
+## Tech stack
+
+| Area | Choice |
+|------|--------|
+| App | [Next.js 16](https://nextjs.org/) (App Router + Turbopack) |
+| UI | [React 19](https://react.dev/), [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/) |
+| i18n | [next-intl](https://next-intl.dev/) (`en` default, `zh` prefixed) |
+| State | [Zustand](https://zustand-demo.pmnd.rs/) + [zundo](https://github.com/charkour/zundo) |
+| Gestures | [@use-gesture/react](https://use-gesture.netlify.app/), [@react-spring/web](https://www.react-spring.dev/) |
+| Export | Browser [opentype.js](https://opentype.js.org/) in `apps/web/lib/export/browser/` |
+| Monorepo | pnpm workspaces + [Turborepo](https://turbo.build/) |
+
+## Repository layout
+
+```text
+keyboard-designer/
+├── apps/
+│   └── web/                 # Next.js product (home + /design editor)
+├── packages/
+│   ├── ui/                  # Shared shadcn/ui components and styles
+│   ├── eslint-config/       # Shared ESLint config
+│   └── typescript-config/   # Shared TypeScript config
+└── legacy/                  # Retired NestJS API and Docker stack
+```
+
+A former NestJS backend (auth, cloud designs, orders, payments, admin) is kept under [`legacy/`](legacy/README.md). The default install, dev server, and production build never load it. Restore it only if you need that stack — there is no product-mode flag.
+
+Web-app details live in [`apps/web/README.md`](apps/web/README.md).
+
+## Run locally
+
+Requirements:
 
 - Node.js >= 22
-- pnpm 11.12.0（建议先运行 `corepack enable`）
+- pnpm 11.12.0 (`corepack enable` is the usual way to pin it)
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-访问：
+Then open:
 
-- `http://localhost:3000`：产品首页
-- `http://localhost:3000/design`：设计器
+- `http://localhost:3000` — marketing home (English)
+- `http://localhost:3000/zh` — marketing home (简体中文)
+- `http://localhost:3000/design` — editor
+- `http://localhost:3000/zh/design` — editor in 简体中文
 
-无需启动任何后端进程。Web 也不依赖环境变量。
+No backend process and no environment variables are required. The editor is desktop-first (≥ 768px).
 
-## 常用命令
+## Scripts
 
-```bash
-pnpm dev        # 启动开发服务器
-pnpm build      # 构建生产包
-pnpm start      # 启动生产构建
-pnpm lint       # 代码检查
-pnpm test       # 运行单元测试
-pnpm typecheck  # 类型检查
-```
-
-## 部署到 Vercel
-
-`apps/web/vercel.json` 使用 Vercel 的 Next.js 框架预设。
-
-1. 在 Vercel 导入仓库。
-2. 将项目 Root Directory 设为 `apps/web`。
-3. 打开 **Include source files outside of the Root Directory**，让构建能够读取 workspace 中的 `packages/ui`。
-4. Install、Build 和 Output Directory 保持框架默认值。
-5. 将 `apps/web/lib/site.ts` 中的 `url` 改成你的生产站点地址（用于 metadata / Open Graph）。
-6. 不需要配置后端或 `NEXT_PUBLIC_*` 密钥，然后部署。
-
-也可以使用 Vercel CLI：
+From the repo root:
 
 ```bash
-cd apps/web
-vercel
-vercel --prod
+pnpm dev        # Next.js dev server
+pnpm build      # production build
+pnpm start      # serve the production build
+pnpm lint       # lint
+pnpm test       # unit tests
+pnpm typecheck  # TypeScript
 ```
 
-详细步骤和故障排查见 [部署指南](docs/DEPLOYMENT.md)。
+## License
 
-## 许可证
+[MIT License](LICENSE).
 
-本项目采用 [MIT License](LICENSE)。
-
-字体、GLB 模型、图片和图标等第三方资源可能有独立许可，再分发前请分别核对。
-
-## 仓库结构
-
-```text
-keyboard-designer/
-├── apps/
-│   └── web/                # Next.js 前端，含 Vercel 配置
-├── packages/
-│   ├── ui/                 # 共享 UI 组件
-│   ├── eslint-config/      # ESLint 配置
-│   └── typescript-config/  # TypeScript 配置
-├── docs/                   # 项目文档
-└── legacy/                 # 已废弃的后端与全栈 Docker，见 legacy/README.md
-```
-
-更多开发细节见 [apps/web/README.md](apps/web/README.md)。
+Third-party fonts, GLB models, images, and icons may use their own licenses — check those before redistributing.
