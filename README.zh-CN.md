@@ -12,6 +12,12 @@
 
 Keyboard Designer 是一个浏览器端键帽设计器。打开页面、选择布局、编辑颜色与文字，即可导出 PNG、SVG、JSON 与生产用治具文件——无需注册、无需后端、无需云端存储。
 
+应用已部署在 [Vercel](https://vercel.com/) 上，打开 **[kbd.weihangli.dev](https://kbd.weihangli.dev)** 即可查看并使用，无需本地安装。
+
+- [kbd.weihangli.dev](https://kbd.weihangli.dev) — 英文
+- [kbd.weihangli.dev/zh](https://kbd.weihangli.dev/zh) — 简体中文
+- [kbd.weihangli.dev/design](https://kbd.weihangli.dev/design) — 设计器
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark.png">

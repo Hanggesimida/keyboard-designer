@@ -43,7 +43,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale)
 
   return (
-    <html lang={locale} className={`dark ${fontVariables}`} suppressHydrationWarning>
+    <html lang={locale} className={fontVariables} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider>
           <Providers>{children}</Providers>

@@ -12,6 +12,12 @@
 
 Keyboard Designer is a browser-based keycap editor. Open it, pick a layout, paint colors and legends, then export PNG, SVG, JSON, or production jig files — no sign-up, no backend, no cloud storage.
 
+The app is already deployed on [Vercel](https://vercel.com/). Open **[kbd.weihangli.dev](https://kbd.weihangli.dev)** in your browser to try it — no install required.
+
+- [kbd.weihangli.dev](https://kbd.weihangli.dev) — English
+- [kbd.weihangli.dev/zh](https://kbd.weihangli.dev/zh) — 简体中文
+- [kbd.weihangli.dev/design](https://kbd.weihangli.dev/design) — editor
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark.png">
