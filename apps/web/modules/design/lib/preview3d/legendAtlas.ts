@@ -19,9 +19,9 @@ import {
   resolveSolidColor,
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
 import {
-  DESIGN_ART_PAD,
-  imageElementToWorldTextureMatrixElements,
-} from "./imageDecal"
+  keyboardSvgSize,
+  svgRectToWorldTextureMatrix,
+} from "@/modules/design/lib/design/imageProjection"
 import type {
   LegendAtlasSpec,
   LegendDrawItem,
@@ -34,22 +34,6 @@ export const LEGEND_ATLAS_MAX_SIDE = 4096
 function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 1
   return Math.max(0, Math.min(1, n))
-}
-
-function keyboardSvgSize(
-  keys: ReadonlyArray<{ x: number; y: number; w: number; h: number }>,
-  unit: number,
-): { width: number; height: number } {
-  let maxX = 0
-  let maxY = 0
-  for (const k of keys) {
-    maxX = Math.max(maxX, k.x + k.w)
-    maxY = Math.max(maxY, k.y + k.h)
-  }
-  return {
-    width: Math.max(1, Math.ceil(maxX * unit)),
-    height: Math.max(1, Math.ceil(maxY * unit)),
-  }
 }
 
 /**
@@ -193,14 +177,13 @@ export function buildLegendDrawList(
     }
   }
 
-  const matrixElements = imageElementToWorldTextureMatrixElements({
-    x: DESIGN_ART_PAD,
-    y: DESIGN_ART_PAD,
-    width: svgWidth,
-    height: svgHeight,
+  const matrixElements = svgRectToWorldTextureMatrix(
+    0,
+    0,
+    svgWidth,
+    svgHeight,
     baseUnit,
-    expandMarginU: 0,
-  })
+  )
 
   const layerRevision = designState.layers
     .map(

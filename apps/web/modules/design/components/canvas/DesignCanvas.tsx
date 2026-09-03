@@ -11,15 +11,11 @@ import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } fro
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { flattenLayout } from "@/modules/design/lib/design/layout"
 import type { KeyDef } from "@/modules/design/types/design"
-import { KeycapNode, KEY_RADIUS_BASE, KEYCAP_GAP } from "./KeycapNode"
+import { KeycapNode } from "./KeycapNode"
 import {
-  KEY_RADIUS_TOP,
-  getTopFaceRects,
-  getIsoBasePoints,
-  getIsoTopFacePoints,
-  getIsoTopFaceRadii,
-  roundedPolygonPath,
-} from "@/modules/design/lib/design/keycapGeometry"
+  buildImageProjectionAtlasSpec,
+  DESIGN_ART_PAD,
+} from "@/modules/design/lib/design/imageProjection"
 import { CanvasElementLayer } from "./CanvasElementLayer"
 import { KeycapEditorModal } from "./KeycapEditorModal"
 import { CanvasToolbar } from "./CanvasToolbar"
@@ -33,7 +29,6 @@ import {
   PREVIEW_3D_HEIGHT_MAX,
   PREVIEW_3D_HEIGHT_MIN,
 } from "@/modules/design/lib/preview3d/constants"
-import { DESIGN_ART_PAD } from "@/modules/design/lib/preview3d/imageDecal"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
 import {
   buildGlobalDistributedColors,
@@ -46,7 +41,7 @@ const Keycap3DPreview = dynamic(
 )
 
 // ─── 常量 ──────────────────────────────────────────────
-const ART_PAD = DESIGN_ART_PAD // 画板内边距（与 3D 贴花矩阵共用）
+const ART_PAD = DESIGN_ART_PAD // 画板内边距（与 3D 投影规格共用）
 
 function getTemplateBounds(keys: KeyDef[], unit: number) {
   let maxX = 0
@@ -63,11 +58,8 @@ function getTemplateBounds(keys: KeyDef[], unit: number) {
 
 // ─── 键帽 Clip 图层 ────────────────────────────────────
 /**
- * 将 clipToKeycaps=true 的画布图片裁剪到其下方所有重叠键帽的底座形状中渲染。
+ * 使用与 3D 图集相同的投影规格渲染键帽裁剪图片。
  * 坐标系：与 KeyboardTemplate SVG 相同（artboard 坐标减去 artPad）。
- *
- * 性能：用 useMemo 缓存重叠检测结果，keys 为模块级常量，
- * 仅在 canvasElements 变化时重算（而非每次渲染）。
  */
 function ClippedImagesLayer({
   canvasElements,
@@ -80,126 +72,54 @@ function ClippedImagesLayer({
   unit: number
   artPad: number
 }) {
-  const GAP = KEYCAP_GAP
-  // 订阅实时拖拽偏移：只有 ClippedImagesLayer 重渲染，KeycapNode 等不受影响
   const liveDragOverrides = useDesignUIStore((s) => s.liveDragOverrides)
   const assetMap = useDesignUIStore((s) => s.assetMap)
 
-  // useMemo 缓存重叠检测：仅在 canvasElements/keys/unit/artPad 变化时重算
-  const clippedImageData = useMemo(() => {
-    const clipped = canvasElements.filter(
-      (el) => (el.clipToKeycaps ?? true) && (el.clipToKeycaps || el.clipToKeycapId),
-    )
-    return clipped
-      .map((img) => {
-        const imgSvgX = img.x - artPad
-        const imgSvgY = img.y - artPad
+  const projection = useMemo(
+    () =>
+      buildImageProjectionAtlasSpec({
+        elements: canvasElements,
+        assetMap,
+        keys,
+        baseUnit: unit,
+        artPad,
+        liveDragOverrides,
+      }),
+    [artPad, assetMap, canvasElements, keys, liveDragOverrides, unit],
+  )
 
-        let overlappingKeys: KeyDef[]
-        if (img.clipToKeycapIds && img.clipToKeycapIds.length > 0) {
-          const idSet = new Set(img.clipToKeycapIds)
-          overlappingKeys = keys.filter((k) => idSet.has(k.keyId))
-        } else if (img.clipToKeycapId) {
-          const key = keys.find((k) => k.keyId === img.clipToKeycapId)
-          overlappingKeys = key ? [key] : []
-        } else {
-          overlappingKeys = keys.filter((key) => {
-            const px = key.x * unit + GAP / 2
-            const py = key.y * unit + GAP / 2
-            const pw = key.w * unit - GAP
-            const ph = key.h * unit - GAP
-            return (
-              imgSvgX < px + pw &&
-              imgSvgX + img.width > px &&
-              imgSvgY < py + ph &&
-              imgSvgY + img.height > py
-            )
-          })
-        }
-        return { img, overlappingKeys, imgSvgX, imgSvgY }
-      })
-      .filter(({ overlappingKeys }) => overlappingKeys.length > 0)
-  }, [canvasElements, keys, unit, artPad, GAP])
-
-  if (clippedImageData.length === 0) return null
+  if (projection.items.length === 0) return null
 
   return (
     <>
-      {clippedImageData.map(({ img, overlappingKeys, imgSvgX, imgSvgY }) => {
-        const clipId = `clip-canvas-img-${img.id}`
-        const rotation = img.rotation ?? 0
-
-        // 应用实时拖拽偏移（在 live 状态下跟手，其余时刻偏移为 0）
-        const liveOff = liveDragOverrides[img.id]
-        const liveX = imgSvgX + (liveOff?.dx ?? 0)
-        const liveY = imgSvgY + (liveOff?.dy ?? 0)
-        const imgCx = liveX + img.width / 2
-        const imgCy = liveY + img.height / 2
+      {projection.items.map((item) => {
+        const clipId = `clip-canvas-img-${item.elementId}`
+        const centerX = item.x + item.width / 2
+        const centerY = item.y + item.height / 2
 
         return (
-          <g key={img.id}>
+          <g key={item.elementId}>
             <defs>
               <clipPath id={clipId}>
-                {overlappingKeys.map((key) => {
-                  const px = key.x * unit + GAP / 2
-                  const py = key.y * unit + GAP / 2
-                  const pw = key.w * unit - GAP
-                  const ph = key.h * unit - GAP
-                  if (img.clipToTopFace) {
-                    if (key.shape === "iso") {
-                      return (
-                        <path
-                          key={key.keyId}
-                          d={roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))}
-                        />
-                      )
-                    }
-                    return getTopFaceRects(key.shape, px, py, pw, ph).map((r, ri) => (
-                      <rect
-                        key={`${key.keyId}-${ri}`}
-                        x={r.x}
-                        y={r.y}
-                        width={r.w}
-                        height={r.h}
-                        rx={KEY_RADIUS_TOP}
-                      />
-                    ))
-                  }
-                  if (key.shape === "iso") {
-                    return (
-                      <path
-                        key={key.keyId}
-                        d={roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)}
-                      />
-                    )
-                  }
-                  return (
-                    <rect
-                      key={key.keyId}
-                      x={px}
-                      y={py}
-                      width={pw}
-                      height={ph}
-                      rx={KEY_RADIUS_BASE}
-                    />
-                  )
-                })}
+                {item.clipPaths.map((path) => (
+                  <path key={path} d={path} />
+                ))}
               </clipPath>
             </defs>
-            <g clipPath={`url(#${clipId})`} opacity={img.opacity}>
+            <g clipPath={`url(#${clipId})`} opacity={item.opacity}>
               <g
                 transform={
-                  rotation !== 0
-                    ? `rotate(${rotation},${imgCx},${imgCy})`
+                  item.rotationDeg !== 0
+                    ? `rotate(${item.rotationDeg},${centerX},${centerY})`
                     : undefined
                 }
               >
                 <image
-                  href={assetMap[img.assetId] ?? ""}
-                  x={liveX}
-                  y={liveY}
-                  width={img.width}
-                  height={img.height}
+                  href={item.src}
+                  x={item.x}
+                  y={item.y}
+                  width={item.width}
+                  height={item.height}
                   preserveAspectRatio="none"
                   style={{ pointerEvents: "none" }}
                 />

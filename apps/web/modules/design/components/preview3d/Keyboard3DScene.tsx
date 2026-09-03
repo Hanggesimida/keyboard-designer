@@ -134,8 +134,6 @@ export function Keyboard3DScene({
     invalidate()
   }, [invalidate, showCase])
 
-  const primaryDecal = sceneModel.imageDecals[0] ?? null
-
   return (
     <>
       <ThemeSceneBackground />
@@ -153,7 +151,7 @@ export function Keyboard3DScene({
       {showCase ? <KeyboardCaseMesh case={sceneModel.case} /> : null}
 
       <KeycapDecalProvider
-        decal={primaryDecal}
+        imageAtlas={sceneModel.imageProjectionAtlas}
         legendAtlas={sceneModel.legendAtlas}
       >
         <group>

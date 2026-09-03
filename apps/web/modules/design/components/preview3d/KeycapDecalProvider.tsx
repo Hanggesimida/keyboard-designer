@@ -9,8 +9,9 @@ import {
   type ReactNode,
 } from "react"
 import { useThree } from "@react-three/fiber"
-import { CanvasTexture, TextureLoader, type Texture } from "three"
-import type { PreviewImageDecal } from "@/modules/design/lib/preview3d/imageDecal"
+import { CanvasTexture, type Texture } from "three"
+import type { ImageProjectionAtlasSpec } from "@/modules/design/lib/design/imageProjection"
+import { bakeImageProjectionAtlas } from "@/modules/design/lib/preview3d/bakeImageProjectionAtlas"
 import type { LegendAtlasSpec } from "@/modules/design/lib/preview3d/types"
 import { bakeLegendAtlas } from "@/modules/design/lib/preview3d/legendAtlas"
 import {
@@ -32,92 +33,85 @@ export function useSharedDyeSubUniforms(): SharedDyeSubUniforms {
 }
 
 interface KeycapDecalProviderProps {
-  decal: PreviewImageDecal | null
+  imageAtlas: ImageProjectionAtlasSpec
   legendAtlas: LegendAtlasSpec
   children: ReactNode
 }
 
 /**
- * 场景级贴花 + 刻字图集：共享 Texture + 变换矩阵 uniforms。
- * 图片：URL 变化时换贴图；矩阵跟手只写 uniform。
+ * 场景级图片投影 + 刻字图集：共享 Texture + 变换矩阵 uniforms。
+ * 图片：按 2D 规则烘焙为单张透明 CanvasTexture。
  * 刻字：revision 变化时重烘焙 CanvasTexture。
  */
 export function KeycapDecalProvider({
-  decal,
+  imageAtlas,
   legendAtlas,
   children,
 }: KeycapDecalProviderProps) {
   const shared = useMemo(() => createSharedDyeSubUniforms(), [])
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
+  const imageAtlasRef = useRef(imageAtlas)
   const legendAtlasRef = useRef(legendAtlas)
-  legendAtlasRef.current = legendAtlas
 
-  // 纹理加载 / 释放
   useEffect(() => {
-    const url = decal?.textureUrl
-    if (!url) {
-      const prev = shared.uMap.value
-      shared.uMap.value = null
-      shared.uHasMap.value = 0
-      prev?.dispose()
+    imageAtlasRef.current = imageAtlas
+  }, [imageAtlas])
+
+  useEffect(() => {
+    legendAtlasRef.current = legendAtlas
+  }, [legendAtlas])
+
+  useEffect(() => {
+    let cancelled = false
+    let created: Texture | null = null
+    const canvas = document.createElement("canvas")
+    const spec = imageAtlasRef.current
+
+    writeMatrix3Elements(shared.uImageMatrix.value, spec.matrixElements)
+
+    const applyTexture = (texture: Texture | null) => {
+      if (cancelled) {
+        texture?.dispose()
+        return
+      }
+      const previous = shared.uMap.value
+      shared.uMap.value = texture
+      shared.uHasMap.value = texture ? 1 : 0
+      previous?.dispose()
       invalidate()
+    }
+
+    if (spec.items.length === 0) {
+      applyTexture(null)
       return
     }
 
-    let cancelled = false
-    let loaded: Texture | null = null
-    const loader = new TextureLoader()
-    loader.load(
-      url,
-      (tex) => {
-        if (cancelled) {
-          tex.dispose()
-          return
-        }
-        configureDyeSubTexture(tex)
-        const prev = shared.uMap.value
-        shared.uMap.value = tex
-        shared.uHasMap.value = 1
-        loaded = tex
-        prev?.dispose()
-        invalidate()
-      },
-      undefined,
-      () => {
+    void bakeImageProjectionAtlas(canvas, spec)
+      .then(() => {
         if (cancelled) return
-        const prev = shared.uMap.value
-        shared.uMap.value = null
-        shared.uHasMap.value = 0
-        prev?.dispose()
-        invalidate()
-      },
-    )
+        const texture = new CanvasTexture(canvas)
+        configureDyeSubTexture(texture)
+        texture.anisotropy = Math.max(
+          1,
+          Math.min(gl.capabilities.getMaxAnisotropy(), 16),
+        )
+        texture.needsUpdate = true
+        created = texture
+        applyTexture(texture)
+      })
+      .catch(() => applyTexture(null))
 
     return () => {
       cancelled = true
-      // 仅在本 effect 创建的纹理于卸载时释放；被后一次 effect 接管的不在此 dispose
-      if (loaded && shared.uMap.value === loaded) {
+      if (created && shared.uMap.value === created) {
         shared.uMap.value = null
         shared.uHasMap.value = 0
-        loaded.dispose()
+        created.dispose()
       }
     }
-  }, [decal?.textureUrl, invalidate, shared])
-
-  // 矩阵 / 透明度（跟手拖拽）
-  useEffect(() => {
-    if (!decal) {
-      shared.uHasMap.value = shared.uMap.value ? 1 : 0
-      shared.uMapOpacity.value = 0
-      invalidate()
-      return
-    }
-    writeMatrix3Elements(shared.uImageMatrix.value, decal.matrixElements)
-    shared.uMapOpacity.value = decal.opacity
-    shared.uHasMap.value = shared.uMap.value ? 1 : 0
-    invalidate()
-  }, [decal, invalidate, shared])
+    // spec 内容由 revision 完整标识
+  }, [gl, imageAtlas.revision, invalidate, shared])
 
   useEffect(() => {
     let cancelled = false
@@ -155,7 +149,6 @@ export function KeycapDecalProvider({
       cancelled = true
     }
     // 仅 revision 变化时重烘焙；选择态等不会改 revision
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- legendAtlas 内容由 revision 标识
   }, [gl, invalidate, legendAtlas.revision, shared])
 
   useEffect(() => {

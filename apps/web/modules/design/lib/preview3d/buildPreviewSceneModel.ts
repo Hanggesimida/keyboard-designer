@@ -5,8 +5,8 @@ import {
   resolveKeycapAppearance,
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
+import { buildImageProjectionAtlasSpec } from "@/modules/design/lib/design/imageProjection"
 import { normalizeKeyShape } from "@/modules/design/types/design"
-import { buildImageDecals } from "./imageDecal"
 import { buildLegendDrawList } from "./legendAtlas"
 import { buildKeyboardCase } from "./buildKeyboardCase"
 import { getKeyboardBounds, keyDefToWorld } from "./layoutToWorld"
@@ -44,8 +44,8 @@ export function buildPreviewSceneModel(
 
   const missingSet = new Set<string>()
 
-  const imageDecals = buildImageDecals({
-    canvasElements: designState.canvasElements ?? [],
+  const imageProjectionAtlas = buildImageProjectionAtlasSpec({
+    elements: designState.canvasElements ?? [],
     assetMap: designState.assetMap ?? {},
     baseUnit,
     keys: flatKeys.map((k) => ({
@@ -54,10 +54,10 @@ export function buildPreviewSceneModel(
       y: k.y,
       w: k.w,
       h: k.h,
+      shape: k.shape,
     })),
     liveDragOverrides: designState.liveDragOverrides,
   })
-  const decalKeySet = new Set(imageDecals[0]?.keyIds ?? [])
   const legendAtlas = buildLegendDrawList(layout, designState)
 
   const keys: PreviewKey[] = flatKeys.map((key) => {
@@ -98,7 +98,6 @@ export function buildPreviewSceneModel(
       selected: selected.has(key.keyId),
       pressed: pressed.has(key.keyId),
       visible: appearance.visible,
-      decalEnabled: decalKeySet.has(key.keyId),
     }
   })
 
@@ -160,13 +159,6 @@ export function buildPreviewSceneModel(
   const pressedRevision = (designState.pressedKeyIds ?? []).join(",")
   const missingRevision = missingModels.join(",")
 
-  const decalRevision = imageDecals
-    .map(
-      (d) =>
-        `${d.elementId}:${d.opacity}:${d.keyIds.join(",")}:${d.matrixElements.map((n) => n.toFixed(5)).join(",")}`,
-    )
-    .join("|")
-
   return {
     templateId: designState.templateId,
     baseUnit,
@@ -174,8 +166,8 @@ export function buildPreviewSceneModel(
     bounds,
     case: keyboardCase,
     missingModels,
-    imageDecals,
+    imageProjectionAtlas,
     legendAtlas,
-    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${pressedRevision}#${missingRevision}#${decalRevision}#${legendAtlas.revision}`,
+    revision: `${geometryRevision}#${appearanceRevision}#${selectionRevision}#${pressedRevision}#${missingRevision}#${imageProjectionAtlas.revision}#${legendAtlas.revision}`,
   }
 }

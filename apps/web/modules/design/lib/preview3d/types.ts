@@ -1,5 +1,8 @@
 import type { KeyShape, KeySection } from "@/modules/design/types/design"
-import type { PreviewImageDecal } from "./imageDecal"
+import type {
+  ImageProjectionAtlasSpec,
+  TextureMatrixElements,
+} from "@/modules/design/lib/design/imageProjection"
 
 /** 与 React / Zustand / Three 无关的单键预览数据 */
 export interface PreviewKey {
@@ -26,8 +29,6 @@ export interface PreviewKey {
   /** 真实键盘按下 */
   pressed: boolean
   visible: boolean
-  /** 当前全局贴花是否作用于此键（与 2D clip 相交一致） */
-  decalEnabled: boolean
 }
 
 /** 图集中单条刻字（SVG 坐标，与 KeycapNode 一致） */
@@ -53,7 +54,7 @@ export interface LegendAtlasSpec {
   items: readonly LegendDrawItem[]
   svgWidth: number
   svgHeight: number
-  matrixElements: PreviewImageDecal["matrixElements"]
+  matrixElements: TextureMatrixElements
   revision: string
 }
 
@@ -97,11 +98,8 @@ export interface PreviewSceneModel {
    * 空数组表示全部有真模。
    */
   missingModels: string[]
-  /**
-   * 全局键帽贴花（首版 0～1 张）：裁到全部键帽的顶层图片。
-   * 由世界空间投影采样，不依赖 mesh UV。
-   */
-  imageDecals: PreviewImageDecal[]
+  /** 按 2D 规则合成的整盘图片图集，由世界 XZ 正交投影。 */
+  imageProjectionAtlas: ImageProjectionAtlasSpec
   /**
    * 整盘刻字图集描述（纯数据）。渲染层烘焙为 CanvasTexture，
    * 仅在键帽顶面世界空间采样。
@@ -174,6 +172,7 @@ export interface PreviewDesignStateInput {
     clipToKeycaps?: boolean
     clipToKeycapId?: string
     clipToKeycapIds?: string[]
+    clipToTopFace?: boolean
   }>
   /** assetId → data URL */
   assetMap?: Readonly<Record<string, string>>

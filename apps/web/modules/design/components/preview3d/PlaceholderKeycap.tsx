@@ -5,7 +5,6 @@ import { useThree, type ThreeEvent } from "@react-three/fiber"
 import { KEYCAP_PRESS_TRAVEL_U, PLACEHOLDER_COLOR, PLACEHOLDER_KEY_HEIGHT } from "@/modules/design/lib/preview3d/constants"
 import {
   createKeycapDyeSubMaterial,
-  setDyeSubDecalEnabled,
   syncDyeSubAppearance,
 } from "@/modules/design/lib/preview3d/keycapDyeSubMaterial"
 import type { PreviewKey } from "@/modules/design/lib/preview3d/types"
@@ -40,8 +39,6 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
       createKeycapDyeSubMaterial({
         shared,
         color,
-        keyTopY: PLACEHOLDER_KEY_HEIGHT,
-        decalEnabled: previewKey.decalEnabled,
         selected,
         transparent: true,
         opacity: 0.55,
@@ -60,10 +57,6 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
   }, [material])
 
   useEffect(() => {
-    setDyeSubDecalEnabled(material, previewKey.decalEnabled)
-  }, [material, previewKey.decalEnabled])
-
-  useEffect(() => {
     syncDyeSubAppearance(material, { color, selected })
     if (!selected) {
       // 占位未选中时保留微弱暖色 emissive，与旧视觉接近
@@ -71,7 +64,7 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
       material.emissiveIntensity = 0.15
     }
     invalidate()
-  }, [invalidate, material, color, selected, sx, sz, previewKey.decalEnabled])
+  }, [invalidate, material, color, selected, sx, sz])
 
   useEffect(() => {
     invalidate()
