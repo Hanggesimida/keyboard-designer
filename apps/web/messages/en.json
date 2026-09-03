@@ -462,6 +462,7 @@
     "preview3d": {
       "missingModels": "Missing models: ",
       "resetView": "Reset camera",
+      "topView": "Top view",
       "exportPng": "Export current view as PNG",
       "hideCase": "Hide tray",
       "showCase": "Show tray",

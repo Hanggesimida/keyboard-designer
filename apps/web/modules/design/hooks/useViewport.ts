@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
 export interface Viewport {
   x: number
@@ -16,6 +16,8 @@ interface UseViewportParams {
   maxZoom?: number
   /** 禁用所有交互（滚轮缩放、键盘快捷键），模态框打开时传 true */
   disabled?: boolean
+  /** 变化时按当前容器尺寸重新适配一次（如 3D 预览显隐、切换键盘布局） */
+  layoutKey?: unknown
 }
 
 function calcFitViewport(containerW: number, containerH: number, artW: number, artH: number): Viewport {
@@ -32,9 +34,11 @@ export function useViewport({
   minZoom = 0.05,
   maxZoom = 8,
   disabled = false,
+  layoutKey,
 }: UseViewportParams) {
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 })
   const fittedRef = useRef(false)
+  const layoutKeyRef = useRef(layoutKey)
 
   const fitToScreen = useCallback(() => {
     const el = containerRef.current
@@ -75,6 +79,12 @@ export function useViewport({
   const panBy = useCallback((dx: number, dy: number) => {
     setViewport((prev) => ({ ...prev, x: prev.x + dx, y: prev.y + dy }))
   }, [])
+
+  useLayoutEffect(() => {
+    if (Object.is(layoutKeyRef.current, layoutKey)) return
+    layoutKeyRef.current = layoutKey
+    fitToScreen()
+  }, [fitToScreen, layoutKey])
 
   useEffect(() => {
     const el = containerRef.current

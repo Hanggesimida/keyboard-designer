@@ -8,7 +8,11 @@ import {
   PREVIEW_3D_BG_DARK,
   PREVIEW_3D_BG_LIGHT,
 } from "@/modules/design/lib/preview3d/constants"
-import { computeCameraFitPose } from "@/modules/design/lib/preview3d/cameraFit"
+import {
+  computeCameraFitPose,
+  computeCameraTopPose,
+  type CameraView,
+} from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
 import { KeycapDecalProvider } from "./KeycapDecalProvider"
@@ -33,12 +37,14 @@ function CameraRig({
   center,
   extents,
   templateId,
-  cameraResetToken,
+  cameraView,
+  cameraViewToken,
 }: {
   center: Vec3
   extents: { width: number; depth: number }
   templateId: string
-  cameraResetToken: number
+  cameraView: CameraView
+  cameraViewToken: number
 }) {
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -46,27 +52,36 @@ function CameraRig({
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
   const prevTemplateIdRef = useRef(templateId)
   const prevSizeRef = useRef({ width: size.width, height: size.height })
-  const prevResetTokenRef = useRef(cameraResetToken)
+  const prevViewTokenRef = useRef(cameraViewToken)
   const hasFittedRef = useRef(false)
+  const viewRef = useRef<CameraView>("fit")
 
   useEffect(() => {
     const templateChanged = prevTemplateIdRef.current !== templateId
     const sizeChanged =
       prevSizeRef.current.width !== size.width ||
       prevSizeRef.current.height !== size.height
-    const resetRequested = prevResetTokenRef.current !== cameraResetToken
+    const viewRequested = prevViewTokenRef.current !== cameraViewToken
     const firstFit = !hasFittedRef.current
 
     prevTemplateIdRef.current = templateId
     prevSizeRef.current = { width: size.width, height: size.height }
-    prevResetTokenRef.current = cameraResetToken
+    prevViewTokenRef.current = cameraViewToken
 
-    // 首次挂载、模板切换、面板尺寸变化、或复位视角时 fit
-    if (!firstFit && !templateChanged && !sizeChanged && !resetRequested) return
+    if (!firstFit && !templateChanged && !sizeChanged && !viewRequested) return
     hasFittedRef.current = true
 
+    if (firstFit || templateChanged) {
+      viewRef.current = "fit"
+    } else if (viewRequested) {
+      viewRef.current = cameraView
+    }
+
     const aspect = size.width / Math.max(size.height, 1)
-    const { position, target } = computeCameraFitPose(center, extents, aspect)
+    const { position, target } =
+      viewRef.current === "top"
+        ? computeCameraTopPose(center, extents, aspect)
+        : computeCameraFitPose(center, extents, aspect)
 
     camera.position.set(position[0], position[1], position[2])
     camera.up.set(0, 1, 0)
@@ -82,7 +97,8 @@ function CameraRig({
     invalidate()
   }, [
     camera,
-    cameraResetToken,
+    cameraView,
+    cameraViewToken,
     center,
     extents,
     invalidate,
@@ -108,8 +124,9 @@ function CameraRig({
 
 interface Keyboard3DSceneProps {
   sceneModel: PreviewSceneModel
-  /** 递增以强制复位相机（不重置模板） */
-  cameraResetToken?: number
+  cameraView?: CameraView
+  /** 递增以应用 cameraView（不重置模板） */
+  cameraViewToken?: number
   /** 是否渲染托盘壳体 */
   showCase?: boolean
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
@@ -118,7 +135,8 @@ interface Keyboard3DSceneProps {
 
 export function Keyboard3DScene({
   sceneModel,
-  cameraResetToken = 0,
+  cameraView = "fit",
+  cameraViewToken = 0,
   showCase = true,
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
@@ -145,7 +163,8 @@ export function Keyboard3DScene({
         center={center}
         extents={extents}
         templateId={sceneModel.templateId}
-        cameraResetToken={cameraResetToken}
+        cameraView={cameraView}
+        cameraViewToken={cameraViewToken}
       />
 
       {showCase ? <KeyboardCaseMesh case={sceneModel.case} /> : null}

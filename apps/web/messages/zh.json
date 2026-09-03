@@ -462,6 +462,7 @@
     "preview3d": {
       "missingModels": "缺失相关模型：",
       "resetView": "复位视角",
+      "topView": "俯视键盘",
       "exportPng": "导出当前视角为 PNG",
       "hideCase": "隐藏托盘",
       "showCase": "显示托盘",

@@ -34,10 +34,11 @@ import {
   buildGlobalDistributedColors,
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
+import { Preview3DChunkFallback } from "../preview3d/Preview3DOverlay"
 
 const Keycap3DPreview = dynamic(
   () => import("../preview3d/Keycap3DPreview").then((m) => m.Keycap3DPreview),
-  { ssr: false },
+  { ssr: false, loading: Preview3DChunkFallback },
 )
 
 // ─── 常量 ──────────────────────────────────────────────
@@ -510,6 +511,7 @@ export function DesignCanvas() {
     artW,
     artH,
     disabled: !!keycapEditTarget,
+    layoutKey: `${show3dPreview}:${templateId}`,
   })
   // 用 ref 存储最新 viewport，使 onDrop 等回调能读到最新值而不产生闭包旧值
   const viewportRef = useRef(viewport)

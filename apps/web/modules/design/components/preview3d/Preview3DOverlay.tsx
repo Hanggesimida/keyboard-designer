@@ -1,14 +1,44 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { Box, ImageDown, RotateCcw } from "lucide-react"
+import { ArrowDownToLine, Box, ImageDown, RotateCcw } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
+
+const PREVIEW_3D_SHELL_STYLE = {
+  backgroundColor: "var(--design-preview3d-bg)",
+  backgroundImage:
+    "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
+  backgroundSize: "24px 24px",
+} as const
+
+/** 不透明加载遮罩：盖住空 Canvas / chunk 下载期空白 */
+export function Preview3DLoadingCover() {
+  return (
+    <div
+      className="absolute inset-0 z-10 flex items-center justify-center"
+      style={PREVIEW_3D_SHELL_STYLE}
+      aria-busy
+    >
+      <Spinner className="size-5 text-muted-foreground" />
+    </div>
+  )
+}
+
+/** next/dynamic 的 loading：与场景就绪遮罩同一视觉 */
+export function Preview3DChunkFallback() {
+  return (
+    <div className="relative h-full w-full">
+      <Preview3DLoadingCover />
+    </div>
+  )
+}
 
 interface Preview3DOverlayProps {
   loading?: boolean
   exporting?: boolean
   onResetCamera: () => void
+  onTopView: () => void
   onExportPng?: () => void
   showCase: boolean
   onToggleCase: () => void
@@ -16,11 +46,12 @@ interface Preview3DOverlayProps {
   missingModels?: readonly string[]
 }
 
-/** 3D 预览壳层 overlay：加载态、缺模提示、复位视角、导出 PNG、托盘开关、操作提示 */
+/** 3D 预览壳层 overlay：加载态、缺模提示、复位/俯视、导出 PNG、托盘开关、操作提示 */
 export function Preview3DOverlay({
   loading = false,
   exporting = false,
   onResetCamera,
+  onTopView,
   onExportPng,
   showCase,
   onToggleCase,
@@ -31,11 +62,7 @@ export function Preview3DOverlay({
 
   return (
     <>
-      {loading && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <Spinner className="size-5 text-muted-foreground" />
-        </div>
-      )}
+      {loading && <Preview3DLoadingCover />}
 
       <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-10 flex flex-col items-start gap-2">
         {hasMissing && (
@@ -57,6 +84,19 @@ export function Preview3DOverlay({
             }}
           >
             <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 text-foreground cursor-pointer"
+            title={t("topView")}
+            onClick={(e) => {
+              e.stopPropagation()
+              onTopView()
+            }}
+          >
+            <ArrowDownToLine className="size-3.5" />
           </Button>
           {onExportPng && (
             <Button

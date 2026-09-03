@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Canvas, type RootState } from "@react-three/fiber"
 import { useShallow } from "zustand/react/shallow"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
@@ -8,6 +8,7 @@ import { getLayoutData } from "@/modules/design/data/layouts"
 import { CAMERA_FOV_DEG } from "@/modules/design/lib/preview3d/constants"
 import { buildPreviewSceneModel } from "@/modules/design/lib/preview3d/buildPreviewSceneModel"
 import { exportPreview3dPng } from "@/modules/design/lib/preview3d/exportPreviewPng"
+import type { CameraView } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewDesignStateInput } from "@/modules/design/lib/preview3d/types"
 import { Keyboard3DScene } from "./Keyboard3DScene"
 import { Preview3DErrorBoundary } from "./Preview3DErrorBoundary"
@@ -16,12 +17,28 @@ import { Preview3DOverlay } from "./Preview3DOverlay"
 /** 空白处点击：位移超过此值视为拖拽旋转，不清除选中 */
 const MISS_CLICK_DELTA_PX = 5
 
+/** R3F 内：场景提交后揭开遮罩；挂起/卸载时盖回。fallback 勿渲染 DOM。 */
+function SceneReady({
+  onPending,
+  onReady,
+}: {
+  onPending: () => void
+  onReady?: () => void
+}) {
+  useEffect(() => {
+    onReady?.()
+    return onPending
+  }, [onPending, onReady])
+  return null
+}
+
 /** 3D 预览 Canvas；关闭时由父级卸载以停止渲染循环。 */
 export function Keycap3DPreview() {
   const [canvasKey, setCanvasKey] = useState(0)
   const [ready, setReady] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const [cameraResetToken, setCameraResetToken] = useState(0)
+  const [cameraView, setCameraView] = useState<CameraView>("fit")
+  const [cameraViewToken, setCameraViewToken] = useState(0)
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null)
   const threeRef = useRef<RootState | null>(null)
 
@@ -86,9 +103,11 @@ export function Keycap3DPreview() {
     )
   }, [storeSlice])
 
+  const markPending = useCallback(() => setReady(false), [])
+  const markReady = useCallback(() => setReady(true), [])
+
   const handleCreated = useCallback((state: RootState) => {
     threeRef.current = state
-    setReady(true)
   }, [])
 
   const handleExportPng = useCallback(async () => {
@@ -110,8 +129,9 @@ export function Keycap3DPreview() {
     setCanvasKey((k) => k + 1)
   }, [])
 
-  const handleResetCamera = useCallback(() => {
-    setCameraResetToken((t) => t + 1)
+  const applyCameraView = useCallback((view: CameraView) => {
+    setCameraView(view)
+    setCameraViewToken((t) => t + 1)
   }, [])
 
   const handleSelectKeycap = useCallback(
@@ -153,37 +173,40 @@ export function Keycap3DPreview() {
           pointerDownRef.current = { x: e.clientX, y: e.clientY }
         }}
       >
-        <Suspense fallback={null}>
-          <Canvas
-            key={canvasKey}
-            className="h-full w-full touch-none"
-            camera={{
-              fov: CAMERA_FOV_DEG,
-              near: 0.1,
-              far: 200,
-              position: [0, 8, 14],
-            }}
-            gl={{ antialias: true, alpha: true }}
-            dpr={[1, 1.5]}
-            frameloop="demand"
-            shadows={false}
-            style={{ background: "transparent" }}
-            onCreated={handleCreated}
-            onPointerMissed={handlePointerMissed}
-          >
+        <Canvas
+          key={canvasKey}
+          className="h-full w-full touch-none"
+          camera={{
+            fov: CAMERA_FOV_DEG,
+            near: 0.1,
+            far: 200,
+            position: [0, 8, 14],
+          }}
+          gl={{ antialias: true, alpha: true }}
+          dpr={[1, 1.5]}
+          frameloop="demand"
+          shadows={false}
+          style={{ background: "transparent" }}
+          onCreated={handleCreated}
+          onPointerMissed={handlePointerMissed}
+        >
+          <Suspense fallback={<SceneReady onPending={markPending} />}>
             <Keyboard3DScene
               sceneModel={sceneModel}
-              cameraResetToken={cameraResetToken}
+              cameraView={cameraView}
+              cameraViewToken={cameraViewToken}
               showCase={show3dCase}
               onSelectKeycap={handleSelectKeycap}
             />
-          </Canvas>
-        </Suspense>
+            <SceneReady onPending={markPending} onReady={markReady} />
+          </Suspense>
+        </Canvas>
 
         <Preview3DOverlay
           loading={!ready}
           exporting={exporting}
-          onResetCamera={handleResetCamera}
+          onResetCamera={() => applyCameraView("fit")}
+          onTopView={() => applyCameraView("top")}
           onExportPng={handleExportPng}
           showCase={show3dCase}
           onToggleCase={toggleShow3dCase}
