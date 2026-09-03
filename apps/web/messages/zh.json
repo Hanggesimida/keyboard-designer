@@ -9,6 +9,7 @@
   "Common": {
     "appName": "键盘设计器",
     "themeToggle": "切换深色/浅色模式",
+    "switchLanguage": "Switch language",
     "backHome": "返回首页",
     "cancel": "取消",
     "confirm": "确定",
@@ -466,6 +467,8 @@
       "exportPng": "导出当前视角为 PNG",
       "hideCase": "隐藏托盘",
       "showCase": "显示托盘",
+      "disableRealism": "关闭写实增强",
+      "enableRealism": "开启写实增强",
       "hint": "拖动旋转 · 滚轮缩放 · 右键平移",
       "loadFailed": "3D 预览加载失败",
       "webglError": "WebGL 上下文异常，请重试或关闭预览。",

@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
-import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher"
 import type { ExportArtboardParams } from "@/modules/design/lib/design/exportArtboard"
 import {
   exportArtboardJson,
@@ -353,9 +352,6 @@ export function CanvasToolbar({
         {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
         {t("toolbar.jig")}
       </Button>
-
-      <ToolbarSeparator />
-      <LocaleSwitcher />
 
       <input
         ref={fileInputRef}

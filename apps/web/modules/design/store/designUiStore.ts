@@ -197,6 +197,8 @@ interface DesignUIState {
   preview3dHeight: number
   /** 3D 预览是否显示键盘托盘（纯 UI，不参与 undo） */
   show3dCase: boolean
+  /** 3D 预览是否启用写实光照与接触阴影（纯 UI，不参与 undo） */
+  show3dRealism: boolean
   /** 真实键盘当前按下的键帽 id（纯 UI，不参与 undo） */
   pressedKeyIds: string[]
 }
@@ -277,6 +279,8 @@ interface DesignUIActions {
   setShow3dCase: (show: boolean) => void
   /** 切换 3D 托盘显隐 */
   toggleShow3dCase: () => void
+  /** 切换 3D 写实增强 */
+  toggleShow3dRealism: () => void
   /** 设置 3D 预览面板高度（会 clamp 并写入 localStorage） */
   setPreview3dHeight: (height: number) => void
   /** 从 localStorage 恢复预览高度（客户端挂载后调用，避免 SSR mismatch） */
@@ -314,6 +318,7 @@ export type UndoableDesignState = Omit<
   | "show3dPreview"
   | "preview3dHeight"
   | "show3dCase"
+  | "show3dRealism"
   | "pressedKeyIds"
 >
 
@@ -361,6 +366,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     // SSR 用默认值；客户端挂载后由 DesignCanvas hydrate，避免 hydration mismatch
     preview3dHeight: PREVIEW_3D_HEIGHT_DEFAULT,
     show3dCase: true,
+    show3dRealism: true,
     pressedKeyIds: [],
 
     resetAll: () =>
@@ -667,6 +673,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     toggleShow3dPreview: () => set((s) => ({ show3dPreview: !s.show3dPreview })),
     setShow3dCase: (show) => set({ show3dCase: show }),
     toggleShow3dCase: () => set((s) => ({ show3dCase: !s.show3dCase })),
+    toggleShow3dRealism: () =>
+      set((s) => ({ show3dRealism: !s.show3dRealism })),
     setPreview3dHeight: (height) => {
       const next = clampPreview3dHeight(height)
       persistPreview3dHeight(next)
@@ -703,6 +711,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         show3dPreview,
         preview3dHeight,
         show3dCase,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 纯 UI 状态不进入撤销历史
+        show3dRealism,
         pressedKeyIds,
         ...undoable
       } = state

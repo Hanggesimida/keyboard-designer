@@ -14,6 +14,11 @@ import {
   SRGBColorSpace,
   type Texture,
 } from "three"
+import {
+  KEYCAP_MATERIAL_ENV_MAP_INTENSITY,
+  KEYCAP_MATERIAL_METALNESS,
+  KEYCAP_MATERIAL_ROUGHNESS,
+} from "@/modules/design/lib/preview3d/constants"
 
 /** 场景级共享的贴花 uniform（多颗键帽引用同一对象） */
 export interface SharedDyeSubUniforms {
@@ -60,8 +65,9 @@ export function createKeycapDyeSubMaterial(
   const selected = options.selected ?? false
   const mat = new MeshStandardMaterial({
     color: options.color,
-    roughness: options.roughness ?? 0.55,
-    metalness: options.metalness ?? 0.05,
+    roughness: options.roughness ?? KEYCAP_MATERIAL_ROUGHNESS,
+    metalness: options.metalness ?? KEYCAP_MATERIAL_METALNESS,
+    envMapIntensity: KEYCAP_MATERIAL_ENV_MAP_INTENSITY,
     emissive: selected ? "#5b8def" : "#000000",
     emissiveIntensity: selected ? 0.35 : 0,
     transparent: options.transparent ?? false,

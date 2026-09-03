@@ -9,6 +9,7 @@
   "Common": {
     "appName": "Keyboard Designer",
     "themeToggle": "Toggle dark/light mode",
+    "switchLanguage": "切换语言",
     "backHome": "Back to home",
     "cancel": "Cancel",
     "confirm": "OK",
@@ -466,6 +467,8 @@
       "exportPng": "Export current view as PNG",
       "hideCase": "Hide tray",
       "showCase": "Show tray",
+      "disableRealism": "Disable realistic rendering",
+      "enableRealism": "Enable realistic rendering",
       "hint": "Drag to orbit · scroll to zoom · right-click to pan",
       "loadFailed": "3D preview failed to load",
       "webglError": "WebGL context error. Retry or close the preview.",

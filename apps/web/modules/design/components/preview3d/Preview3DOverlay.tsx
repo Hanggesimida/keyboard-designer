@@ -1,7 +1,13 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { ArrowDownToLine, Box, ImageDown, RotateCcw } from "lucide-react"
+import {
+  ArrowDownToLine,
+  Box,
+  ImageDown,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 
@@ -42,11 +48,13 @@ interface Preview3DOverlayProps {
   onExportPng?: () => void
   showCase: boolean
   onToggleCase: () => void
+  showRealism: boolean
+  onToggleRealism: () => void
   /** 当前布局缺失的期望 GLB 文件名 */
   missingModels?: readonly string[]
 }
 
-/** 3D 预览壳层 overlay：加载态、缺模提示、复位/俯视、导出 PNG、托盘开关、操作提示 */
+/** 3D 预览壳层 overlay：加载态、缺模提示、视角、导出及显示开关 */
 export function Preview3DOverlay({
   loading = false,
   exporting = false,
@@ -55,6 +63,8 @@ export function Preview3DOverlay({
   onExportPng,
   showCase,
   onToggleCase,
+  showRealism,
+  onToggleRealism,
   missingModels = [],
 }: Preview3DOverlayProps) {
   const t = useTranslations("Design.preview3d")
@@ -134,6 +144,24 @@ export function Preview3DOverlay({
             }}
           >
             <Box className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={
+              showRealism
+                ? "size-7 text-foreground bg-accent cursor-pointer"
+                : "size-7 text-foreground cursor-pointer"
+            }
+            title={showRealism ? t("disableRealism") : t("enableRealism")}
+            aria-pressed={showRealism}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleRealism()
+            }}
+          >
+            <Sparkles className="size-3.5" />
           </Button>
           <span className="mx-1 h-4 w-px shrink-0 bg-border" aria-hidden />
           <span className="select-none px-1.5 text-[11px] text-foreground/75">

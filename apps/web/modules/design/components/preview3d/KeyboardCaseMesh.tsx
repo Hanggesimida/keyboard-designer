@@ -3,6 +3,7 @@
 import { RoundedBox } from "@react-three/drei"
 import {
   CASE_CORNER_RADIUS_U,
+  CASE_MATERIAL_ENV_MAP_INTENSITY,
   CASE_MATERIAL_METALNESS,
   CASE_MATERIAL_ROUGHNESS,
 } from "@/modules/design/lib/preview3d/constants"
@@ -36,6 +37,7 @@ function CasePartMesh({
         color={color}
         roughness={CASE_MATERIAL_ROUGHNESS}
         metalness={CASE_MATERIAL_METALNESS}
+        envMapIntensity={CASE_MATERIAL_ENV_MAP_INTENSITY}
       />
     </RoundedBox>
   )

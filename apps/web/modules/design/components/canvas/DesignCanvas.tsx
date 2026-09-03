@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Home } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { LocaleToggle } from "@/components/i18n/LocaleSwitcher"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
@@ -674,6 +675,7 @@ export function DesignCanvas() {
           size="icon-xs"
           className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"
         />
+        <LocaleToggle className="bg-popover/80 backdrop-blur-sm border border-border text-foreground" />
       </div>
 
       <CanvasToolbar

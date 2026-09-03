@@ -66,6 +66,8 @@ export function Keycap3DPreview() {
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
   const show3dCase = useDesignUIStore((s) => s.show3dCase)
   const toggleShow3dCase = useDesignUIStore((s) => s.toggleShow3dCase)
+  const show3dRealism = useDesignUIStore((s) => s.show3dRealism)
+  const toggleShow3dRealism = useDesignUIStore((s) => s.toggleShow3dRealism)
 
   const sceneModel = useMemo(() => {
     const designSnapshot: PreviewDesignStateInput = {
@@ -196,6 +198,7 @@ export function Keycap3DPreview() {
               cameraView={cameraView}
               cameraViewToken={cameraViewToken}
               showCase={show3dCase}
+              showRealism={show3dRealism}
               onSelectKeycap={handleSelectKeycap}
             />
             <SceneReady onPending={markPending} onReady={markReady} />
@@ -210,6 +213,8 @@ export function Keycap3DPreview() {
           onExportPng={handleExportPng}
           showCase={show3dCase}
           onToggleCase={toggleShow3dCase}
+          showRealism={show3dRealism}
+          onToggleRealism={toggleShow3dRealism}
           missingModels={sceneModel.missingModels}
         />
       </div>

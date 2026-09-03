@@ -35,9 +35,17 @@ export const CASE_BODY_COLOR = "#2a2d32"
 
 export const CASE_PLATE_COLOR = "#3d424a"
 
-export const CASE_MATERIAL_ROUGHNESS = 0.85
+/** 键帽按哑光塑料处理，环境反射只用于呈现轮廓和曲面层次 */
+export const KEYCAP_MATERIAL_ROUGHNESS = 0.48
+export const KEYCAP_MATERIAL_METALNESS = 0
+export const KEYCAP_MATERIAL_ENV_MAP_INTENSITY = 0.8
 
-export const CASE_MATERIAL_METALNESS = 0.08
+/** 壳体保留轻微金属感，但避免镜面反射抢过键帽内容 */
+export const CASE_MATERIAL_ROUGHNESS = 0.62
+
+export const CASE_MATERIAL_METALNESS = 0.12
+
+export const CASE_MATERIAL_ENV_MAP_INTENSITY = 1
 
 /** 真实按键时键帽沿 -Y 下沉（世界单位 u） */
 export const KEYCAP_PRESS_TRAVEL_U = 0.08

@@ -3,7 +3,12 @@
 import { useEffect, useLayoutEffect, useRef, type ComponentRef } from "react"
 import { useTheme } from "next-themes"
 import { useThree } from "@react-three/fiber"
-import { OrbitControls } from "@react-three/drei"
+import {
+  ContactShadows,
+  Environment,
+  Lightformer,
+  OrbitControls,
+} from "@react-three/drei"
 import {
   PREVIEW_3D_BG_DARK,
   PREVIEW_3D_BG_LIGHT,
@@ -20,6 +25,9 @@ import { KeyboardCaseMesh } from "./KeyboardCaseMesh"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
 import { KeycapMesh } from "./KeycapMesh"
 
+const SHADOW_FLOOR_GAP_U = 0.015
+const SHADOW_MARGIN_U = 1
+
 /** 跟随浅色/深色模式设置 WebGL 背景；Three.Color 无法解析 oklch/lab，必须用 hex */
 function ThemeSceneBackground() {
   const { resolvedTheme } = useTheme()
@@ -31,6 +39,80 @@ function ThemeSceneBackground() {
   }, [bg, invalidate])
 
   return <color attach="background" args={[bg]} />
+}
+
+/** 无外部贴图的中性日光环境；接触阴影仅生成一帧，避免拖动相机时重复计算 */
+function PreviewEnvironment({
+  center,
+  extents,
+  floorY,
+  shadowKey,
+}: {
+  center: Vec3
+  extents: { width: number; depth: number }
+  floorY: number
+  shadowKey: string
+}) {
+  const shadowScale = Math.max(extents.width, extents.depth) + SHADOW_MARGIN_U * 2
+
+  return (
+    <>
+      <hemisphereLight
+        color="#f8fafc"
+        groundColor="#6b7280"
+        intensity={0.45}
+      />
+      <directionalLight position={[6, 10, 8]} intensity={1.15} />
+
+      <Environment resolution={256} frames={1}>
+        <Lightformer
+          form="rect"
+          color="#fff7ed"
+          intensity={2.5}
+          position={[-5, 5, 4]}
+          rotation={[-Math.PI / 4, 0, 0]}
+          scale={[10, 8, 1]}
+        />
+        <Lightformer
+          form="rect"
+          color="#dbeafe"
+          intensity={1.25}
+          position={[5, 2, 1]}
+          rotation={[0, Math.PI / 2, 0]}
+          scale={[6, 4, 1]}
+        />
+        <Lightformer
+          form="rect"
+          color="#ffffff"
+          intensity={0.8}
+          position={[0, 4, -6]}
+          rotation={[Math.PI / 2, 0, 0]}
+          scale={[8, 3, 1]}
+        />
+      </Environment>
+
+      <ContactShadows
+        key={shadowKey}
+        position={[center[0], floorY, center[2]]}
+        scale={shadowScale}
+        opacity={0.34}
+        blur={2.8}
+        far={3}
+        resolution={512}
+        frames={1}
+      />
+    </>
+  )
+}
+
+function BasicLighting() {
+  return (
+    <>
+      <ambientLight intensity={0.55} />
+      <directionalLight position={[8, 12, 6]} intensity={1.1} />
+      <directionalLight position={[-6, 4, -4]} intensity={0.35} />
+    </>
+  )
 }
 
 function CameraRig({
@@ -129,6 +211,8 @@ interface Keyboard3DSceneProps {
   cameraViewToken?: number
   /** 是否渲染托盘壳体 */
   showCase?: boolean
+  /** 是否启用环境光与接触阴影 */
+  showRealism?: boolean
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
   onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
 }
@@ -138,26 +222,39 @@ export function Keyboard3DScene({
   cameraView = "fit",
   cameraViewToken = 0,
   showCase = true,
+  showRealism = true,
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
   const invalidate = useThree((s) => s.invalidate)
   const center = sceneModel.bounds.center
-  const [caseWidth, , caseDepth] = sceneModel.case.body.size
+  const [caseWidth, caseHeight, caseDepth] = sceneModel.case.body.size
   const extents = {
     width: caseWidth,
     depth: caseDepth,
   }
+  const floorY = showCase
+    ? sceneModel.case.body.position[1] -
+      caseHeight / 2 -
+      SHADOW_FLOOR_GAP_U
+    : -SHADOW_FLOOR_GAP_U
 
   useEffect(() => {
     invalidate()
-  }, [invalidate, showCase])
+  }, [invalidate, showCase, showRealism])
 
   return (
     <>
       <ThemeSceneBackground />
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[8, 12, 6]} intensity={1.1} />
-      <directionalLight position={[-6, 4, -4]} intensity={0.35} />
+      {showRealism ? (
+        <PreviewEnvironment
+          center={center}
+          extents={extents}
+          floorY={floorY}
+          shadowKey={`${sceneModel.templateId}:${showCase}`}
+        />
+      ) : (
+        <BasicLighting />
+      )}
 
       <CameraRig
         center={center}
