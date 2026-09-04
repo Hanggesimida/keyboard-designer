@@ -4,9 +4,9 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/hero_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/hero_light.png">
-    <img alt="Keyboard Designer 键帽设计编辑器" src="apps/web/public/images/hero_light.png" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/hero_dark_zh.png">
+    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/hero_light_zh.png">
+    <img alt="Keyboard Designer 键帽设计编辑器" src="apps/web/public/images/hero_light_zh.png" width="900">
   </picture>
 </p>
 
@@ -20,9 +20,9 @@ Keyboard Designer 是一个浏览器端键帽设计器。打开页面、选择�
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/feature_light.png">
-    <img alt="所见即所得键帽编辑器" src="apps/web/public/images/feature_light.png" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark_zh.png">
+    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/feature_light_zh.png">
+    <img alt="所见即所得键帽编辑器" src="apps/web/public/images/feature_light_zh.png" width="900">
   </picture>
 </p>
 

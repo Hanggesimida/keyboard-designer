@@ -13,6 +13,7 @@ import {
   PREVIEW_3D_BG_DARK,
   PREVIEW_3D_BG_LIGHT,
 } from "@/modules/design/lib/preview3d/constants"
+import type { DirectionalLight } from "three"
 import {
   computeCameraFitPose,
   computeCameraTopPose,
@@ -53,22 +54,47 @@ function PreviewEnvironment({
   floorY: number
   shadowKey: string
 }) {
+  const keyLightRef = useRef<DirectionalLight>(null)
   const shadowScale = Math.max(extents.width, extents.depth) + SHADOW_MARGIN_U * 2
+  const shadowExtent = shadowScale / 2
+
+  useLayoutEffect(() => {
+    const light = keyLightRef.current
+    if (!light) return
+    light.target.position.set(center[0], center[1], center[2])
+    light.target.updateMatrixWorld()
+  }, [center])
 
   return (
     <>
       <hemisphereLight
         color="#f8fafc"
-        groundColor="#6b7280"
-        intensity={0.45}
+        groundColor="#525866"
+        intensity={0.32}
       />
-      <directionalLight position={[6, 10, 8]} intensity={1.15} />
+      <directionalLight
+        ref={keyLightRef}
+        position={[center[0] + 6, 10, center[2] + 8]}
+        color="#fffaf2"
+        intensity={1.35}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-shadowExtent}
+        shadow-camera-right={shadowExtent}
+        shadow-camera-top={shadowExtent}
+        shadow-camera-bottom={-shadowExtent}
+        shadow-camera-near={0.5}
+        shadow-camera-far={40}
+        shadow-bias={-0.00015}
+        shadow-normalBias={0.018}
+      />
 
-      <Environment resolution={256} frames={1}>
+      <Environment resolution={512} frames={1}>
         <Lightformer
           form="rect"
           color="#fff7ed"
-          intensity={2.5}
+          intensity={2.8}
           position={[-5, 5, 4]}
           rotation={[-Math.PI / 4, 0, 0]}
           scale={[10, 8, 1]}
@@ -76,7 +102,7 @@ function PreviewEnvironment({
         <Lightformer
           form="rect"
           color="#dbeafe"
-          intensity={1.25}
+          intensity={1.15}
           position={[5, 2, 1]}
           rotation={[0, Math.PI / 2, 0]}
           scale={[6, 4, 1]}
@@ -84,7 +110,7 @@ function PreviewEnvironment({
         <Lightformer
           form="rect"
           color="#ffffff"
-          intensity={0.8}
+          intensity={0.9}
           position={[0, 4, -6]}
           rotation={[Math.PI / 2, 0, 0]}
           scale={[8, 3, 1]}
@@ -95,10 +121,10 @@ function PreviewEnvironment({
         key={shadowKey}
         position={[center[0], floorY, center[2]]}
         scale={shadowScale}
-        opacity={0.34}
-        blur={2.8}
-        far={3}
-        resolution={512}
+        opacity={0.22}
+        blur={2.2}
+        far={2.5}
+        resolution={1024}
         frames={1}
       />
     </>

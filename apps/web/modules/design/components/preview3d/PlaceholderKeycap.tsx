@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
-import { useThree, type ThreeEvent } from "@react-three/fiber"
+import { useEffect, useMemo, useRef } from "react"
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
+import { MathUtils, type Group } from "three"
 import { KEYCAP_PRESS_TRAVEL_U, PLACEHOLDER_COLOR, PLACEHOLDER_KEY_HEIGHT } from "@/modules/design/lib/preview3d/constants"
 import {
   createKeycapDyeSubMaterial,
@@ -29,10 +30,13 @@ interface PlaceholderKeycapProps {
 export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapProps) {
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
+  const groupRef = useRef<Group>(null)
   const shared = useSharedDyeSubUniforms()
   const [sx, sz] = previewKey.sizeU
   const color = previewKey.color || PLACEHOLDER_COLOR
   const selected = previewKey.selected
+  const [x, y, z] = previewKey.position
+  const targetY = previewKey.pressed ? y - KEYCAP_PRESS_TRAVEL_U : y
 
   const material = useMemo(
     () =>
@@ -68,7 +72,20 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
 
   useEffect(() => {
     invalidate()
-  }, [invalidate, previewKey.pressed])
+  }, [invalidate, targetY])
+
+  useFrame((_state, delta) => {
+    const group = groupRef.current
+    if (!group) return
+    const damping = previewKey.pressed ? 34 : 22
+    const nextY = MathUtils.damp(group.position.y, targetY, damping, delta)
+    if (Math.abs(nextY - targetY) < 0.0005) {
+      group.position.y = targetY
+      return
+    }
+    group.position.y = nextY
+    invalidate()
+  })
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
@@ -76,11 +93,8 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
     onSelect?.(e.shiftKey)
   }
 
-  const [x, y, z] = previewKey.position
-  const posY = previewKey.pressed ? y - KEYCAP_PRESS_TRAVEL_U : y
-
   return (
-    <group position={[x, posY, z]}>
+    <group ref={groupRef} position={[x, y, z]}>
       <mesh
         position={[0, PLACEHOLDER_KEY_HEIGHT / 2, 0]}
         material={material as never}

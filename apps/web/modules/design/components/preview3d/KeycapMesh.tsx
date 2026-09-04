@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef } from "react"
 import { useGLTF } from "@react-three/drei"
-import { useThree, type ThreeEvent } from "@react-three/fiber"
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
+import { MathUtils, type Mesh } from "three"
 import { KEYCAP_PRESS_TRAVEL_U } from "@/modules/design/lib/preview3d/constants"
 import {
   KEYCAP_MATERIAL_NAME,
@@ -95,7 +96,10 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
   const validatedRef = useRef<string | null>(null)
+  const meshRef = useRef<Mesh>(null)
   const shared = useSharedDyeSubUniforms()
+  const [x, y, z] = previewKey.position
+  const targetY = previewKey.pressed ? y - KEYCAP_PRESS_TRAVEL_U : y
 
   const geometry = findKeycapGeometry(scene as SceneLike)
 
@@ -133,7 +137,20 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
 
   useEffect(() => {
     invalidate()
-  }, [invalidate, previewKey.pressed])
+  }, [invalidate, targetY])
+
+  useFrame((_state, delta) => {
+    const mesh = meshRef.current
+    if (!mesh) return
+    const damping = previewKey.pressed ? 34 : 22
+    const nextY = MathUtils.damp(mesh.position.y, targetY, damping, delta)
+    if (Math.abs(nextY - targetY) < 0.0005) {
+      mesh.position.y = targetY
+      return
+    }
+    mesh.position.y = nextY
+    invalidate()
+  })
 
   if (!geometry) return null
 
@@ -143,15 +160,15 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
     onSelect?.(e.shiftKey)
   }
 
-  const [x, y, z] = previewKey.position
-  const posY = previewKey.pressed ? y - KEYCAP_PRESS_TRAVEL_U : y
-
   return (
     <mesh
+      ref={meshRef}
       geometry={geometry as never}
       material={material as never}
-      position={[x, posY, z]}
+      position={[x, y, z]}
       scale={MODEL_SCALE}
+      castShadow
+      receiveShadow
       onClick={onSelect ? handleClick : undefined}
       onPointerOver={
         onSelect

@@ -2,6 +2,11 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Canvas, type RootState } from "@react-three/fiber"
+import {
+  ACESFilmicToneMapping,
+  PCFShadowMap,
+  SRGBColorSpace,
+} from "three"
 import { useShallow } from "zustand/react/shallow"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
@@ -109,6 +114,11 @@ export function Keycap3DPreview() {
   const markReady = useCallback(() => setReady(true), [])
 
   const handleCreated = useCallback((state: RootState) => {
+    state.gl.outputColorSpace = SRGBColorSpace
+    state.gl.toneMapping = ACESFilmicToneMapping
+    state.gl.toneMappingExposure = 1.05
+    state.gl.shadowMap.enabled = true
+    state.gl.shadowMap.type = PCFShadowMap
     threeRef.current = state
   }, [])
 
@@ -184,10 +194,14 @@ export function Keycap3DPreview() {
             far: 200,
             position: [0, 8, 14],
           }}
-          gl={{ antialias: true, alpha: true }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance",
+          }}
           dpr={[1, 1.5]}
           frameloop="demand"
-          shadows={false}
+          shadows="percentage"
           style={{ background: "transparent" }}
           onCreated={handleCreated}
           onPointerMissed={handlePointerMissed}

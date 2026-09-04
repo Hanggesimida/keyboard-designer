@@ -13,15 +13,6 @@ const redirectedSources = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "ik.imagekit.io",
-        pathname: "/lrigu76hy/**",
-      },
-    ],
-  },
   async redirects() {
     return [
       ...redirectedSources.map((source) => ({

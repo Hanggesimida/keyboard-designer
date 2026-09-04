@@ -37,7 +37,7 @@ export function HomeFooter() {
     {
       title: t("product"),
       links: [
-        { name: t("features"), href: "#features", icon: LayoutGrid },
+        { name: t("features"), href: "/#features", icon: LayoutGrid },
         { name: t("editor"), href: "/design", icon: Keyboard },
       ],
     },

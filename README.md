@@ -4,9 +4,9 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/hero_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/hero_light.png">
-    <img alt="Keyboard Designer editor" src="apps/web/public/images/hero_light.png" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/hero_dark_en.png">
+    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/hero_light_en.png">
+    <img alt="Keyboard Designer editor" src="apps/web/public/images/hero_light_en.png" width="900">
   </picture>
 </p>
 
@@ -20,9 +20,9 @@ The app is already deployed on [Vercel](https://vercel.com/). Open **[kbd.weihan
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/feature_light.png">
-    <img alt="What-you-see-is-what-you-get keycap editor" src="apps/web/public/images/feature_light.png" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/images/feature_dark_en.png">
+    <source media="(prefers-color-scheme: light)" srcset="apps/web/public/images/feature_light_en.png">
+    <img alt="What-you-see-is-what-you-get keycap editor" src="apps/web/public/images/feature_light_en.png" width="900">
   </picture>
 </p>
 

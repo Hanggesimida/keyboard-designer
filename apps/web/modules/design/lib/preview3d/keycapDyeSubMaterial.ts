@@ -53,7 +53,7 @@ export interface KeycapDyeSubMaterialOptions {
   metalness?: number
 }
 
-const SHADER_CACHE_KEY = "keycap-dyesub-v4"
+const SHADER_CACHE_KEY = "keycap-dyesub-v5-pbt"
 
 /**
  * 创建带世界空间贴花的 Standard 材质。
@@ -112,7 +112,23 @@ uniform mat3 uLegendMatrix;
 uniform float uHasLegend;
 varying vec3 vWorldPos_dye;
 varying vec3 vWorldNormal_dye;
+float pbtGrainHash(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
 void main() {
+`,
+    )
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <roughnessmap_fragment>",
+      /* glsl */ `
+#include <roughnessmap_fragment>
+{
+  float pbtGrain = pbtGrainHash(floor(vWorldPos_dye * 64.0));
+  roughnessFactor = clamp(roughnessFactor + (pbtGrain - 0.5) * 0.08, 0.04, 1.0);
+}
 `,
     )
 

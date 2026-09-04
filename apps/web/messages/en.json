@@ -25,6 +25,10 @@
     "custom": "Custom",
     "default": "Default"
   },
+  "NotFoundPage": {
+    "title": "Page not found",
+    "description": "This address doesn’t match any page. Check the link, or go back home."
+  },
   "Nav": {
     "home": "Home",
     "features": "Features",

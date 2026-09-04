@@ -17,8 +17,8 @@ export function HomeHeader() {
 
   const menuItems = [
     { name: t("home"), href: "/" },
-    { name: t("features"), href: "#features" },
-    { name: t("faq"), href: "#faq" },
+    { name: t("features"), href: "/#features" },
+    { name: t("faq"), href: "/#faq" },
   ]
 
   useEffect(() => {

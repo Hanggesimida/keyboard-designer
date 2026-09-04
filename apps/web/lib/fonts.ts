@@ -96,6 +96,17 @@ const playfairDisplay = localFont({
   display: "swap",
 })
 
+const manrope = localFont({
+  src: [
+    { path: "../public/fonts/manrope/manrope-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../public/fonts/manrope/manrope-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../public/fonts/manrope/manrope-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../public/fonts/manrope/manrope-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-manrope",
+  display: "swap",
+})
+
 export const fontVariables = [
   inter.variable,
   ibmPlexMono.variable,
@@ -107,4 +118,5 @@ export const fontVariables = [
   orbitron.variable,
   dmMono.variable,
   playfairDisplay.variable,
+  manrope.variable,
 ].join(" ")
