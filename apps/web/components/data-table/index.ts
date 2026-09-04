@@ -13,3 +13,10 @@ export { useServerDataTable } from "./hooks/use-server-data-table"
 
 // ─── 类型 ─────────────────────────────────────────────────────────────────────
 export type { FacetedFilterOption } from "./data-table-faceted-filter"
+export type {
+  DataTableColumn,
+  DataTableColumnDef,
+  DataTableFeatures,
+  DataTableInstance,
+  DataTableRow,
+} from "./table-features"

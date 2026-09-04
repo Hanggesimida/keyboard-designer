@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Minus, Plus } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
@@ -10,6 +9,7 @@ import {
   ORDER_QUANTITY_MAX,
   ORDER_QUANTITY_MIN,
 } from "@/modules/checkout/constants"
+import { useSyncedState } from "@/hooks/useSyncedState"
 
 interface QuantitySelectorProps {
   value: number
@@ -33,11 +33,7 @@ export function QuantitySelector({
   className,
 }: QuantitySelectorProps) {
   const t = useTranslations("Checkout")
-  const [inputValue, setInputValue] = useState(String(value))
-
-  useEffect(() => {
-    setInputValue(String(value))
-  }, [value])
+  const [inputValue, setInputValue] = useSyncedState(String(value))
 
   function commitValue(raw: string) {
     const parsed = Number.parseInt(raw, 10)

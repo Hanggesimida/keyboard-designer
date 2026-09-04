@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -8,6 +7,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { HexColorPicker } from "@/modules/design/components/pickers/HexColorPicker"
 import { isValidHex } from "@/modules/design/lib/keycap-inspector/constants"
 import { isGradientValue } from "@/modules/design/lib/design/gradientUtils"
+import { useSyncedState } from "@/hooks/useSyncedState"
 
 interface ColorRowProps {
   label: string
@@ -36,11 +36,7 @@ export function ColorRow({
   const tCommon = useTranslations("Common")
   const t = useTranslations("Design.inspector")
   const display = value || fallback
-  const [hexInput, setHexInput] = useState(display)
-
-  useEffect(() => {
-    setHexInput(display)
-  }, [display])
+  const [hexInput, setHexInput] = useSyncedState(display)
 
   const handleHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value

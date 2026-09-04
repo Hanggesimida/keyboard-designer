@@ -1,10 +1,11 @@
 "use client"
 
-import { useRef, useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { createPortal } from "react-dom"
 import { type ResizeHandle, computeResizePatch, normalizeAngleDeg } from "./imageElementUtils"
 import { ResetRotationIcon, RestoreAspectIcon, LockAspectIcon } from "./ImageControlIcons"
+import { useLatestRef } from "@/hooks/useLatestRef"
 
 /** 键帽编辑器内图片视图（坐标相对键帽底座左上角，SVG 单位） */
 export interface KeycapEditorImage {
@@ -42,6 +43,34 @@ const CTRL_HANDLE = 7
 const CTRL_GAP = 4
 
 export type ClipMode = "none" | "base" | "top"
+
+function parseSvgNaturalSize(src: string): { w: number; h: number } | null {
+  if (!src.startsWith("data:image/svg+xml")) return null
+  try {
+    const base64 = src.split(",")[1]
+    const svgText = base64
+      ? decodeURIComponent(escape(atob(base64)))
+      : decodeURIComponent(src.split(",")[1] ?? "")
+    const viewBoxMatch = svgText.match(
+      /viewBox\s*=\s*["'][\s,]*[\d.+-]+[\s,]+[\d.+-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/,
+    )
+    if (viewBoxMatch?.[1] && viewBoxMatch?.[2]) {
+      const w = parseFloat(viewBoxMatch[1])
+      const h = parseFloat(viewBoxMatch[2])
+      if (w > 0 && h > 0) return { w, h }
+    }
+    const wMatch = svgText.match(/<svg[^>]*\s+width\s*=\s*["']([\d.]+)/)
+    const hMatch = svgText.match(/<svg[^>]*\s+height\s*=\s*["']([\d.]+)/)
+    if (wMatch?.[1] && hMatch?.[1]) {
+      const w = parseFloat(wMatch[1])
+      const h = parseFloat(hMatch[1])
+      if (w > 0 && h > 0) return { w, h }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
 
 interface KeycapImageControlOverlayProps {
   left: number
@@ -221,7 +250,7 @@ export interface KeycapEditorImageElementProps {
   /** 顶面轮廓的 clipPath id */
   topFaceClipId: string
   svgRef: React.RefObject<SVGSVGElement | null>
-  overlayContainerRef: React.RefObject<HTMLDivElement | null>
+  overlayContainer: HTMLDivElement | null
   onSelect: () => void
   onCycleClipMode: () => void
   onCenterToTopFace: () => void
@@ -229,50 +258,27 @@ export interface KeycapEditorImageElementProps {
 }
 
 export function KeycapEditorImageElement({
-  img, clipMode, isSelected, scale, clipId, topFaceClipId, svgRef, overlayContainerRef, onSelect, onCycleClipMode, onCenterToTopFace, onCommit,
+  img, clipMode, isSelected, scale, clipId, topFaceClipId, svgRef, overlayContainer, onSelect, onCycleClipMode, onCenterToTopFace, onCommit,
 }: KeycapEditorImageElementProps) {
   const [lockAspect, setLockAspect] = useState(true)
-  const lockAspectRef = useRef(lockAspect)
-  lockAspectRef.current = lockAspect
+  const lockAspectRef = useLatestRef(lockAspect)
 
-  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
+  const svgNaturalSize = useMemo(() => parseSvgNaturalSize(img.src), [img.src])
+  const [rasterNaturalSize, setRasterNaturalSize] = useState<{ w: number; h: number } | null>(null)
 
   useEffect(() => {
+    if (svgNaturalSize) return
     const src = img.src
-    // SVG data URL：从 base64 解码后解析 viewBox/width/height，避免 naturalWidth=0 的问题
-    if (src.startsWith("data:image/svg+xml")) {
-      try {
-        const base64 = src.split(",")[1]
-        const svgText = base64
-          ? decodeURIComponent(escape(atob(base64)))
-          : decodeURIComponent(src.split(",")[1] ?? "")
-        const viewBoxMatch = svgText.match(
-          /viewBox\s*=\s*["'][\s,]*[\d.+-]+[\s,]+[\d.+-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/,
-        )
-        if (viewBoxMatch?.[1] && viewBoxMatch?.[2]) {
-          const w = parseFloat(viewBoxMatch[1])
-          const h = parseFloat(viewBoxMatch[2])
-          if (w > 0 && h > 0) { setNaturalSize({ w, h }); return }
-        }
-        const wMatch = svgText.match(/<svg[^>]*\s+width\s*=\s*["']([\d.]+)/)
-        const hMatch = svgText.match(/<svg[^>]*\s+height\s*=\s*["']([\d.]+)/)
-        if (wMatch?.[1] && hMatch?.[1]) {
-          const w = parseFloat(wMatch[1])
-          const h = parseFloat(hMatch[1])
-          if (w > 0 && h > 0) { setNaturalSize({ w, h }); return }
-        }
-      } catch {
-        // 解析失败则 fallback 到 Image 方式
-      }
-    }
     const domImg = new window.Image()
     domImg.onload = () => {
       if (domImg.naturalWidth > 0 && domImg.naturalHeight > 0) {
-        setNaturalSize({ w: domImg.naturalWidth, h: domImg.naturalHeight })
+        setRasterNaturalSize({ w: domImg.naturalWidth, h: domImg.naturalHeight })
       }
     }
     domImg.src = src
-  }, [img.src])
+  }, [img.src, svgNaturalSize])
+
+  const naturalSize = svgNaturalSize ?? rasterNaturalSize
 
   // 实时预览（null = 无交互进行中）
   const [live, setLive] = useState<LivePatch | null>(null)
@@ -357,7 +363,7 @@ export function KeycapEditorImageElement({
       document.addEventListener("mousemove", onMove)
       document.addEventListener("mouseup", onUp)
     },
-    [img.id, img.x, img.y, img.width, img.height, scale, onCommit],
+    [img.id, img.x, img.y, img.width, img.height, lockAspectRef, scale, onCommit],
   )
 
   // ─── 旋转手柄 ──────────────────────────────────────
@@ -396,7 +402,7 @@ export function KeycapEditorImageElement({
   )
 
   const overlay =
-    isSelected && overlayContainerRef.current
+    isSelected && overlayContainer
       ? createPortal(
           <KeycapImageControlOverlay
             left={(dispX + MODAL_VIEW_INSET) * scale}
@@ -417,7 +423,7 @@ export function KeycapEditorImageElement({
             onResetRotation={() => onCommit(img.id, { rotation: 0 })}
             onCenterToTopFace={onCenterToTopFace}
           />,
-          overlayContainerRef.current,
+          overlayContainer,
         )
       : null
 

@@ -28,12 +28,12 @@ type Translate = (
 
 export function createAddressSchema(t: Translate) {
   return z.object({
-    name: z.string().min(1, t("recipientRequired")).max(50),
-    phone: z.string().regex(/^1[3-9]\d{9}$/, t("phoneInvalid")),
-    province: z.string().min(1, t("provinceRequired")).max(50),
-    city: z.string().min(1, t("cityRequired")).max(50),
-    district: z.string().min(1, t("districtRequired")).max(50),
-    detail: z.string().min(1, t("detailRequired")).max(200),
+    name: z.string().min(1, { error: t("recipientRequired") }).max(50),
+    phone: z.string().regex(/^1[3-9]\d{9}$/, { error: t("phoneInvalid") }),
+    province: z.string().min(1, { error: t("provinceRequired") }).max(50),
+    city: z.string().min(1, { error: t("cityRequired") }).max(50),
+    district: z.string().min(1, { error: t("districtRequired") }).max(50),
+    detail: z.string().min(1, { error: t("detailRequired") }).max(200),
     isDefault: z.boolean().optional(),
   })
 }

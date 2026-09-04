@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { type Column } from "@tanstack/react-table"
+import { type RowData } from "@tanstack/react-table"
 import { Check, PlusCircle } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -24,19 +24,21 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { type DataTableColumn } from "./table-features"
+
 export interface FacetedFilterOption {
   label: string
   value: string
   icon?: React.ComponentType<{ className?: string }>
 }
 
-interface DataTableFacetedFilterProps<TData, TValue> {
-  column?: Column<TData, TValue>
+interface DataTableFacetedFilterProps<TData extends RowData, TValue = unknown> {
+  column?: DataTableColumn<TData, TValue>
   title?: string
   options: FacetedFilterOption[]
 }
 
-export function DataTableFacetedFilter<TData, TValue>({
+export function DataTableFacetedFilter<TData extends RowData, TValue = unknown>({
   column,
   title,
   options,

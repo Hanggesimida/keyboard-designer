@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Loader2, PackageCheck, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import {
@@ -51,19 +51,23 @@ export function BatchOrderDialog({
   const defaultAddressId =
     addresses?.find((a) => a.isDefault)?.id ?? addresses?.[0]?.id ?? ""
 
-  useEffect(() => {
-    if (!open) return
-    setResult(null)
-    const initialAddresses: Record<string, string> = {}
-    const initialQuantities: Record<string, number> = {}
-    for (const design of designs) {
-      initialAddresses[design.id] = defaultAddressId
-      initialQuantities[design.id] = 1
+  const designIdsKey = designs.map((d) => d.id).join(",")
+  const resetSessionKey = open ? `${designIdsKey}:${defaultAddressId}` : ""
+  const [appliedResetKey, setAppliedResetKey] = useState("")
+  if (resetSessionKey !== appliedResetKey) {
+    setAppliedResetKey(resetSessionKey)
+    if (open) {
+      setResult(null)
+      const initialAddresses: Record<string, string> = {}
+      const initialQuantities: Record<string, number> = {}
+      for (const design of designs) {
+        initialAddresses[design.id] = defaultAddressId
+        initialQuantities[design.id] = 1
+      }
+      setAddressByDesign(initialAddresses)
+      setQuantityByDesign(initialQuantities)
     }
-    setAddressByDesign(initialAddresses)
-    setQuantityByDesign(initialQuantities)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, designs.map((d) => d.id).join(","), defaultAddressId])
+  }
 
   function handleOpenChange(next: boolean) {
     if (!isPending) onOpenChange(next)

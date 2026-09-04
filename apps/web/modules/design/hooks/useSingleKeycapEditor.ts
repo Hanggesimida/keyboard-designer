@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { useShallow } from "zustand/react/shallow"
 import {
   computeLabelAlignPatch,
@@ -17,6 +17,7 @@ import {
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
 import { getFontCapabilities } from "@/modules/design/components/sidebar/sections/right/font-options"
+import { useSyncedState } from "@/hooks/useSyncedState"
 
 export function useSingleKeycapEditor({
   layerId,
@@ -49,17 +50,9 @@ export function useSingleKeycapEditor({
   const currentFontSize = override?.fontSize ?? globalKeycapStyle.fontSize
   const effectiveFontFamily = override?.fontFamily ?? globalFontFamily
 
-  const [labelInput, setLabelInput] = useState(currentLabel)
-  const [fontSizeInput, setFontSizeInput] = useState(String(currentFontSize))
+  const [labelInput, setLabelInput] = useSyncedState(currentLabel)
+  const [fontSizeInput, setFontSizeInput] = useSyncedState(String(currentFontSize))
   const [fontPopoverOpen, setFontPopoverOpen] = useState(false)
-
-  useEffect(() => {
-    setLabelInput(currentLabel)
-  }, [currentLabel])
-
-  useEffect(() => {
-    setFontSizeInput(String(currentFontSize))
-  }, [currentFontSize])
 
   const patchOverride = useCallback(
     (patch: Partial<KeycapOverride>) => {
@@ -109,6 +102,7 @@ export function useSingleKeycapEditor({
       keyDef.keyId,
       layerId,
       setKeycapOverride,
+      setFontSizeInput,
     ],
   )
 
@@ -122,7 +116,7 @@ export function useSingleKeycapEditor({
         setKeycapOverride(layerId, keyDef.keyId, { labelText: val })
       }
     },
-    [disabled, keyDef.keyId, keyDef.label, layerId, setKeycapOverride],
+    [disabled, keyDef.keyId, keyDef.label, layerId, setKeycapOverride, setLabelInput],
   )
 
   const handleFontSizeStepperChange = useCallback(
@@ -148,6 +142,7 @@ export function useSingleKeycapEditor({
       keyDef.keyId,
       layerId,
       setKeycapOverride,
+      setFontSizeInput,
     ],
   )
 
@@ -189,7 +184,7 @@ export function useSingleKeycapEditor({
       )
       patchOverride(patch)
     },
-    [currentFontSize, currentLabel, disabled, keyDef, patchOverride],
+    [LAYOUT_BASE_UNIT, currentFontSize, currentLabel, disabled, keyDef, patchOverride],
   )
 
   const hasOverride = !!override && Object.keys(override).length > 0

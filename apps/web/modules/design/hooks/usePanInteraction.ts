@@ -16,13 +16,16 @@ export function usePanInteraction({ onPanBy, disabled = false }: UsePanInteracti
   const isSpacePressedRef = useRef(false)
   const panFromSpaceLeftRef = useRef(false)
 
+  if (disabled) {
+    if (isSpacePressed) setIsSpacePressed(false)
+    if (isPanning) setIsPanning(false)
+  }
+
   useEffect(() => {
     if (disabled) {
       isSpacePressedRef.current = false
-      setIsSpacePressed(false)
       dragging.current = false
       panFromSpaceLeftRef.current = false
-      setIsPanning(false)
       return
     }
 

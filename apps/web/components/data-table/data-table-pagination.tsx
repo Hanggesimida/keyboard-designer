@@ -1,6 +1,6 @@
 "use client"
 
-import { type Table } from "@tanstack/react-table"
+import { type RowData } from "@tanstack/react-table"
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,8 +18,10 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 
-interface DataTablePaginationProps<TData> {
-  table: Table<TData>
+import { type DataTableInstance } from "./table-features"
+
+interface DataTablePaginationProps<TData extends RowData> {
+  table: DataTableInstance<TData>
   /**
    * 服务端模式下的总条数。
    * 传入时左侧将显示"共 N 条"；不传则显示已选/当前页行数统计。
@@ -29,13 +31,13 @@ interface DataTablePaginationProps<TData> {
   pageSizeOptions?: number[]
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends RowData>({
   table,
   totalRows,
   pageSizeOptions = [10, 20, 30, 50],
 }: DataTablePaginationProps<TData>) {
   const t = useTranslations("DataTable")
-  const { pageIndex, pageSize } = table.getState().pagination
+  const { pageIndex, pageSize } = table.state.pagination
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length
   const filteredCount = table.getFilteredRowModel().rows.length

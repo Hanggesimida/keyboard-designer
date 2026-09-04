@@ -2,6 +2,7 @@
 
 import { Download, Layout, Palette, Sparkles, Play } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import Image from 'next/image'
 import { Card } from '@workspace/ui/components/card'
 
 export function FeaturesSection() {
@@ -20,18 +21,18 @@ export function FeaturesSection() {
               </p>
               <div className="[mask-image:linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)] -ml-2 -mt-2 mr-0.5 pl-2 pt-2">
                 <div className="bg-background rounded-tl-xl relative mx-auto mt-8 h-96 overflow-hidden border border-transparent shadow ring-1 ring-foreground/5">
-                  <img
+                  <Image
                     src="/images/feature_light.png"
                     alt={t('previewAlt')}
-                    width="2700"
-                    height="1440"
+                    width={2700}
+                    height={1440}
                     className="object-top h-full w-full object-cover dark:hidden"
                   />
-                  <img
+                  <Image
                     src="/images/feature_dark.png"
                     alt={t('previewAlt')}
-                    width="2700"
-                    height="1440"
+                    width={2700}
+                    height={1440}
                     className="object-top hidden h-full w-full object-cover dark:block"
                   />
                 </div>

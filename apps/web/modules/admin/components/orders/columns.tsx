@@ -1,6 +1,6 @@
 "use client"
 
-import { type ColumnDef } from "@tanstack/react-table"
+import { type DataTableColumnDef } from "@/components/data-table"
 import {
   MoreHorizontal,
   ExternalLink,
@@ -108,7 +108,7 @@ const cnyFormatter = new Intl.NumberFormat("zh-CN", {
 export function createOrderColumns(
   t: (key: string, values?: Record<string, number>) => string,
   dateLocale: Locale,
-): ColumnDef<AdminOrderSummary>[] {
+): DataTableColumnDef<AdminOrderSummary>[] {
   return [
     {
       accessorKey: "orderNo",

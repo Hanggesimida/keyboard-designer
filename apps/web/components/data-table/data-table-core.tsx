@@ -1,6 +1,6 @@
 "use client"
 
-import { flexRender, type Table } from "@tanstack/react-table"
+import { type RowData } from "@tanstack/react-table"
 import { useTranslations } from "next-intl"
 
 import {
@@ -13,8 +13,13 @@ import {
 } from "@workspace/ui/components/table"
 import { Spinner } from "@workspace/ui/components/spinner"
 
-interface DataTableCoreProps<TData> {
-  table: Table<TData>
+import {
+  type DataTableInstance,
+  type DataTableRow,
+} from "./table-features"
+
+interface DataTableCoreProps<TData extends RowData> {
+  table: DataTableInstance<TData>
   /** 列数，用于空状态 colSpan */
   columnCount: number
   /** 加载中时显示 spinner */
@@ -22,14 +27,14 @@ interface DataTableCoreProps<TData> {
   /** 空数据提示文案 */
   emptyText?: string
   /** 行点击回调，传入后整行可点击 */
-  onRowClick?: (row: import("@tanstack/react-table").Row<TData>) => void
+  onRowClick?: (row: DataTableRow<TData>) => void
 }
 
 /**
  * 纯渲染组件，只负责 thead / tbody 的渲染，不持有任何状态。
  * 接收 table 实例，适用于客户端和服务端两种模式。
  */
-export function DataTableCore<TData>({
+export function DataTableCore<TData extends RowData>({
   table,
   columnCount,
   isLoading = false,
@@ -46,9 +51,7 @@ export function DataTableCore<TData>({
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <TableHead key={header.id} colSpan={header.colSpan}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
+                  {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                 </TableHead>
               ))}
             </TableRow>
@@ -71,7 +74,7 @@ export function DataTableCore<TData>({
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <table.FlexRender cell={cell} />
                   </TableCell>
                 ))}
               </TableRow>

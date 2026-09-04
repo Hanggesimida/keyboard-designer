@@ -13,6 +13,7 @@ import {
   normalizeAngleDeg,
 } from "./imageElementUtils"
 import { ClippedImagePlaceholder, ImageSelectionChrome } from "./ImageSelectionChrome"
+import { useLatestRef } from "@/hooks/useLatestRef"
 
 const _ART_PAD = 28
 
@@ -72,31 +73,22 @@ export function CanvasImageElement({
   }, [templateId])
 
   const [lockAspect, setLockAspect] = useState(true)
-  const lockAspectRef = useRef(lockAspect)
-  lockAspectRef.current = lockAspect
+  const lockAspectRef = useLatestRef(lockAspect)
 
-  const zoomRef = useRef(zoom)
-  zoomRef.current = zoom
+  const zoomRef = useLatestRef(zoom)
 
-  const isClippedRef = useRef(!!element.clipToKeycaps)
-  isClippedRef.current = !!element.clipToKeycaps
-  const elementIdRef = useRef(element.id)
-  elementIdRef.current = element.id
+  const isClippedRef = useLatestRef(!!element.clipToKeycaps)
+  const elementIdRef = useLatestRef(element.id)
 
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
   const elementRef = useRef<HTMLDivElement>(null)
 
-  const liveOffsetRef = useRef<{ dx: number; dy: number } | null>(null)
-  const liveResizeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null)
-  const liveRotationRef = useRef<number | null>(null)
-
   const [liveOffset, setLiveOffset] = useState<{ dx: number; dy: number } | null>(null)
   const [liveResize, setLiveResize] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
   const [liveRotation, setLiveRotation] = useState<number | null>(null)
-
-  liveOffsetRef.current = liveOffset
-  liveResizeRef.current = liveResize
-  liveRotationRef.current = liveRotation
+  const liveOffsetRef = useLatestRef(liveOffset)
+  const liveResizeRef = useLatestRef(liveResize)
+  const liveRotationRef = useLatestRef(liveRotation)
 
   let dispX = element.x, dispY = element.y
   let dispW = element.width, dispH = element.height
@@ -124,8 +116,7 @@ export function CanvasImageElement({
 
   // ─── 拖拽移动 ──────────────────────────────────────────
   const dragStart = useRef<{ mx: number; my: number } | null>(null)
-  const isSpacePressedRef = useRef(isSpacePressed)
-  isSpacePressedRef.current = isSpacePressed
+  const isSpacePressedRef = useLatestRef(isSpacePressed)
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -136,7 +127,7 @@ export function CanvasImageElement({
       dragStart.current = { mx: e.clientX, my: e.clientY }
       ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     },
-    [element.locked, onSelect],
+    [element.locked, isSpacePressedRef, onSelect],
   )
 
   const handlePointerMove = useCallback(
@@ -150,7 +141,7 @@ export function CanvasImageElement({
         useDesignUIStore.getState().setLiveDragOverride(elementIdRef.current, dx, dy)
       }
     },
-    [],
+    [elementIdRef, isClippedRef, liveOffsetRef, zoomRef],
   )
 
   const handlePointerUp = useCallback(() => {
@@ -164,7 +155,7 @@ export function CanvasImageElement({
     if (isClippedRef.current) {
       useDesignUIStore.getState().clearLiveDragOverride(elementIdRef.current)
     }
-  }, [element.id, onDragMove])
+  }, [element.id, elementIdRef, isClippedRef, liveOffsetRef, onDragMove])
 
   // ─── 缩放手柄 ──────────────────────────────────────────
   const resizeDragStart = useRef<{
@@ -195,7 +186,7 @@ export function CanvasImageElement({
       liveResizeRef.current = patch
       setLiveResize(patch)
     },
-    [],
+    [liveResizeRef, lockAspectRef, zoomRef],
   )
 
   const handleResizePointerUp = useCallback(() => {
@@ -204,7 +195,7 @@ export function CanvasImageElement({
     resizeDragStart.current = null
     liveResizeRef.current = null
     setLiveResize(null)
-  }, [element.id, onResizeCommit])
+  }, [element.id, liveResizeRef, onResizeCommit])
 
   // ─── 旋转手柄 ──────────────────────────────────────────
   const rotateDragStart = useRef<{
@@ -242,7 +233,7 @@ export function CanvasImageElement({
       liveRotationRef.current = newRotation
       setLiveRotation(newRotation)
     },
-    [],
+    [liveRotationRef],
   )
 
   const handleRotatePointerUp = useCallback(() => {
@@ -251,7 +242,7 @@ export function CanvasImageElement({
     rotateDragStart.current = null
     liveRotationRef.current = null
     setLiveRotation(null)
-  }, [element.id, onRotate])
+  }, [element.id, liveRotationRef, onRotate])
 
   return (
     <div

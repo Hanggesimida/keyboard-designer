@@ -13,6 +13,7 @@ import { verifyOtp, createVerifyOtpSchema, type VerifyOtpInput } from "@/lib/api
 import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
+import { useSessionStorageItem } from "@/hooks/useSessionStorageItem"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -33,18 +34,13 @@ export function OtpVerifyForm() {
   const redirect = searchParams.get("redirect") ?? "/"
   const setToken = useUserStore((s) => s.setToken)
 
-  const [email, setEmail] = useState("")
+  const email = useSessionStorageItem("otp_email")
   const [serverError, setServerError] = useState<string | null>(null)
 
   const verifyOtpSchema = useMemo(() => createVerifyOtpSchema(tValidation), [tValidation])
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("otp_email")
-    if (!stored) {
-      router.replace("/login")
-      return
-    }
-    setEmail(stored)
+    if (!sessionStorage.getItem("otp_email")) router.replace("/login")
   }, [router])
 
   const {

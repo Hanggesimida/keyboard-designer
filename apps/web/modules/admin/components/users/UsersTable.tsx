@@ -94,7 +94,7 @@ export function UsersTable() {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   })
 
-  const tablePageIndex = table.getState().pagination.pageIndex
+  const tablePageIndex = table.state.pagination.pageIndex
   const isFirstRender = React.useRef(true)
   React.useEffect(() => {
     if (isFirstRender.current) {
@@ -104,20 +104,19 @@ export function UsersTable() {
     setPage(tablePageIndex + 1)
   }, [tablePageIndex])
 
-  const tableFilters = table.getState().columnFilters
+  const tableFilters = table.state.columnFilters
   const tableFiltersKey = JSON.stringify(tableFilters)
-  React.useEffect(() => {
-    const filters: typeof tableFilters = JSON.parse(tableFiltersKey)
-    const roleColFilter = filters.find((f) => f.id === "role")
-    const roleValues = (roleColFilter?.value as string[] | undefined) ?? []
-    setRoles(roleValues as UserRole[])
-    const accountTypeColFilter = filters.find((f) => f.id === "accountType")
-    const accountTypeValues =
-      (accountTypeColFilter?.value as string[] | undefined) ?? []
-    setAccountTypes(accountTypeValues as AccountType[])
+  const [prevFiltersKey, setPrevFiltersKey] = React.useState(tableFiltersKey)
+  if (tableFiltersKey !== prevFiltersKey) {
+    setPrevFiltersKey(tableFiltersKey)
+    const roleColFilter = tableFilters.find((f) => f.id === "role")
+    setRoles(((roleColFilter?.value as string[] | undefined) ?? []) as UserRole[])
+    const accountTypeColFilter = tableFilters.find((f) => f.id === "accountType")
+    setAccountTypes(
+      ((accountTypeColFilter?.value as string[] | undefined) ?? []) as AccountType[],
+    )
     setPage(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableFiltersKey])
+  }
 
   const isFiltered = tableFilters.length > 0
 

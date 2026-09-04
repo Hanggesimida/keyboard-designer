@@ -1,16 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
+import { type RowData } from "@tanstack/react-table"
 
 import { DataTableCore } from "./data-table-core"
 import { DataTablePagination } from "./data-table-pagination"
+import {
+  type DataTableColumnDef,
+  type DataTableInstance,
+  type DataTableRow,
+} from "./table-features"
 
-interface DataTableProps<TData> {
+interface DataTableProps<TData extends RowData> {
   /** TanStack Table 实例，由 useDataTable / useServerDataTable 创建 */
-  table: Table<TData>
+  table: DataTableInstance<TData>
   /** 列定义，用于计算 colSpan */
-  columns: ColumnDef<TData, any>[]
+  columns: DataTableColumnDef<TData>[]
   /**
    * 工具栏插槽，通常传入 <DataTableToolbar> 或自定义工具栏。
    * 不传则不渲染工具栏区域。
@@ -27,7 +32,7 @@ interface DataTableProps<TData> {
   /** 每页行数选项，透传给 DataTablePagination */
   pageSizeOptions?: number[]
   /** 行点击回调，透传给 DataTableCore */
-  onRowClick?: (row: Row<TData>) => void
+  onRowClick?: (row: DataTableRow<TData>) => void
 }
 
 /**
@@ -56,7 +61,7 @@ interface DataTableProps<TData> {
  * <DataTable table={table} columns={columns} totalRows={totalRows} isLoading={isFetching} toolbar={...} />
  * ```
  */
-export function DataTable<TData>({
+export function DataTable<TData extends RowData>({
   table,
   columns,
   toolbar,

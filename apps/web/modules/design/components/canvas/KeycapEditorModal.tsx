@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { X, ImagePlus, Trash2, Move, Crosshair } from "lucide-react"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import type { KeyDef } from "@/modules/design/types/design"
+import { useLatestRef } from "@/hooks/useLatestRef"
 import {
   KEYCAP_GAP as GAP,
   KEY_PAD_LEFT,
@@ -89,7 +90,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const clipId = rawId.replace(/[^a-zA-Z0-9_-]/g, "-")
 
   const svgRef = useRef<SVGSVGElement>(null)
-  const overlayContainerRef = useRef<HTMLDivElement>(null)
+  const [overlayContainer, setOverlayContainer] = useState<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
@@ -101,28 +102,6 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   // 3. 动态计算文本 BBox 用于绘制选中边框
   const textRef = useRef<SVGTextElement>(null)
   const [textBBox, setTextBBox] = useState<DOMRect | null>(null)
-
-  useLayoutEffect(() => {
-    if (textRef.current) {
-      try {
-        const next = textRef.current.getBBox()
-        setTextBBox((prev) => {
-          if (
-            prev &&
-            prev.x === next.x &&
-            prev.y === next.y &&
-            prev.width === next.width &&
-            prev.height === next.height
-          ) {
-            return prev
-          }
-          return next
-        })
-      } catch {
-        // 当元素未完全挂载到 DOM 时 getBBox 可能会报错，在此捕获
-      }
-    }
-  })
 
   // 4. 键帽几何尺寸与布局计算
   const rawW = keyDef.w * unit
@@ -230,9 +209,37 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
   const textY = topY + topH / 2 + displayLabelY
   const textYDraw = textY - fontSize * KEY_LABEL_OPTICAL_CENTER_RATIO - multiLineOffsetY
 
+  useLayoutEffect(() => {
+    if (!textRef.current) return
+    try {
+      const next = textRef.current.getBBox()
+      setTextBBox((prev) => {
+        if (
+          prev &&
+          prev.x === next.x &&
+          prev.y === next.y &&
+          prev.width === next.width &&
+          prev.height === next.height
+        ) {
+          return prev
+        }
+        return next
+      })
+    } catch {
+      // 当元素未完全挂载到 DOM 时 getBBox 可能会报错，在此捕获
+    }
+  }, [
+    fontSize,
+    labelFontFamily,
+    labelText,
+    letterSpacing,
+    lineHeight,
+    textX,
+    textYDraw,
+  ])
+
   // 使用 ref 保存缩放比，避免拖拽回调中产生闭包旧值
-  const modalScaleRef = useRef(modalScale)
-  modalScaleRef.current = modalScale
+  const modalScaleRef = useLatestRef(modalScale)
 
   // 10. 全局快捷键监听（Esc 关闭，Delete/Backspace 删除图片，方向键微调位置）
   useEffect(() => {
@@ -299,7 +306,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
         y: (clientY - rect.top) / modalScaleRef.current - MODAL_VIEW_INSET,
       }
     },
-    [],
+    [modalScaleRef],
   )
 
   // 12. 更新图片在主画布 Store 中的坐标与属性
@@ -392,7 +399,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
       document.addEventListener("mousemove", onMove)
       document.addEventListener("mouseup", onUp)
     },
-    [committedLabelX, committedLabelY, layerId, keyId, maxOffX, maxOffY, setKeycapOverride],
+    [committedLabelX, committedLabelY, layerId, keyId, maxOffX, maxOffY, modalScaleRef, setKeycapOverride],
   )
 
   // 14. 拖拽及选择文件上传，并绑定当前键帽的 z-index 层级
@@ -547,7 +554,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
             onClick={() => { setSelectedImageId(null); setSelectedLabel(false) }}
           >
             <div
-              ref={overlayContainerRef}
+              ref={setOverlayContainer}
               className="relative"
               style={{ width: viewW, height: viewH }}
             >
@@ -636,7 +643,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
                       clipId={clipId}
                       topFaceClipId={`${clipId}-top`}
                       svgRef={svgRef}
-                      overlayContainerRef={overlayContainerRef}
+                      overlayContainer={overlayContainer}
                       onSelect={() => {
                         setSelectedImageId(img.id)
                         setSelectedLabel(false)

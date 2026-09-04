@@ -35,7 +35,6 @@ export const notificationKeys = {
  */
 export function useNotifications(params?: QueryNotificationsParams) {
   const accessToken = useUserStore((s) => s.accessToken);
-  const setNotifications = useNotificationStore((s) => s.setNotifications);
 
   return useQuery({
     queryKey: notificationKeys.lists(params),
@@ -43,10 +42,6 @@ export function useNotifications(params?: QueryNotificationsParams) {
     enabled: !!accessToken,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
-    select: (data) => data,
-    // 每次拿到最新数据时同步到 Zustand store
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(undefined as any),
   });
 }
 

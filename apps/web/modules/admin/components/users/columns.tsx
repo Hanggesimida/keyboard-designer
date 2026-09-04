@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { MoreHorizontal, Shield, ShieldOff, Building2, Loader2 } from "lucide-react"
-import { type ColumnDef } from "@tanstack/react-table"
+import { type DataTableColumnDef } from "@/components/data-table"
 import { formatDistanceToNow } from "date-fns"
 import type { Locale } from "date-fns"
 import { useTranslations } from "next-intl"
@@ -227,7 +227,7 @@ export function createUserColumns(
   onError: ((message: string) => void) | undefined,
   t: (key: string, values?: Record<string, number>) => string,
   dateLocale: Locale,
-): ColumnDef<AdminUserSummary>[] {
+): DataTableColumnDef<AdminUserSummary>[] {
   return [
     {
       accessorKey: "email",

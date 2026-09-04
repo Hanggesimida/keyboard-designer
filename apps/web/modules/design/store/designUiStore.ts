@@ -625,12 +625,12 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
       })),
 
     setSelectedElementId: (id, options) =>
-      set((s) => ({
+      set({
         selectedElementId: id,
         ...(id !== null && !options?.additive
           ? { selectedKeycapIds: [], activeLayerId: null }
           : {}),
-      })),
+      }),
 
     setKeycapEditTarget: (target) => set({ keycapEditTarget: target }),
 
@@ -700,22 +700,23 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   }),
   {
     partialize: (state) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const {
-        selectedKeycapIds,
-        activeLayerId,
-        selectedElementId,
-        keycapEditTarget,
-        liveDragOverrides,
-        assetMap,
-        show3dPreview,
-        preview3dHeight,
-        show3dCase,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 纯 UI 状态不进入撤销历史
-        show3dRealism,
-        pressedKeyIds,
-        ...undoable
-      } = state
+      const undoable = { ...state }
+      const excluded: (keyof DesignUIState)[] = [
+        "selectedKeycapIds",
+        "activeLayerId",
+        "selectedElementId",
+        "keycapEditTarget",
+        "liveDragOverrides",
+        "assetMap",
+        "show3dPreview",
+        "preview3dHeight",
+        "show3dCase",
+        "show3dRealism",
+        "pressedKeyIds",
+      ]
+      for (const key of excluded) {
+        delete undoable[key]
+      }
       return undoable as UndoableDesignState
     },
     /**

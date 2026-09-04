@@ -11,6 +11,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { useLatestRef } from "@/hooks/useLatestRef"
+import { useSyncedState } from "@/hooks/useSyncedState"
 import {
   isGradientValue,
   gradientToCSS,
@@ -62,8 +64,7 @@ interface SvPanelProps {
 function SvPanel({ hue, saturation, value, onChange }: SvPanelProps) {
   const ref = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
+  const onChangeRef = useLatestRef(onChange)
 
   const pick = useCallback((clientX: number, clientY: number) => {
     if (!ref.current) return
@@ -71,7 +72,7 @@ function SvPanel({ hue, saturation, value, onChange }: SvPanelProps) {
     const s = clamp((clientX - rect.left) / rect.width, 0, 1)
     const v = clamp((clientY - rect.top) / rect.height, 0, 1)
     onChangeRef.current(Math.round(s * 100), Math.round((1 - v) * 100))
-  }, [])
+  }, [onChangeRef])
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -128,15 +129,14 @@ interface HueSliderProps {
 function HueSlider({ hue, onChange }: HueSliderProps) {
   const ref = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
+  const onChangeRef = useLatestRef(onChange)
 
   const pick = useCallback((clientX: number) => {
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
     const x = clamp((clientX - rect.left) / rect.width, 0, 1)
     onChangeRef.current(Math.round(x * 360))
-  }, [])
+  }, [onChangeRef])
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -200,8 +200,7 @@ function GradientStopsBar({
   const t = useTranslations("Design.color")
   const containerRef = useRef<HTMLDivElement>(null)
   const draggingId = useRef<string | null>(null)
-  const onMoveRef = useRef(onMoveStop)
-  onMoveRef.current = onMoveStop
+  const onMoveRef = useLatestRef(onMoveStop)
 
   const getPos = useCallback((clientX: number): number => {
     if (!containerRef.current) return 0
@@ -222,7 +221,7 @@ function GradientStopsBar({
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
     }
-  }, [getPos])
+  }, [getPos, onMoveRef])
 
   // Always render left-to-right for the preview bar
   const previewCSS = (() => {
@@ -294,11 +293,7 @@ function AngleInput({
   onChange: (a: number) => void
 }) {
   const t = useTranslations("Design.color")
-  const [inputVal, setInputVal] = useState(String(angle))
-
-  useEffect(() => {
-    setInputVal(String(angle))
-  }, [angle])
+  const [inputVal, setInputVal] = useSyncedState(String(angle))
 
   const commit = (val: string) => {
     const n = parseInt(val)
@@ -427,9 +422,9 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
     () => initStop?.color ?? "#ff0000",
   )
 
-  // ── Sync from external value ───────────────────────────────────────────────
-
-  useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value)
+  if (value !== prevValue) {
+    setPrevValue(value)
     if (isGradientValue(value)) {
       const parsed = parseCssLinearGradient(value)
       if (parsed) {
@@ -444,8 +439,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
       setHsv(hexToHsv(value))
       setHexInput(value)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value])
+  }
 
   // ── Solid handlers ─────────────────────────────────────────────────────────
 

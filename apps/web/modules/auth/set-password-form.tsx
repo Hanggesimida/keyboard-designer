@@ -13,6 +13,7 @@ import { setPassword, createSetPasswordSchema, type SetPasswordInput } from "@/l
 import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
+import { useSessionStorageItem } from "@/hooks/useSessionStorageItem"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -33,7 +34,7 @@ export function SetPasswordForm() {
   const redirect = searchParams.get("redirect") ?? "/"
   const setToken = useUserStore((s) => s.setToken)
 
-  const [setupToken, setSetupToken] = useState("")
+  const setupToken = useSessionStorageItem("otp_setup_token")
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -44,12 +45,7 @@ export function SetPasswordForm() {
   )
 
   useEffect(() => {
-    const token = sessionStorage.getItem("otp_setup_token")
-    if (!token) {
-      router.replace("/login")
-      return
-    }
-    setSetupToken(token)
+    if (!sessionStorage.getItem("otp_setup_token")) router.replace("/login")
   }, [router])
 
   const {

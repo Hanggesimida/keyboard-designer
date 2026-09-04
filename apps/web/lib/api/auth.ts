@@ -17,86 +17,93 @@ type Translate = (
 
 const defaultT: Translate = (key) => key;
 
+function emailField(t: Translate) {
+  return z.email({ error: t('invalidEmail') });
+}
+
+function otpField(t: Translate) {
+  return z
+    .string()
+    .length(6, { error: t('otpLength') })
+    .regex(/^\d+$/, { error: t('otpDigits') });
+}
+
+function passwordField(t: Translate) {
+  return z
+    .string()
+    .min(8, { error: t('passwordMin') })
+    .max(64, { error: t('passwordMax') });
+}
+
+function confirmPassword(t: Translate) {
+  return {
+    error: t('passwordMismatch'),
+    path: ['confirm'] as PropertyKey[],
+  };
+}
+
 export function createLoginSchema(t: Translate) {
   return z.object({
-    email: z.string().email(t('invalidEmail')),
-    password: z.string().min(1, t('passwordRequired')),
+    email: emailField(t),
+    password: z.string().min(1, { error: t('passwordRequired') }),
   });
 }
 
 export function createSendOtpSchema(t: Translate) {
   return z.object({
-    email: z.string().email(t('invalidEmail')),
+    email: emailField(t),
   });
 }
 
 export function createVerifyOtpSchema(t: Translate) {
   return z.object({
-    otp: z
-      .string()
-      .length(6, t('otpLength'))
-      .regex(/^\d+$/, t('otpDigits')),
+    otp: otpField(t),
   });
 }
 
 export function createSetPasswordSchema(t: Translate) {
   return z
     .object({
-      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      password: passwordField(t),
       confirm: z.string(),
     })
-    .refine((v) => v.password === v.confirm, {
-      message: t('passwordMismatch'),
-      path: ['confirm'],
-    });
+    .refine((v) => v.password === v.confirm, confirmPassword(t));
 }
 
 export function createChangePasswordSchema(t: Translate) {
   return z
     .object({
       currentPassword: z.string().optional(),
-      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      password: passwordField(t),
       confirm: z.string(),
     })
-    .refine((v) => v.password === v.confirm, {
-      message: t('passwordMismatch'),
-      path: ['confirm'],
-    });
+    .refine((v) => v.password === v.confirm, confirmPassword(t));
 }
 
 export function createChangePasswordWithCurrentSchema(t: Translate) {
   return z
     .object({
-      currentPassword: z.string().min(1, t('currentPasswordRequired')),
-      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      currentPassword: z.string().min(1, { error: t('currentPasswordRequired') }),
+      password: passwordField(t),
       confirm: z.string(),
     })
-    .refine((v) => v.password === v.confirm, {
-      message: t('passwordMismatch'),
-      path: ['confirm'],
-    });
+    .refine((v) => v.password === v.confirm, confirmPassword(t));
 }
 
 export function createForgotPasswordSchema(t: Translate) {
   return z.object({
-    email: z.string().email(t('invalidEmail')),
+    email: emailField(t),
   });
 }
 
 export function createResetPasswordSchema(t: Translate) {
   return z
     .object({
-      otp: z
-        .string()
-        .length(6, t('otpLength'))
-        .regex(/^\d+$/, t('otpDigits')),
-      password: z.string().min(8, t('passwordMin')).max(64, t('passwordMax')),
+      otp: otpField(t),
+      password: passwordField(t),
       confirm: z.string(),
     })
-    .refine((v) => v.password === v.confirm, {
-      message: t('passwordMismatch'),
-      path: ['confirm'],
-    });
+    .refine((v) => v.password === v.confirm, confirmPassword(t));
 }
 
 export const loginSchema = createLoginSchema(defaultT);

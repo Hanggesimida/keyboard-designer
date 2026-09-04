@@ -17,6 +17,7 @@ import {
 import { resolveErrorMessage } from "@/lib/api/request"
 import { useUserStore } from "@/store/userStore"
 import { getQueryClient } from "@/lib/api/queryClient"
+import { useSessionStorageItem } from "@/hooks/useSessionStorageItem"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -37,7 +38,7 @@ export function ChangePasswordForm() {
   const redirect = searchParams.get("redirect") ?? "/"
   const setToken = useUserStore((s) => s.setToken)
 
-  const [changePasswordToken, setChangePasswordToken] = useState("")
+  const changePasswordToken = useSessionStorageItem("change_password_token")
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -48,12 +49,7 @@ export function ChangePasswordForm() {
   )
 
   useEffect(() => {
-    const token = sessionStorage.getItem("change_password_token")
-    if (!token) {
-      router.replace("/login")
-      return
-    }
-    setChangePasswordToken(token)
+    if (!sessionStorage.getItem("change_password_token")) router.replace("/login")
   }, [router])
 
   const {

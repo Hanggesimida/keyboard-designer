@@ -2,13 +2,13 @@
 
 import * as React from "react"
 import { X } from "lucide-react"
-import type { Row } from "@tanstack/react-table"
 import { useLocale, useTranslations } from "next-intl"
 import { enUS, zhCN } from "date-fns/locale"
 import {
   DataTable,
   DataTableFacetedFilter,
   useServerDataTable,
+  type DataTableRow,
   type FacetedFilterOption,
 } from "@/components/data-table"
 import { Button } from "@workspace/ui/components/button"
@@ -83,7 +83,7 @@ export function OrdersTable() {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   })
 
-  const tablePageIndex = table.getState().pagination.pageIndex
+  const tablePageIndex = table.state.pagination.pageIndex
   const isFirstRender = React.useRef(true)
   React.useEffect(() => {
     if (isFirstRender.current) {
@@ -93,21 +93,20 @@ export function OrdersTable() {
     setPage(tablePageIndex + 1)
   }, [tablePageIndex])
 
-  const tableFilters = table.getState().columnFilters
+  const tableFilters = table.state.columnFilters
   const tableFiltersKey = JSON.stringify(tableFilters)
-  React.useEffect(() => {
-    const filters: typeof tableFilters = JSON.parse(tableFiltersKey)
-    const statusFilter = filters.find((f) => f.id === "status")
-    const values = (statusFilter?.value as string[] | undefined) ?? []
-    setStatuses(values as OrderStatus[])
+  const [prevFiltersKey, setPrevFiltersKey] = React.useState(tableFiltersKey)
+  if (tableFiltersKey !== prevFiltersKey) {
+    setPrevFiltersKey(tableFiltersKey)
+    const statusFilter = tableFilters.find((f) => f.id === "status")
+    setStatuses(((statusFilter?.value as string[] | undefined) ?? []) as OrderStatus[])
     setPage(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableFiltersKey])
+  }
 
   const isFiltered = tableFilters.length > 0
 
   const handleRowClick = React.useCallback(
-    (row: Row<AdminOrderSummary>) => {
+    (row: DataTableRow<AdminOrderSummary>) => {
       router.push(`/admin/orders/${row.original.id}`)
     },
     [router],

@@ -62,6 +62,8 @@ function CanvasImageRow({
       <ZIndexBadge index={zIndex} />
 
       {element.type === "image" && src ? (
+        // 用户素材为 data URL / blob，不走 next/image 优化
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt=""

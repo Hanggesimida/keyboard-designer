@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { Eye, EyeOff, RotateCcw } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -13,6 +13,7 @@ import { BoldItalicToggle } from "./keycap-inspector/BoldItalicToggle"
 import { ColorRow } from "./keycap-inspector/ColorRow"
 import { FontFamilySelect } from "./keycap-inspector/FontFamilySelect"
 import { toCssFontFamily } from "@/lib/fonts/fontRef"
+import { useSyncedState } from "@/hooks/useSyncedState"
 
 const FONT_SIZE_MIN = 6
 const FONT_SIZE_MAX = 32
@@ -39,13 +40,9 @@ export function GlobalKeycapSection() {
   const isItalic = fontStyle === "italic"
 
   const [fontFamilyOpen, setFontFamilyOpen] = useState(false)
-  const [fontSizeInput, setFontSizeInput] = useState(
+  const [fontSizeInput, setFontSizeInput] = useSyncedState(
     String(globalKeycapStyle.fontSize),
   )
-
-  useEffect(() => {
-    setFontSizeInput(String(globalKeycapStyle.fontSize))
-  }, [globalKeycapStyle.fontSize])
 
   const commitFontSize = (directValue?: string) => {
     const parsed = Number.parseInt(directValue ?? fontSizeInput, 10)

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react"
 import type { GlobalKeycapStyle, KeycapOverride } from "@/modules/design/store/designUiStore"
 import { registerTextMetrics } from "@/modules/design/store/textMetricsRegistry"
 import { toCssFontFamily } from "@/lib/fonts/fontRef"
+import { useLatestRef } from "@/hooks/useLatestRef"
 import {
   KEYCAP_GAP as _GAP,
   KEY_PAD_LEFT,
@@ -187,16 +188,11 @@ export function KeycapNode({
   const [dragDelta, setDragDelta] = useState<{ x: number; y: number } | null>(null)
 
   // 用 ref 保持最新值，避免 document 事件监听器中的 stale closure
-  const zoomRef = useRef(zoom)
-  zoomRef.current = zoom
-  const topWRef = useRef(topW)
-  topWRef.current = topW
-  const topHRef = useRef(topH)
-  topHRef.current = topH
-  const textHalfSizeRef = useRef(textHalfSize)
-  textHalfSizeRef.current = textHalfSize
-  const onLabelOffsetChangeRef = useRef(onLabelOffsetChange)
-  onLabelOffsetChangeRef.current = onLabelOffsetChange
+  const zoomRef = useLatestRef(zoom)
+  const topWRef = useLatestRef(topW)
+  const topHRef = useLatestRef(topH)
+  const textHalfSizeRef = useLatestRef(textHalfSize)
+  const onLabelOffsetChangeRef = useLatestRef(onLabelOffsetChange)
 
   const dragStartRef = useRef<{
     mouseX: number
@@ -206,10 +202,12 @@ export function KeycapNode({
   } | null>(null)
 
   // 退出编辑模式时重置拖拽状态
+  if (!isLabelEditing && dragDelta !== null) {
+    setDragDelta(null)
+  }
   useEffect(() => {
     if (!isLabelEditing) {
       dragStartRef.current = null
-      setDragDelta(null)
     }
   }, [isLabelEditing])
 

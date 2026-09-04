@@ -2,17 +2,25 @@ import { useUserStore } from '@/store/userStore';
 
 const BASE_URL = '/api';
 
+function resolveApiErrorMessage(body: unknown, status: number): string {
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    'message' in body &&
+    typeof body.message === 'string'
+  ) {
+    return body.message
+  }
+  return `HTTP ${status}`
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly body: unknown,
   ) {
     // 直接在 super 中进行类型判断
-    super(
-      typeof body === 'object' && body !== null && 'message' in body && typeof (body as any).message === 'string'
-        ? (body as any).message
-        : `HTTP ${status}`
-    );
+    super(resolveApiErrorMessage(body, status));
     this.name = 'ApiError';
   }
 }

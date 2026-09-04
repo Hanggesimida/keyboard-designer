@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react"
 import type { RefObject } from "react"
 import type { KeyDef } from "@/modules/design/types/design"
 import type { Viewport } from "@/modules/design/hooks/useViewport"
+import { useLatestRef } from "@/hooks/useLatestRef"
 
 const MARQUEE_DRAG_THRESHOLD = 3
 
@@ -90,8 +91,7 @@ export function useMarqueeSelection({
   disabled = false,
 }: UseMarqueeSelectionParams) {
   const [marquee, setMarquee] = useState<MarqueeState | null>(null)
-  const marqueeRef = useRef<MarqueeState | null>(null)
-  marqueeRef.current = marquee
+  const marqueeRef = useLatestRef(marquee)
   const wasDraggedRef = useRef(false)
 
   const handleMouseDown = useCallback(
@@ -134,7 +134,7 @@ export function useMarqueeSelection({
       }
       setMarquee((prev) => (prev ? { ...prev, endX: ex, endY: ey } : null))
     },
-    [containerRef, disabled, panHandlers],
+    [containerRef, disabled, marqueeRef, panHandlers],
   )
 
   const handleMouseUp = useCallback(
@@ -168,6 +168,7 @@ export function useMarqueeSelection({
       artPad,
       disabled,
       keys,
+      marqueeRef,
       panHandlers,
       selectedKeycapIds,
       setSelectedKeycapIds,

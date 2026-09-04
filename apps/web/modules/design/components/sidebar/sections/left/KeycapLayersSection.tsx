@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
@@ -292,11 +292,9 @@ export function KeycapLayersSection() {
     return init
   })
 
-  useEffect(() => {
-    if (selectedKeycapIds.length > 0 && activeLayerId) {
-      setExpanded((prev) => ({ ...prev, [activeLayerId]: true }))
-    }
-  }, [selectedKeycapIds, activeLayerId])
+  if (selectedKeycapIds.length > 0 && activeLayerId && !expanded[activeLayerId]) {
+    setExpanded((prev) => ({ ...prev, [activeLayerId]: true }))
+  }
 
   const toggleExpanded = (layerId: string) => {
     setExpanded((prev) => ({ ...prev, [layerId]: !prev[layerId] }))

@@ -2,20 +2,20 @@
 
 import * as React from "react"
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  VisibilityState,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable,
+  useTable,
+  type ColumnFiltersState,
+  type ColumnVisibilityState,
+  type RowData,
 } from "@tanstack/react-table"
 
-interface UseDataTableOptions<TData> {
+import {
+  dataTableFeatures,
+  type DataTableColumnDef,
+} from "../table-features"
+
+interface UseDataTableOptions<TData extends RowData> {
   data: TData[]
-  columns: ColumnDef<TData, any>[]
+  columns: DataTableColumnDef<TData>[]
   /** 默认每页行数，默认 10 */
   pageSize?: number
 }
@@ -24,30 +24,27 @@ interface UseDataTableOptions<TData> {
  * 客户端模式 hook：筛选、分页均在本地完成。
  * 直接传入完整数据集，适合数据量较小的场景。
  */
-export function useDataTable<TData>({
+export function useDataTable<TData extends RowData>({
   data,
   columns,
   pageSize = 10,
 }: UseDataTableOptions<TData>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<ColumnVisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
 
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
     initialState: {
-      pagination: { pageSize },
+      pagination: { pageIndex: 0, pageSize },
     },
     autoResetPageIndex: false,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
       columnFilters,
       columnVisibility,

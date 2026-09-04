@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useShallow } from "zustand/react/shallow"
 import {
   computeLabelAlignPatch,
@@ -23,6 +23,7 @@ import {
 import { parseCssLinearGradient } from "@/modules/design/lib/design/gradientUtils"
 import { distributeGradientColors } from "@/modules/design/lib/design/distributeGradientColors"
 import { getTextMetrics } from "@/modules/design/store/textMetricsRegistry"
+import { useSyncedState } from "@/hooks/useSyncedState"
 
 export function useMultiKeycapEditor({
   selectedIds,
@@ -72,12 +73,8 @@ export function useMultiKeycapEditor({
      globalKeycapStyle.borderHidden, globalFontFamily],
   )
 
-  const [fontSizeInput, setFontSizeInput] = useState(String(fontSize.value))
+  const [fontSizeInput, setFontSizeInput] = useSyncedState(String(fontSize.value))
   const [fontPopoverOpen, setFontPopoverOpen] = useState(false)
-
-  useEffect(() => {
-    setFontSizeInput(String(fontSize.value))
-  }, [fontSize.value])
 
   const hasAnyOverride = selectedIds.some(
     (id) => layerOverrides[id] && Object.keys(layerOverrides[id]!).length > 0,
@@ -157,6 +154,8 @@ export function useMultiKeycapEditor({
       batchSetKeycapOverrides(layerId, batchOverrides)
     },
     [
+      LAYOUT_BASE_UNIT,
+      KEYS_BY_ID,
       batchSetKeycapOverrides,
       disabled,
       globalKeycapStyle.fontSize,
@@ -178,7 +177,7 @@ export function useMultiKeycapEditor({
       setFontSizeInput(String(clamped))
       applyPatch({ fontSize: clamped })
     },
-    [applyPatch, disabled, fontSize.value, fontSizeInput],
+    [applyPatch, disabled, fontSize.value, fontSizeInput, setFontSizeInput],
   )
 
   const handleFontSizeStepperChange = useCallback(
@@ -194,7 +193,7 @@ export function useMultiKeycapEditor({
         applyPatch({ fontSize: parsed })
       }
     },
-    [applyPatch, disabled],
+    [applyPatch, disabled, setFontSizeInput],
   )
 
   const handleFontFamilyPick = useCallback(

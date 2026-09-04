@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useRef, useCallback, useMemo, useState, useEffect } from "react"
+import { useRef, useCallback, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { ImagePlus, Trash2, Spline } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -9,6 +9,7 @@ import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/stor
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { PanelSection } from "../../panel-section"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
+import { useSyncedState } from "@/hooks/useSyncedState"
 
 // ─── 图片缩略图行 ──────────────────────────────────────
 interface AssetRowProps {
@@ -27,16 +28,8 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
     ? (keyLabelMap[element.clipToKeycapId] ?? element.clipToKeycapId)
     : null
 
-  const [wVal, setWVal] = useState(String(Math.round(element.width)))
-  const [hVal, setHVal] = useState(String(Math.round(element.height)))
-
-  useEffect(() => {
-    setWVal(String(Math.round(element.width)))
-  }, [element.width])
-
-  useEffect(() => {
-    setHVal(String(Math.round(element.height)))
-  }, [element.height])
+  const [wVal, setWVal] = useSyncedState(String(Math.round(element.width)))
+  const [hVal, setHVal] = useSyncedState(String(Math.round(element.height)))
 
   const commitResize = useCallback((rawW: string, rawH: string) => {
     const w = parseInt(rawW, 10)
@@ -47,7 +40,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
       setWVal(String(Math.round(element.width)))
       setHVal(String(Math.round(element.height)))
     }
-  }, [onResize, element.width, element.height])
+  }, [onResize, element.width, element.height, setHVal, setWVal])
 
   const handleWKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") { e.currentTarget.blur() }

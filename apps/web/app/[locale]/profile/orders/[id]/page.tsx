@@ -51,7 +51,6 @@ export default function OrderDetailPage({
   useEffect(() => {
     if (!fromAlipay || !id) return
 
-    setIsPollingPayment(true)
     const stop = pollOrderUntilPaid(getOrder, id, {
       onPaid: () => {
         setIsPollingPayment(false)

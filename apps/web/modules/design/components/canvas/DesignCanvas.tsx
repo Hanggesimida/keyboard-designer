@@ -349,6 +349,15 @@ export function DesignCanvas() {
     }
   }, [templateId])
 
+  // ─── 视口与交互 ──────────────────────────────────────
+  const { viewport, fitToScreen, panBy } = useViewport({
+    containerRef,
+    artW,
+    artH,
+    disabled: !!keycapEditTarget,
+    layoutKey: `${show3dPreview}:${templateId}`,
+  })
+
   // ─── 拖放状态 ────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false)
   const previewResizeRef = useRef<{ startY: number; startH: number } | null>(null)
@@ -453,7 +462,7 @@ export function DesignCanvas() {
           readSvgFile(file).then((result) => {
             if (!result) return
             const assetId = addAsset(result.src)
-            const vp = viewportRef.current
+            const vp = viewport
             const defaultW = Math.min(result.w, artW - ART_PAD * 2)
             const defaultH = Math.round((defaultW / result.w) * result.h)
             const artX = Math.round((clientX - vp.x) / vp.zoom - defaultW / 2)
@@ -481,7 +490,7 @@ export function DesignCanvas() {
           const img = new Image()
           img.onload = () => {
             const assetId = addAsset(src)
-            const vp = viewportRef.current
+            const vp = viewport
             const artX = Math.round((clientX - vp.x) / vp.zoom - img.width / 2)
             const artY = Math.round((clientY - vp.y) / vp.zoom - img.height / 2)
             const defaultW = Math.min(img.width, artW - ART_PAD * 2)
@@ -503,22 +512,9 @@ export function DesignCanvas() {
         reader.readAsDataURL(file)
       })
     },
-    [addAsset, addCanvasElement, artW],
+    [addAsset, addCanvasElement, artW, viewport],
   )
 
-  // ─── 视口与交互 ──────────────────────────────────────
-  const { viewport, fitToScreen, panBy } = useViewport({
-    containerRef,
-    artW,
-    artH,
-    disabled: !!keycapEditTarget,
-    layoutKey: `${show3dPreview}:${templateId}`,
-  })
-  // 用 ref 存储最新 viewport，使 onDrop 等回调能读到最新值而不产生闭包旧值
-  const viewportRef = useRef(viewport)
-  useEffect(() => {
-    viewportRef.current = viewport
-  }, [viewport])
   const isModalOpen = !!keycapEditTarget
 
   const panHandlers = usePanInteraction({

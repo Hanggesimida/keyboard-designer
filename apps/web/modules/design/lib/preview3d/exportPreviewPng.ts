@@ -1,3 +1,5 @@
+import type { Camera, Scene } from "three"
+
 /**
  * 把当前 3D 预览 WebGL 画布导出为 PNG。
  * 先临时拉高渲染分辨率再读像素，避免预览 DPR 上限导致导出发糊；
@@ -12,13 +14,13 @@ const EXPORT_MIN_PIXEL_RATIO = 2
 export interface Preview3dCaptureSource {
   gl: {
     domElement: HTMLCanvasElement
-    render: (scene: any, camera: any) => void
+    render: (scene: Scene, camera: Camera) => void
     getPixelRatio: () => number
     setPixelRatio: (ratio: number) => void
     setSize: (width: number, height: number, updateStyle?: boolean) => void
   }
-  scene: any
-  camera: any
+  scene: Scene
+  camera: Camera
 }
 
 export function buildPreview3dPngFilename(templateId?: string): string {

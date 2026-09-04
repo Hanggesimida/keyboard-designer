@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState, useSyncExternalStore } from "react"
 import { useTranslations } from "next-intl"
 import { Undo2, Redo2, RotateCcw, FileImage, FileCode2, FileJson2, FolderOpen, Wrench, Boxes, AlertTriangle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -64,15 +64,29 @@ function ToolbarSeparator() {
   return <Separator orientation="vertical" />
 }
 
+function subscribeNoSaveHint(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange)
+  return () => window.removeEventListener("storage", onStoreChange)
+}
+
+function getNoSaveHintSnapshot() {
+  return window.localStorage.getItem(NOSAVE_HINT_DISMISSED_KEY) !== "1"
+}
+
+function getNoSaveHintServerSnapshot() {
+  return false
+}
+
 function NoSaveHint() {
   const t = useTranslations("Design.toolbar")
   const tCommon = useTranslations("Common")
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (window.localStorage.getItem(NOSAVE_HINT_DISMISSED_KEY) === "1") return
-    setVisible(true)
-  }, [])
+  const storedVisible = useSyncExternalStore(
+    subscribeNoSaveHint,
+    getNoSaveHintSnapshot,
+    getNoSaveHintServerSnapshot,
+  )
+  const [dismissed, setDismissed] = useState(false)
+  const visible = storedVisible && !dismissed
 
   if (!visible) return null
 
@@ -88,7 +102,7 @@ function NoSaveHint() {
         onClick={(e) => {
           e.stopPropagation()
           window.localStorage.setItem(NOSAVE_HINT_DISMISSED_KEY, "1")
-          setVisible(false)
+          setDismissed(true)
         }}
       >
         {tCommon("gotIt")}
