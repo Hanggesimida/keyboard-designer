@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation"
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Menu, X } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { Logo } from "@/components/layouts/Logo"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
@@ -92,11 +92,9 @@ export function HomeHeader() {
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:items-center sm:gap-3 sm:space-y-0 md:w-fit">
                 <LocaleSwitcher className="hidden lg:inline-flex" />
                 <ThemeToggle className="hidden lg:inline-flex" />
-                <Button asChild>
-                  <Link href="/design">
-                    <span>{t("start")}</span>
-                  </Link>
-                </Button>
+                <Link href="/design" className={buttonVariants()}>
+                  <span>{t("start")}</span>
+                </Link>
               </div>
             </div>
           </div>

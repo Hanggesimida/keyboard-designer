@@ -69,26 +69,28 @@ export function TemplateSection() {
           {t("templates.layout")}
         </Label>
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              id="template-trigger"
-              type="button"
-              variant="outline"
-              size="sm"
-              aria-expanded={open}
-              className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
-            >
+          <PopoverTrigger
+            render={
+              <Button
+                id="template-trigger"
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-expanded={open}
+                className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
+              />
+            }
+          >
               <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left text-xs">
                 <LayoutGrid className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate">{currentLabel}</span>
               </span>
               <ChevronDown className="size-3.5 shrink-0 opacity-60" />
-            </Button>
           </PopoverTrigger>
           <PopoverContent
             align="start"
             sideOffset={4}
-            className="w-[var(--radix-popover-trigger-width)] p-1"
+            className="w-(--anchor-width) p-1"
           >
             <ul className="flex max-h-64 flex-col gap-px overflow-y-auto p-0.5">
               {TEMPLATES.map((t) => {

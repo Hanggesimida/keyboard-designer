@@ -69,7 +69,10 @@ export function DesignLoadingScreen() {
 
       {/* 进度条容器 */}
       <div className="relative w-[200px]">
-        <Progress value={progress} className="h-[3px]" />
+        <Progress
+          value={progress}
+          className="w-full gap-0 [&_[data-slot=progress-track]]:h-[3px]"
+        />
         <div className="mt-2 text-right text-[10px] tabular-nums text-muted-foreground/60">
           {Math.round(progress)}%
         </div>

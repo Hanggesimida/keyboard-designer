@@ -10,7 +10,7 @@ import {
   ProfileEmptyState,
 } from "@/modules/profile"
 import { useMyDesigns } from "@/hooks/queries/designs/useDesigns"
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { PageHeader } from "@/components/layouts/PageHeader"
 import { Link, useRouter } from "@/i18n/navigation"
 
@@ -44,12 +44,10 @@ export default function ProfilePage() {
           title={t("recent")}
           description={t("recentHint")}
           action={
-            <Button asChild size="sm" className="cursor-pointer">
-              <Link href="/design">
-                <Plus />
-                {t("newDesign")}
-              </Link>
-            </Button>
+            <Link href="/design" className={buttonVariants({ size: "sm", className: "cursor-pointer" })}>
+              <Plus />
+              {t("newDesign")}
+            </Link>
           }
         >
           {isDesignsLoading ? (

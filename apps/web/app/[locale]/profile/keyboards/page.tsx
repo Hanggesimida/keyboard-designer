@@ -16,7 +16,7 @@ import {
 import { ProfileSection, ProfileEmptyState } from "@/modules/profile"
 import { PageHeader } from "@/components/layouts/PageHeader"
 import { useMyDesigns, useDeleteDesign } from "@/hooks/queries/designs/useDesigns"
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Link, useRouter } from "@/i18n/navigation"
 import { resolveErrorMessage } from "@/lib/api/request"
 
@@ -54,12 +54,13 @@ export default function ProfileKeyboardsPage() {
         title={t("title")}
         description={t("subtitle")}
         action={
-          <Button asChild className="w-full sm:w-auto cursor-pointer">
-            <Link href="/design">
-              <Keyboard size={15} />
-              {t("newDesign")}
-            </Link>
-          </Button>
+          <Link
+            href="/design"
+            className={buttonVariants({ className: "w-full sm:w-auto cursor-pointer" })}
+          >
+            <Keyboard size={15} />
+            {t("newDesign")}
+          </Link>
         }
       />
 
@@ -195,9 +196,9 @@ export default function ProfileKeyboardsPage() {
             >
               {tCommon("gotIt")}
             </Button>
-            <Button asChild className="cursor-pointer">
-              <Link href="/profile/orders">{t("viewOrders")}</Link>
-            </Button>
+            <Link href="/profile/orders" className={buttonVariants({ className: "cursor-pointer" })}>
+              {t("viewOrders")}
+            </Link>
           </DialogFooter>
         </DialogContent>
       </Dialog>

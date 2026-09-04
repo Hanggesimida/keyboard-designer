@@ -174,7 +174,7 @@ export function BatchOrderDialog({
 
                 <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
                   <span className="text-xs text-muted-foreground">{t("batchAddress")}</span>
-                  <Select onValueChange={applyToAll}>
+                  <Select onValueChange={(value) => { if (typeof value === "string") applyToAll(value) }}>
                     <SelectTrigger size="sm" className="w-44">
                       <SelectValue placeholder={t("applyAddress")} />
                     </SelectTrigger>
@@ -211,9 +211,10 @@ export function BatchOrderDialog({
                         />
                         <Select
                           value={addressByDesign[design.id] ?? ""}
-                          onValueChange={(value) =>
+                          onValueChange={(value) => {
+                            if (typeof value !== "string") return
                             setAddressByDesign((prev) => ({ ...prev, [design.id]: value }))
-                          }
+                          }}
                         >
                           <SelectTrigger size="sm" className="min-w-0 flex-1">
                             <SelectValue placeholder={t("selectAddress")} />

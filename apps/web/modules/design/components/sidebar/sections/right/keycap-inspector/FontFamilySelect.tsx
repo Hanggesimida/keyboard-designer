@@ -128,31 +128,33 @@ export function FontFamilySelect({
         open={disabled ? false : open}
         onOpenChange={disabled ? undefined : onOpenChange}
       >
-        <PopoverTrigger asChild>
-          <Button
-            id={triggerId}
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={disabled}
-            aria-expanded={open}
-            className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
-            style={{
-              fontFamily: isMixed
-                ? undefined
-                : toCssFontFamily(effectiveFontFamily),
-            }}
-          >
+        <PopoverTrigger
+          render={
+            <Button
+              id={triggerId}
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={disabled}
+              aria-expanded={open}
+              className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
+              style={{
+                fontFamily: isMixed
+                  ? undefined
+                  : toCssFontFamily(effectiveFontFamily),
+              }}
+            />
+          }
+        >
             <span className="min-w-0 flex-1 truncate text-left text-xs">
               {currentLabel}
             </span>
             <ChevronDown className="size-3.5 shrink-0 opacity-60 cursor-pointer" />
-          </Button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
           sideOffset={4}
-          className="w-[var(--radix-popover-trigger-width)] p-1"
+          className="w-(--anchor-width) p-1"
         >
           <div className="flex max-h-72 flex-col gap-px overflow-y-auto p-0.5">
             {FONT_CATEGORIES.map((cat) => {

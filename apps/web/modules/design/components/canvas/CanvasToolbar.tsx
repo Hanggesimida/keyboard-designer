@@ -111,6 +111,7 @@ export function CanvasToolbar({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<ImportPayload | null>(null)
+  const [resetOpen, setResetOpen] = useState(false)
   const [exporting, setExporting] = useState<ExportingFormat>(null)
   const show3dPreview = useDesignUIStore((s) => s.show3dPreview)
   const toggleShow3dPreview = useDesignUIStore((s) => s.toggleShow3dPreview)
@@ -262,18 +263,20 @@ export function CanvasToolbar({
 
       <ToolbarSeparator />
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            title={t("toolbar.resetLayout")}
-            className="hover:text-destructive"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <RotateCcw />
-          </Button>
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              title={t("toolbar.resetLayout")}
+              className="hover:text-destructive"
+              onClick={(e) => e.stopPropagation()}
+            />
+          }
+        >
+          <RotateCcw />
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -284,7 +287,12 @@ export function CanvasToolbar({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={onReset}>
+            <AlertDialogAction
+              onClick={() => {
+                onReset()
+                setResetOpen(false)
+              }}
+            >
               {t("toolbar.confirmReset")}
             </AlertDialogAction>
           </AlertDialogFooter>

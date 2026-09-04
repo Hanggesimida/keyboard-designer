@@ -4,7 +4,7 @@ import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
 import type { Variants } from 'motion/react'
-import { Button } from '@workspace/ui/components/button'
+import { buttonVariants } from '@workspace/ui/components/button'
 import { AnimatedGroup } from '@/components/animate/animated-group'
 
 const transitionVariants: { item: Variants } = {
@@ -61,18 +61,24 @@ export function CtaSection() {
           className="flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <div className="bg-foreground/10 rounded-[14px] border p-0.5">
-            <Button asChild size="lg" className="rounded-xl px-6 text-base">
-              <Link href="/design">
-                <span className="text-nowrap">{t('openEditor')}</span>
-                <ArrowRight className="ml-2 size-4" />
-              </Link>
-            </Button>
-          </div>
-          <Button asChild size="lg" variant="ghost" className="h-10.5 rounded-xl px-6">
-            <Link href="#features">
-              <span className="text-nowrap">{t('viewFeatures')}</span>
+            <Link
+              href="/design"
+              className={buttonVariants({ size: "lg", className: "rounded-xl px-6 text-base" })}
+            >
+              <span className="text-nowrap">{t('openEditor')}</span>
+              <ArrowRight className="ml-2 size-4" />
             </Link>
-          </Button>
+          </div>
+          <Link
+            href="#features"
+            className={buttonVariants({
+              size: "lg",
+              variant: "ghost",
+              className: "h-10.5 rounded-xl px-6",
+            })}
+          >
+            <span className="text-nowrap">{t('viewFeatures')}</span>
+          </Link>
         </AnimatedGroup>
       </div>
     </section>

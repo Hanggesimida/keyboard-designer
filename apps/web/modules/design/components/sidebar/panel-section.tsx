@@ -42,20 +42,22 @@ export function PanelSection({
       <section className={sectionClass}>
         <Collapsible defaultOpen={defaultOpen}>
           <div className="flex items-center justify-between gap-1 px-3 py-2">
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "group flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md py-0.5 text-left",
-                  "outline-none ring-offset-background transition-colors",
-                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                )}
-              >
+            <CollapsibleTrigger
+              render={
+                <button
+                  type="button"
+                  className={cn(
+                    "group flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md py-0.5 text-left",
+                    "outline-none ring-offset-background transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  )}
+                />
+              }
+            >
                 <span className="truncate text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {title}
                 </span>
-                <ChevronDown className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180 cursor-pointer" />
-              </button>
+                <ChevronDown className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-data-panel-open:rotate-180 cursor-pointer" />
             </CollapsibleTrigger>
             {action}
           </div>

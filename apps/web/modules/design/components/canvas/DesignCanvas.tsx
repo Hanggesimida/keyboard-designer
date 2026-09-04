@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Home } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { LocaleToggle } from "@/components/i18n/LocaleSwitcher"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
@@ -657,20 +657,18 @@ export function DesignCanvas() {
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
       {/* 顶部工具栏 / 返回首页：始终贴在中间列顶部，不被 3D 顶开 */}
       <div className="absolute top-3 left-3 z-30 flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          asChild
-          className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"
+        <Link
+          href="/"
+          title={t("backHome")}
+          onClick={(e) => e.stopPropagation()}
+          className={buttonVariants({
+            variant: "ghost",
+            size: "icon-xs",
+            className: "cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground",
+          })}
         >
-          <Link
-            href="/"
-            title={t("backHome")}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Home className="size-3.5" />
-          </Link>
-        </Button>
+          <Home className="size-3.5" />
+        </Link>
         <ThemeToggle
           size="icon-xs"
           className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"

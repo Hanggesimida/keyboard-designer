@@ -12,11 +12,10 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "paths": {
-      "@modules/*": ["src/modules/*"],
-      "@prisma/*": ["src/prisma/*"],
-      "@redis/*": ["src/redis/*"]
+      "@modules/*": ["./src/modules/*"],
+      "@prisma/*": ["./src/prisma/*"],
+      "@redis/*": ["./src/redis/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

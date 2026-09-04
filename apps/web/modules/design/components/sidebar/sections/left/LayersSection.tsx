@@ -15,7 +15,7 @@ export function LayersSection() {
   const isEmpty = canvasElements.length === 0 && layers.length === 0
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider delay={300}>
       <PanelSection title={t("title")}>
         {isEmpty && (
           <p className="py-2 text-center text-[11px] text-muted-foreground">

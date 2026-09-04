@@ -25,7 +25,7 @@ export function FaqSection() {
           </div>
 
           <div className="md:col-span-3">
-            <Accordion type="single" collapsible>
+            <Accordion>
               {FAQ_IDS.map((id) => (
                 <AccordionItem key={id} value={`item-${id}`}>
                   <AccordionTrigger className="cursor-pointer text-base hover:no-underline">

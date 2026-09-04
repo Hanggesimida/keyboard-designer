@@ -55,7 +55,7 @@ function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect, on
       {hasImages && (
         // TooltipProvider 已由父级 KeycapLayerTreeNode 提供，无需每行实例化
         <Tooltip>
-          <TooltipTrigger asChild>
+          <TooltipTrigger render={<button type="button" className="inline-flex cursor-default" />}>
             <ImageIcon className="size-2.5 shrink-0 text-chart-2/70" />
           </TooltipTrigger>
           <TooltipContent side="right" className="text-[11px]">
@@ -241,7 +241,7 @@ function KeycapLayerTreeNode({
 
       {isExpanded && (
         // 单个 TooltipProvider 覆盖整个子键帽列表，替代每行独立 Provider
-        <TooltipProvider delayDuration={200}>
+        <TooltipProvider delay={200}>
           <ul className="flex flex-col gap-px">
             {allKeys.map((keyDef) => {
               const override = layerOverrides[keyDef.keyId]

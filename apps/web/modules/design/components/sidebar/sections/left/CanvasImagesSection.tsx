@@ -76,10 +76,10 @@ function CanvasImageRow({
 
       {element.type === "image" && element.clipToKeycapIds && element.clipToKeycapIds.length > 0 && (
         <Tooltip>
-          <TooltipTrigger asChild>
+          <TooltipTrigger render={<button type="button" className="inline-flex cursor-default" />}>
             <Badge
               variant="outline"
-              className="h-3.5 shrink-0 border-indigo-500/35 bg-indigo-500/10 px-1 text-[8px] font-normal text-indigo-400 cursor-default"
+              className="h-3.5 shrink-0 border-indigo-500/35 bg-indigo-500/10 px-1 text-[8px] font-normal text-indigo-400"
             >
               {t("boundKeyCount", { count: element.clipToKeycapIds.length })}
             </Badge>
@@ -96,10 +96,10 @@ function CanvasImageRow({
       {element.type === "image" && element.clipToKeycapId && !element.clipToKeycapIds?.length && (
         // TooltipProvider 已由父级 CanvasImagesSection 提供
         <Tooltip>
-          <TooltipTrigger asChild>
+          <TooltipTrigger render={<button type="button" className="inline-flex cursor-default" />}>
             <Badge
               variant="outline"
-              className="h-3.5 shrink-0 border-indigo-500/35 bg-indigo-500/10 px-1 text-[8px] font-normal text-indigo-400 cursor-default"
+              className="h-3.5 shrink-0 border-indigo-500/35 bg-indigo-500/10 px-1 text-[8px] font-normal text-indigo-400"
             >
               {keysById.get(element.clipToKeycapId)?.label ?? element.clipToKeycapId}
             </Badge>
@@ -164,7 +164,7 @@ export function CanvasImagesSection() {
   const total = canvasElements.length
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider delay={200}>
     <div className="flex flex-col gap-px">
       <SectionHeader
         label={t("canvasImages")}

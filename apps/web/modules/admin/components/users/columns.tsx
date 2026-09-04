@@ -139,20 +139,22 @@ function UserActionsMenu({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 data-[state=open]:bg-muted"
-            disabled={isSelf || isSubAccount || isPending}
-          >
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 data-popup-open:bg-muted"
+              disabled={isSelf || isSubAccount || isPending}
+            />
+          }
+        >
             {isPending ? (
               <Loader2 size={15} className="animate-spin" />
             ) : (
               <MoreHorizontal size={15} />
             )}
             <span className="sr-only">{t("openMenu")}</span>
-          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           {user.role === "USER" ? (

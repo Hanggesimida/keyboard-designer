@@ -36,14 +36,11 @@ export function NotificationCenter() {
 
   return (
     <Popover open={isPanelOpen} onOpenChange={setIsPanelOpen}>
-      <PopoverTrigger asChild>
-        <NotificationBell unreadCount={unreadCount} isOpen={isPanelOpen} />
-      </PopoverTrigger>
+      <PopoverTrigger render={<NotificationBell unreadCount={unreadCount} isOpen={isPanelOpen} />} />
       <PopoverContent
         align="start"
         sideOffset={8}
         className="p-0"
-        avoidCollisions={true}
         collisionPadding={16}
       >
         <NotificationPanel

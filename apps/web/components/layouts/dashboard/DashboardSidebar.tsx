@@ -44,13 +44,11 @@ export function DashboardSidebar({ navGroups, title, headerIcon: HeaderIcon = Ke
           <SidebarMenu className="flex-1">
             <SidebarMenuItem>
               <SidebarMenuButton
-                asChild
+                render={<Link href={headerHref} />}
                 className="data-[slot=sidebar-menu-button]:p-1.5!"
               >
-                <Link href={headerHref}>
-                  <HeaderIcon className="size-5!" />
-                  <span className="text-base font-semibold">{resolvedTitle}</span>
-                </Link>
+                <HeaderIcon className="size-5!" />
+                <span className="text-base font-semibold">{resolvedTitle}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -68,11 +66,13 @@ export function DashboardSidebar({ navGroups, title, headerIcon: HeaderIcon = Ke
             <SidebarMenu className="gap-1">
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isActive(item.href, item.exact)} disabled={item.disabled}>
-                    <Link href={item.disabled ? "#" : item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
+                  <SidebarMenuButton
+                    render={<Link href={item.disabled ? "#" : item.href} />}
+                    isActive={isActive(item.href, item.exact)}
+                    disabled={item.disabled}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -82,11 +82,9 @@ export function DashboardSidebar({ navGroups, title, headerIcon: HeaderIcon = Ke
         <SidebarGroup className="mt-auto">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/">
-                  <Home />
-                  <span>{tDash("backHome")}</span>
-                </Link>
+              <SidebarMenuButton render={<Link href="/" />}>
+                <Home />
+                <span>{tDash("backHome")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

@@ -71,28 +71,27 @@ export function NavUser() {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
-            >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{displayName}</span>
-                <span className="truncate text-xs text-muted-foreground">{email}</span>
-                {accountType && (
-                  <span className="mt-0.5">
-                    <AccountTypeBadge accountType={accountType} />
-                  </span>
-                )}
-              </div>
-              <MoreVertical className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
+          <SidebarMenuButton
+            size="lg"
+            className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground cursor-pointer"
+            render={<DropdownMenuTrigger />}
+          >
+            <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{displayName}</span>
+              <span className="truncate text-xs text-muted-foreground">{email}</span>
+              {accountType && (
+                <span className="mt-0.5">
+                  <AccountTypeBadge accountType={accountType} />
+                </span>
+              )}
+            </div>
+            <MoreVertical className="ml-auto size-4" />
+          </SidebarMenuButton>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-(--anchor-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}

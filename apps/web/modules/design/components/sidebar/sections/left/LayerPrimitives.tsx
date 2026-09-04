@@ -147,10 +147,10 @@ export function SectionHeader({
       <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider select-none">
         {label}
       </span>
-      <TooltipProvider delayDuration={300}>
+      <TooltipProvider delay={300}>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="size-2.5 text-muted-foreground/30 cursor-default" />
+          <TooltipTrigger render={<button type="button" className="inline-flex cursor-default" />}>
+            <Info className="size-2.5 text-muted-foreground/30" />
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-[200px] text-[11px]">
             {tooltip}

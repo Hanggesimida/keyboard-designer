@@ -57,15 +57,17 @@ function OrderActionsMenu({ order }: { order: AdminOrderSummary }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 data-[state=open]:bg-muted"
-        >
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 data-popup-open:bg-muted"
+          />
+        }
+      >
           <MoreHorizontal size={15} />
           <span className="sr-only">{t("openMenu")}</span>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 space-y-1">
         <DropdownMenuItem onClick={() => router.push(`/admin/orders/${order.id}`)}>

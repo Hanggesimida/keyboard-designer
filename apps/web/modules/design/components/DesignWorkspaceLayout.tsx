@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Home, Monitor } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { buttonVariants } from "@workspace/ui/components/button"
 import { DesignSidebarLeft } from "./sidebar/SidebarLeft"
 import { DesignSidebarRight } from "./sidebar/SidebarRight"
 import { DesignCanvas } from "./canvas/DesignCanvas"
@@ -91,12 +91,10 @@ export function DesignWorkspaceLayout() {
         <p className="mb-8 max-w-xs text-sm leading-relaxed text-muted-foreground">
           {t("body")}
         </p>
-        <Button variant="outline" asChild>
-          <Link href="/" className="gap-2">
-            <Home size={15} />
-            {tCommon("backHome")}
-          </Link>
-        </Button>
+        <Link href="/" className={buttonVariants({ variant: "outline", className: "gap-2" })}>
+          <Home size={15} />
+          {tCommon("backHome")}
+        </Link>
       </div>
 
       {/* 正常桌面端布局 */}

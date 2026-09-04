@@ -654,21 +654,22 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t("chooseColor")}
-          className="size-7 shrink-0 cursor-pointer rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-          style={triggerStyle}
-        />
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            aria-label={t("chooseColor")}
+            className="size-7 shrink-0 cursor-pointer rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            style={triggerStyle}
+          />
+        }
+      />
 
       <PopoverContent
         className="w-56 p-3"
         align="start"
         side="left"
         sideOffset={16}
-        avoidCollisions={true}
         collisionPadding={8}
       >
         {/* Mode tabs */}
