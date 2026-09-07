@@ -87,7 +87,11 @@ export function KeycapDecalProvider({
       return
     }
 
-    void bakeImageProjectionAtlas(canvas, spec)
+    void bakeImageProjectionAtlas(
+      canvas,
+      spec,
+      gl.capabilities.maxTextureSize,
+    )
       .then(() => {
         if (cancelled) return
         const texture = new CanvasTexture(canvas)

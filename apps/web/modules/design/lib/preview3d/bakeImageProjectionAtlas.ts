@@ -3,7 +3,31 @@ import type {
   ImageProjectionItem,
 } from "@/modules/design/lib/design/imageProjection"
 
+/** 图片图集默认 4× 超采样，提升小图案近看时的清晰度。 */
+export const IMAGE_ATLAS_SCALE = 4
+export const IMAGE_ATLAS_MAX_SIDE = 4096
+
 const imageCache = new Map<string, Promise<HTMLImageElement>>()
+
+export function imageAtlasPixelSize(
+  svgWidth: number,
+  svgHeight: number,
+  maxTextureSize: number = IMAGE_ATLAS_MAX_SIDE,
+): { width: number; height: number; scale: number } {
+  const w = Math.max(svgWidth, 1)
+  const h = Math.max(svgHeight, 1)
+  const textureLimit =
+    Number.isFinite(maxTextureSize) && maxTextureSize > 0
+      ? Math.min(maxTextureSize, IMAGE_ATLAS_MAX_SIDE)
+      : IMAGE_ATLAS_MAX_SIDE
+  const scale = Math.min(IMAGE_ATLAS_SCALE, textureLimit / w, textureLimit / h)
+
+  return {
+    width: Math.max(1, Math.round(w * scale)),
+    height: Math.max(1, Math.round(h * scale)),
+    scale,
+  }
+}
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(src)
@@ -64,14 +88,25 @@ function drawProjectionItem(
 export async function bakeImageProjectionAtlas(
   canvas: HTMLCanvasElement,
   spec: ImageProjectionAtlasSpec,
+  maxTextureSize?: number,
 ): Promise<void> {
-  canvas.width = Math.max(1, Math.ceil(spec.svgWidth))
-  canvas.height = Math.max(1, Math.ceil(spec.svgHeight))
+  const { width, height, scale } = imageAtlasPixelSize(
+    spec.svgWidth,
+    spec.svgHeight,
+    maxTextureSize,
+  )
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext("2d")
   if (!ctx) return
 
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   if (spec.items.length === 0) return
+
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+  ctx.setTransform(scale, 0, 0, scale, 0, 0)
 
   const loaded = await Promise.all(
     spec.items.map(async (item) => {
