@@ -44,13 +44,17 @@ const PLATE_FINISH: CaseFinish = {
   grainStrength: 0.035,
 }
 
-function createAnodizedCaseMaterial(color: string, finish: CaseFinish) {
+function createAnodizedCaseMaterial(
+  color: string,
+  finish: CaseFinish,
+  reflective: boolean,
+) {
   const material = new MeshPhysicalMaterial({
     color,
-    roughness: finish.roughness,
-    metalness: finish.metalness,
-    envMapIntensity: finish.envMapIntensity,
-    clearcoat: 0.12,
+    roughness: reflective ? finish.roughness : 0.9,
+    metalness: reflective ? finish.metalness : 0,
+    envMapIntensity: reflective ? finish.envMapIntensity : 0,
+    clearcoat: reflective ? 0.12 : 0,
     clearcoatRoughness: 0.5,
   })
 
@@ -106,16 +110,18 @@ function CasePartMesh({
   part,
   color,
   finish,
+  reflective,
 }: {
   part: PreviewCasePart
   color: string
   finish: CaseFinish
+  reflective: boolean
 }) {
   const [w, h, d] = part.size
   const radius = Math.min(CASE_CORNER_RADIUS_U, w / 2, h / 2, d / 2)
   const material = useMemo(
-    () => createAnodizedCaseMaterial(color, finish),
-    [color, finish],
+    () => createAnodizedCaseMaterial(color, finish, reflective),
+    [color, finish, reflective],
   )
 
   useEffect(() => {
@@ -138,20 +144,27 @@ function CasePartMesh({
 
 interface KeyboardCaseMeshProps {
   case: PreviewCase
+  /** 是否使用金属度、环境反射与清漆高光 */
+  reflective?: boolean
 }
 
-export function KeyboardCaseMesh({ case: keyboardCase }: KeyboardCaseMeshProps) {
+export function KeyboardCaseMesh({
+  case: keyboardCase,
+  reflective = true,
+}: KeyboardCaseMeshProps) {
   return (
     <group>
       <CasePartMesh
         part={keyboardCase.body}
         color={keyboardCase.bodyColor}
         finish={BODY_FINISH}
+        reflective={reflective}
       />
       <CasePartMesh
         part={keyboardCase.plate}
         color={keyboardCase.plateColor}
         finish={PLATE_FINISH}
+        reflective={reflective}
       />
     </group>
   )

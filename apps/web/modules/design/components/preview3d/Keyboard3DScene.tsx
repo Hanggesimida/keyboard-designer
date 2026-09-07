@@ -290,7 +290,12 @@ export function Keyboard3DScene({
         cameraViewToken={cameraViewToken}
       />
 
-      {showCase ? <KeyboardCaseMesh case={sceneModel.case} /> : null}
+      {showCase ? (
+        <KeyboardCaseMesh
+          case={sceneModel.case}
+          reflective={showRealism}
+        />
+      ) : null}
 
       <KeycapDecalProvider
         imageAtlas={sceneModel.imageProjectionAtlas}
