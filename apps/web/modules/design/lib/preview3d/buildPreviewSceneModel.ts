@@ -111,14 +111,24 @@ export function buildPreviewSceneModel(
     width: worldBounds.width,
     depth: worldBounds.depth,
   }
+  const baseKeys = flatKeys.filter((key) => key.section === "base")
+  const caseBounds = getKeyboardBounds(baseKeys)
   const keyboardCase = buildKeyboardCase(
-    worldBounds,
+    designState.templateId,
+    caseBounds,
     designState.artboardBackground,
   )
 
-  const geometryRevision = `${designState.templateId}:${flatKeys.length}:${keys
-    .map((k) => `${k.id}:${k.sizeU[0]}x${k.sizeU[1]}:${k.shape}:${k.modelPath ?? "-"}`)
-    .join("|")}`
+  const geometryRevision = [
+    `${designState.templateId}:${flatKeys.length}`,
+    keyboardCase?.modelPath ?? "no-case",
+    keys
+      .map(
+        (k) =>
+          `${k.id}:${k.sizeU[0]}x${k.sizeU[1]}:${k.shape}:${k.modelPath ?? "-"}`,
+      )
+      .join("|"),
+  ].join(":")
 
   const layerRevision = designState.layers
     .map(

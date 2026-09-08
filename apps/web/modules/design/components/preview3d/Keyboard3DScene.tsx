@@ -21,6 +21,7 @@ import {
 } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
+import type { CaseMaterialPresetId } from "@/modules/design/lib/preview3d/caseMaterialPresets"
 import { KeycapDecalProvider } from "./KeycapDecalProvider"
 import { KeyboardCaseMesh } from "./KeyboardCaseMesh"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
@@ -239,6 +240,8 @@ interface Keyboard3DSceneProps {
   showCase?: boolean
   /** 是否启用环境光与接触阴影 */
   showRealism?: boolean
+  /** 仅用于预览的外壳材质 */
+  caseMaterialPreset: CaseMaterialPresetId
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
   onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
 }
@@ -249,19 +252,34 @@ export function Keyboard3DScene({
   cameraViewToken = 0,
   showCase = true,
   showRealism = true,
+  caseMaterialPreset,
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
   const invalidate = useThree((s) => s.invalidate)
-  const center = sceneModel.bounds.center
-  const [caseWidth, caseHeight, caseDepth] = sceneModel.case.body.size
+  const visibleCase = showCase ? sceneModel.case : null
+  const minX = visibleCase
+    ? Math.min(sceneModel.bounds.min[0], visibleCase.bounds.min[0])
+    : sceneModel.bounds.min[0]
+  const maxX = visibleCase
+    ? Math.max(sceneModel.bounds.max[0], visibleCase.bounds.max[0])
+    : sceneModel.bounds.max[0]
+  const minZ = visibleCase
+    ? Math.min(sceneModel.bounds.min[2], visibleCase.bounds.min[2])
+    : sceneModel.bounds.min[2]
+  const maxZ = visibleCase
+    ? Math.max(sceneModel.bounds.max[2], visibleCase.bounds.max[2])
+    : sceneModel.bounds.max[2]
+  const center: Vec3 = [
+    (minX + maxX) / 2,
+    sceneModel.bounds.center[1],
+    (minZ + maxZ) / 2,
+  ]
   const extents = {
-    width: caseWidth,
-    depth: caseDepth,
+    width: maxX - minX,
+    depth: maxZ - minZ,
   }
-  const floorY = showCase
-    ? sceneModel.case.body.position[1] -
-      caseHeight / 2 -
-      SHADOW_FLOOR_GAP_U
+  const floorY = visibleCase
+    ? visibleCase.bounds.min[1] - SHADOW_FLOOR_GAP_U
     : -SHADOW_FLOOR_GAP_U
 
   useEffect(() => {
@@ -290,9 +308,10 @@ export function Keyboard3DScene({
         cameraViewToken={cameraViewToken}
       />
 
-      {showCase ? (
+      {visibleCase ? (
         <KeyboardCaseMesh
-          case={sceneModel.case}
+          case={visibleCase}
+          materialPreset={caseMaterialPreset}
           reflective={showRealism}
         />
       ) : null}

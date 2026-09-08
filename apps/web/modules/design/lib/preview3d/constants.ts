@@ -7,48 +7,25 @@
  * - `1u = 1 world unit`
  */
 
+/** MX 标准键距（米）；键帽与外壳 GLB 均以米导出 */
+export const MX_PITCH_METERS = 0.01905
+
+/** 米 → 世界单位（1u）的统一缩放 */
+export const MODEL_SCALE = 1 / MX_PITCH_METERS
+
 /** 占位键帽高度（世界单位，1u = 1.0） */
 export const PLACEHOLDER_KEY_HEIGHT = 0.2
 
 /** 占位键帽兜底颜色 */
 export const PLACEHOLDER_COLOR = "#8a8f98"
 
-/** 壳体四周相对键位包围盒的外延（世界单位 u） */
-export const CASE_BEZEL_U = 0.4
-
-/** 外框高度（不含叠在顶上的定位板） */
-export const CASE_HEIGHT_U = 0.7
-
-/** 定位板顶面到键帽底面（y = 0）的间隙 */
-export const CASE_TOP_GAP_U = 0.04
-
-/** 定位板相对外框的水平内缩 */
-export const PLATE_INSET_U = 0.12
-
-/** 定位板厚度；叠在外框顶面上 */
-export const PLATE_THICKNESS_U = 0.05
-
-/** RoundedBox 圆角；渲染层按最短边钳制 */
-export const CASE_CORNER_RADIUS_U = 0.18
-
+/** 无效键盘颜色的外壳主体兜底色 */
 export const CASE_BODY_COLOR = "#2a2d32"
-
-export const CASE_PLATE_COLOR = "#3d424a"
 
 /** 键帽按细磨砂 PBT 塑料处理，环境反射只用于呈现轮廓和曲面层次 */
 export const KEYCAP_MATERIAL_ROUGHNESS = 0.62
 export const KEYCAP_MATERIAL_METALNESS = 0
 export const KEYCAP_MATERIAL_ENV_MAP_INTENSITY = 0.72
-
-/** 阳极氧化铝外壳：保留金属高光，但用较高粗糙度压住镜面反射 */
-export const CASE_BODY_MATERIAL_ROUGHNESS = 0.38
-export const CASE_BODY_MATERIAL_METALNESS = 0.82
-export const CASE_BODY_MATERIAL_ENV_MAP_INTENSITY = 1.05
-
-/** 定位板比外壳更暗、更粗糙，避免两层结构糊成一块 */
-export const CASE_PLATE_MATERIAL_ROUGHNESS = 0.5
-export const CASE_PLATE_MATERIAL_METALNESS = 0.68
-export const CASE_PLATE_MATERIAL_ENV_MAP_INTENSITY = 0.9
 
 /** 真实按键时键帽沿 -Y 下沉（世界单位 u） */
 export const KEYCAP_PRESS_TRAVEL_U = 0.08

@@ -8,6 +8,10 @@ import {
   PREVIEW_3D_HEIGHT_MIN,
   PREVIEW_3D_HEIGHT_STORAGE_KEY,
 } from "@/modules/design/lib/preview3d/constants"
+import {
+  DEFAULT_CASE_MATERIAL_PRESET_ID,
+  type CaseMaterialPresetId,
+} from "@/modules/design/lib/preview3d/caseMaterialPresets"
 
 function clampPreview3dHeight(height: number): number {
   return Math.min(PREVIEW_3D_HEIGHT_MAX, Math.max(PREVIEW_3D_HEIGHT_MIN, Math.round(height)))
@@ -199,6 +203,8 @@ interface DesignUIState {
   show3dCase: boolean
   /** 3D 预览是否启用写实光照与接触阴影（纯 UI，不参与 undo） */
   show3dRealism: boolean
+  /** 3D 预览外壳材质（纯 UI，不参与设计保存或 undo） */
+  caseMaterialPreset: CaseMaterialPresetId
   /** 真实键盘当前按下的键帽 id（纯 UI，不参与 undo） */
   pressedKeyIds: string[]
 }
@@ -281,6 +287,8 @@ interface DesignUIActions {
   toggleShow3dCase: () => void
   /** 切换 3D 写实增强 */
   toggleShow3dRealism: () => void
+  /** 设置 3D 预览外壳材质 */
+  setCaseMaterialPreset: (preset: CaseMaterialPresetId) => void
   /** 设置 3D 预览面板高度（会 clamp 并写入 localStorage） */
   setPreview3dHeight: (height: number) => void
   /** 从 localStorage 恢复预览高度（客户端挂载后调用，避免 SSR mismatch） */
@@ -319,6 +327,7 @@ export type UndoableDesignState = Omit<
   | "preview3dHeight"
   | "show3dCase"
   | "show3dRealism"
+  | "caseMaterialPreset"
   | "pressedKeyIds"
 >
 
@@ -367,6 +376,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     preview3dHeight: PREVIEW_3D_HEIGHT_DEFAULT,
     show3dCase: true,
     show3dRealism: true,
+    caseMaterialPreset: DEFAULT_CASE_MATERIAL_PRESET_ID,
     pressedKeyIds: [],
 
     resetAll: () =>
@@ -675,6 +685,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     toggleShow3dCase: () => set((s) => ({ show3dCase: !s.show3dCase })),
     toggleShow3dRealism: () =>
       set((s) => ({ show3dRealism: !s.show3dRealism })),
+    setCaseMaterialPreset: (caseMaterialPreset) => set({ caseMaterialPreset }),
     setPreview3dHeight: (height) => {
       const next = clampPreview3dHeight(height)
       persistPreview3dHeight(next)
@@ -712,6 +723,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         "preview3dHeight",
         "show3dCase",
         "show3dRealism",
+        "caseMaterialPreset",
         "pressedKeyIds",
       ]
       for (const key of excluded) {

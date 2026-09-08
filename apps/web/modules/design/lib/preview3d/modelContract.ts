@@ -1,7 +1,7 @@
 /**
  * GLB 键帽模型资产契约与尺寸族查表。
  *
- * 资产事实（对 apps/web/public/models/*.glb 实测）：
+ * 资产事实（对 apps/web/public/models/keycaps/*.glb 实测）：
  * - 单位：米；1U footprint ≈ 0.0181m（相对 19.05mm 键距自带 ~5% 缝隙）
  * - 原点：键帽底面中心（y_min = 0，X/Z 对称）；node.translation = [0,0,0]，无 rotation
  * - 坐标系：Y-up（X 宽、Y 高、Z 深），与 Three.js 一致
@@ -10,12 +10,6 @@
  */
 
 import type { KeyShape } from "@/modules/design/types/design"
-
-/** MX 标准键距（米） */
-export const MX_PITCH_METERS = 0.01905
-
-/** 米 → 世界单位（1u）的统一缩放 */
-export const MODEL_SCALE = 1 / MX_PITCH_METERS
 
 /** GLB 内统一材质名 */
 export const KEYCAP_MATERIAL_NAME = "Keycap"
@@ -55,7 +49,7 @@ function buildRegistryKey(
   return `${formatSizeU(w)}x${formatSizeU(h)}|${rowLevel}|${shape}`
 }
 
-const MODEL_DIR = "/models"
+const MODEL_DIR = "/models/keycaps"
 
 /**
  * 尺寸族查表：`${w}x${h}|${rowLevel}|${shape}` → GLB 路径。
@@ -67,7 +61,9 @@ export const KEYCAP_MODEL_REGISTRY: Readonly<Record<string, string>> = {
   "1x1|R3|rect": `${MODEL_DIR}/R3_1u.glb`,
   "1x1|R4|rect": `${MODEL_DIR}/R4_1u.glb`,
   "1.25x1|R1|rect": `${MODEL_DIR}/R1_1_25u.glb`,
+  "1.5x1|R1|rect": `${MODEL_DIR}/R1_1_5u.glb`,
   "1.5x1|R3|rect": `${MODEL_DIR}/R3_1_5u.glb`,
+  "1.75x1|R1|rect": `${MODEL_DIR}/R1_1_75u.glb`,
   "1.75x1|R2|rect": `${MODEL_DIR}/R2_1_75u.glb`,
   "1.75x1|R2|stepped": `${MODEL_DIR}/R2_1_75u_Stepped.glb`,
   "2x1|R1|rect": `${MODEL_DIR}/R1_2u.glb`,
@@ -77,18 +73,9 @@ export const KEYCAP_MODEL_REGISTRY: Readonly<Record<string, string>> = {
   "2.75x1|R1|rect": `${MODEL_DIR}/R1_2_75u.glb`,
   "1x2|R1|rect": `${MODEL_DIR}/R1_2u_Vertical.glb`,
   "1x2|R3|rect": `${MODEL_DIR}/R2-R3_2u_Vertical.glb`,
+  "1.5x2|R1|iso": `${MODEL_DIR}/R2-R3_ISOEnter.glb`,
   "6.25x1|R1|rect": `${MODEL_DIR}/R1_6_25u.glb`,
-}
-
-/**
- * 已知但尚未导出的期望文件名（用于缺失提示，不参与加载）。
- * 键与 registry key 同格式。
- */
-const EXPECTED_MISSING_BASENAME: Readonly<Record<string, string>> = {
-  "1.5x1|R1|rect": "R1_1_5u.glb",
-  "1.75x1|R1|rect": "R1_1_75u.glb",
-  "1.5x2|R1|iso": "R2-R3_ISOEnter.glb",
-  "7x1|R1|rect": "R1_7u.glb",
+  "7x1|R1|rect": `${MODEL_DIR}/R1_7u.glb`,
 }
 
 /** 去重后的全部模型路径，供 preload */
@@ -114,9 +101,6 @@ export function expectedKeycapModelName(key: KeycapModelLookup): string | null {
   const registryKey = buildRegistryKey(key.w, key.h, rowLevel, key.shape)
   const registered = KEYCAP_MODEL_REGISTRY[registryKey]
   if (registered) return basenameFromPath(registered)
-
-  const knownMissing = EXPECTED_MISSING_BASENAME[registryKey]
-  if (knownMissing) return knownMissing
 
   const wTok = sizeTokenForFilename(key.w)
   const hTok = sizeTokenForFilename(key.h)

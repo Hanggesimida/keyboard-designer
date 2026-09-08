@@ -473,6 +473,14 @@
       "showCase": "Show tray",
       "disableRealism": "Disable realistic rendering",
       "enableRealism": "Enable realistic rendering",
+      "caseMaterial": "Case material",
+      "materials": {
+        "anodizedAluminum": "Anodized aluminum",
+        "paintedMetal": "Painted metal",
+        "mattePlastic": "Matte plastic",
+        "polishedMetal": "Polished metal",
+        "ceramic": "Ceramic"
+      },
       "hint": "Drag to orbit · scroll to zoom · right-click to pan",
       "loadFailed": "3D preview failed to load",
       "webglError": "WebGL context error. Retry or close the preview.",

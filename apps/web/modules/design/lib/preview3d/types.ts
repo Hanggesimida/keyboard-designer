@@ -68,21 +68,19 @@ export interface PreviewSceneBounds {
   depth: number
 }
 
-/** 程序化壳体的一块盒体（世界坐标，盒体中心） */
-export interface PreviewCasePart {
-  position: [number, number, number]
-  /** `[widthX, heightY, depthZ]` */
-  size: [number, number, number]
-}
-
-/** 单块托盘：外框 + 顶面内缩定位板 */
+/** 按布局解析后的真实 GLB 外壳 */
 export interface PreviewCase {
-  body: PreviewCasePart
-  plate: PreviewCasePart
-  /** 外框色，来自全局「键盘颜色」 */
+  modelPath: string
+  /** GLB 内声明的布局 ID；144 的值为 ansi-108 */
+  assetLayoutId: string
+  /** 模型原点放置位置；XZ 为对应 base 键区中心 */
+  position: [number, number, number]
+  /** 米制 GLB → 1u 世界单位 */
+  scale: number
+  /** 包含脚垫与 USB 结构的世界包围盒 */
+  bounds: PreviewSceneBounds
+  /** 主体色，来自全局「键盘颜色」 */
   bodyColor: string
-  /** 定位板色，由键盘颜色派生（略提亮/压暗） */
-  plateColor: string
 }
 
 /** 渲染层只消费此模型，不直接读 layout JSON / store */
@@ -91,8 +89,8 @@ export interface PreviewSceneModel {
   baseUnit: number
   keys: PreviewKey[]
   bounds: PreviewSceneBounds
-  /** 由键位包围盒推导的托盘壳体（始终存在） */
-  case: PreviewCase
+  /** 当前模板对应的真实外壳；未知模板为 null */
+  case: PreviewCase | null
   /**
    * 当前布局未命中的期望 GLB 文件名（去重排序）。
    * 空数组表示全部有真模。

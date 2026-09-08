@@ -4,11 +4,13 @@ import { useEffect, useMemo, useRef } from "react"
 import { useGLTF } from "@react-three/drei"
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
 import { MathUtils, type Mesh } from "three"
-import { KEYCAP_PRESS_TRAVEL_U } from "@/modules/design/lib/preview3d/constants"
+import {
+  KEYCAP_PRESS_TRAVEL_U,
+  MODEL_SCALE,
+} from "@/modules/design/lib/preview3d/constants"
 import {
   KEYCAP_MATERIAL_NAME,
   KEYCAP_MODEL_PATHS,
-  MODEL_SCALE,
 } from "@/modules/design/lib/preview3d/modelContract"
 import {
   createKeycapDyeSubMaterial,

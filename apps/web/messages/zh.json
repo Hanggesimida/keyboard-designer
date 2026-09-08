@@ -473,6 +473,14 @@
       "showCase": "显示托盘",
       "disableRealism": "关闭写实增强",
       "enableRealism": "开启写实增强",
+      "caseMaterial": "外壳材质",
+      "materials": {
+        "anodizedAluminum": "阳极氧化铝",
+        "paintedMetal": "喷涂金属",
+        "mattePlastic": "哑光塑料",
+        "polishedMetal": "抛光金属",
+        "ceramic": "陶瓷"
+      },
       "hint": "拖动旋转 · 滚轮缩放 · 右键平移",
       "loadFailed": "3D 预览加载失败",
       "webglError": "WebGL 上下文异常，请重试或关闭预览。",

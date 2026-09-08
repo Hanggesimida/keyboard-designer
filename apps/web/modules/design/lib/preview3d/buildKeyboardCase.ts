@@ -1,8 +1,4 @@
-/**
- * 键位世界包围盒 → 单块托盘壳体（纯函数，无 Three）。
- *
- * 定位板叠在外框顶面上：顶面低于键帽底面（y = 0），避免与键帽相交。
- */
+/** 模板与 base 键区包围盒 → 真实 GLB 外壳视图模型（纯函数，无 Three）。 */
 
 import { colord } from "colord"
 import {
@@ -10,18 +6,12 @@ import {
   parseCssLinearGradient,
 } from "@/modules/design/lib/design/gradientUtils"
 import {
-  CASE_BEZEL_U,
   CASE_BODY_COLOR,
-  CASE_HEIGHT_U,
-  CASE_PLATE_COLOR,
-  CASE_TOP_GAP_U,
-  PLATE_INSET_U,
-  PLATE_THICKNESS_U,
+  MODEL_SCALE,
 } from "./constants"
+import { resolveCaseModelAsset } from "./caseModelContract"
 import type { KeyboardWorldBounds } from "./layoutToWorld"
 import type { PreviewCase } from "./types"
-
-const MIN_PART_SIZE_U = 0.05
 
 function resolveKeyboardHex(keyboardColor: string): string {
   if (isGradientValue(keyboardColor)) {
@@ -35,47 +25,46 @@ function resolveKeyboardHex(keyboardColor: string): string {
   return parsed.isValid() ? parsed.toHex() : CASE_BODY_COLOR
 }
 
-/** 外框用键盘色；定位板略提亮/压暗，保持两层可辨 */
-export function deriveCaseColors(keyboardColor: string): {
-  bodyColor: string
-  plateColor: string
-} {
-  const bodyColor = resolveKeyboardHex(keyboardColor)
-  const c = colord(bodyColor)
-  if (!c.isValid()) {
-    return { bodyColor: CASE_BODY_COLOR, plateColor: CASE_PLATE_COLOR }
-  }
-  const plateColor = (c.isLight() ? c.darken(0.08) : c.lighten(0.1)).toHex()
-  return { bodyColor, plateColor }
-}
-
 export function buildKeyboardCase(
+  templateId: string,
   bounds: KeyboardWorldBounds,
   keyboardColor: string,
-): PreviewCase {
-  const bodyW = Math.max(bounds.width + 2 * CASE_BEZEL_U, MIN_PART_SIZE_U)
-  const bodyD = Math.max(bounds.depth + 2 * CASE_BEZEL_U, MIN_PART_SIZE_U)
+): PreviewCase | null {
+  const asset = resolveCaseModelAsset(templateId)
+  if (!asset) return null
+
   const [cx, , cz] = bounds.center
-
-  const plateTopY = -CASE_TOP_GAP_U
-  const bodyTopY = plateTopY - PLATE_THICKNESS_U
-  const bodyCenterY = bodyTopY - CASE_HEIGHT_U / 2
-  const plateCenterY = plateTopY - PLATE_THICKNESS_U / 2
-
-  const plateW = Math.max(bodyW - 2 * PLATE_INSET_U, MIN_PART_SIZE_U)
-  const plateD = Math.max(bodyD - 2 * PLATE_INSET_U, MIN_PART_SIZE_U)
-  const { bodyColor, plateColor } = deriveCaseColors(keyboardColor)
+  const position: [number, number, number] = [cx, 0, cz]
+  const localMin = asset.localBoundsMeters.min
+  const localMax = asset.localBoundsMeters.max
+  const min: [number, number, number] = [
+    cx + localMin[0] * MODEL_SCALE,
+    localMin[1] * MODEL_SCALE,
+    cz + localMin[2] * MODEL_SCALE,
+  ]
+  const max: [number, number, number] = [
+    cx + localMax[0] * MODEL_SCALE,
+    localMax[1] * MODEL_SCALE,
+    cz + localMax[2] * MODEL_SCALE,
+  ]
+  const bodyColor = resolveKeyboardHex(keyboardColor)
 
   return {
-    body: {
-      position: [cx, bodyCenterY, cz],
-      size: [bodyW, CASE_HEIGHT_U, bodyD],
-    },
-    plate: {
-      position: [cx, plateCenterY, cz],
-      size: [plateW, PLATE_THICKNESS_U, plateD],
+    modelPath: asset.path,
+    assetLayoutId: asset.layoutId,
+    position,
+    scale: MODEL_SCALE,
+    bounds: {
+      min,
+      max,
+      center: [
+        (min[0] + max[0]) / 2,
+        (min[1] + max[1]) / 2,
+        (min[2] + max[2]) / 2,
+      ],
+      width: max[0] - min[0],
+      depth: max[2] - min[2],
     },
     bodyColor,
-    plateColor,
   }
 }
