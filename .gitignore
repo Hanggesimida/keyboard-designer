@@ -38,6 +38,7 @@ npm-debug.log*
 # Misc
 .DS_Store
 *.pem
+*.blend1
 
 # SSL 私钥（证书 bundle 可随部署目录放置，私钥勿提交）
 legacy/docker/ssl/*.key
