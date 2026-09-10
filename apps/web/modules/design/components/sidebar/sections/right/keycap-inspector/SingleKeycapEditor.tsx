@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useTranslations } from "next-intl"
-import { Eye, EyeOff, X } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { Label } from "@workspace/ui/components/label"

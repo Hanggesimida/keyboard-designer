@@ -280,9 +280,12 @@ interface DesignUIActions {
   clearLiveDragOverride: (id: string) => void
   /**
    * 调整画布自由图片的层叠顺序。
-   * canvasElements 数组末尾 = 视觉最顶层；'up' 表示视觉上移（向数组末尾移动），'down' 表示视觉下移。
+   * canvasElements 数组末尾 = 视觉最顶层。
    */
-  reorderCanvasElement: (id: string, direction: "up" | "down") => void
+  reorderCanvasElement: (
+    id: string,
+    direction: "up" | "down" | "front" | "back",
+  ) => void
   /**
    * 调整键帽设计层的层叠顺序。
    * layers 数组首位 = 视觉最顶层；'up' 表示视觉上移（向数组首位移动），'down' 表示视觉下移。
@@ -711,6 +714,19 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         const arr = [...s.canvasElements]
         const idx = arr.findIndex((el) => el.id === id)
         if (idx === -1) return s
+        if (direction === "front" || direction === "back") {
+          if (
+            (direction === "front" && idx === arr.length - 1) ||
+            (direction === "back" && idx === 0)
+          ) {
+            return s
+          }
+          const [element] = arr.splice(idx, 1)
+          if (!element) return s
+          if (direction === "front") arr.push(element)
+          else arr.unshift(element)
+          return { canvasElements: arr }
+        }
         // 视觉"上移" = 数组中向后移动（末尾 = 最顶层）
         const targetIdx = direction === "up" ? idx + 1 : idx - 1
         if (targetIdx < 0 || targetIdx >= arr.length) return s

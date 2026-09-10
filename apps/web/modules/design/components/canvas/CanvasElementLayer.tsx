@@ -91,7 +91,12 @@ export function CanvasElementLayer({ viewport, artW, artH, isSpacePressed = fals
   // 已选中的图片置于 HTML 层最顶，便于拖拽编辑裁切图
   const htmlLayerImages = useMemo(() => {
     const images = canvasElements.filter(
-      (el) => el.type === "image" && !(el.clipToKeycapId && (el.clipToKeycaps ?? true)),
+      (el) =>
+        el.type === "image" &&
+        (
+          !(el.clipToKeycapId && (el.clipToKeycaps ?? true)) ||
+          el.id === selectedElementId
+        ),
     )
     if (!selectedElementId) return images
     const selected = images.find((el) => el.id === selectedElementId)

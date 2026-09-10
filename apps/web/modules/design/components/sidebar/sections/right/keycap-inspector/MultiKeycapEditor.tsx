@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { useTranslations } from "next-intl"
-import { Eye, EyeOff, X } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Button } from "@workspace/ui/components/button"

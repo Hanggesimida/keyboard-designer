@@ -8,7 +8,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { PanelSection } from "../../panel-section"
-import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
+import { readCanvasImageFile } from "@/modules/design/lib/design/canvasImageFile"
 import { useSyncedState } from "@/hooks/useSyncedState"
 
 // ─── 图片缩略图行 ──────────────────────────────────────
@@ -156,52 +156,24 @@ export function AssetSection() {
   )
 
   const addImageFile = useCallback(
-    (file: File) => {
-      if (isSvgFile(file)) {
-        readSvgFile(file).then((result) => {
-          if (!result) return
-          const assetId = addAsset(result.src)
-          const defaultW = Math.min(result.w, 400)
-          const defaultH = Math.round((defaultW / result.w) * result.h)
-          addCanvasElement({
-            id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            type: "image",
-            assetId,
-            x: 40,
-            y: 40,
-            width: defaultW,
-            height: defaultH,
-            opacity: 1,
-            locked: false,
-            isSvg: true,
-          })
-        })
-        return
-      }
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        const src = ev.target?.result as string
-        if (!src) return
-        const img = new Image()
-        img.onload = () => {
-          const assetId = addAsset(src)
-          const defaultW = Math.min(img.width, 400)
-          const defaultH = Math.round((defaultW / img.width) * img.height)
-          addCanvasElement({
-            id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            type: "image",
-            assetId,
-            x: 40,
-            y: 40,
-            width: defaultW,
-            height: defaultH,
-            opacity: 1,
-            locked: false,
-          })
-        }
-        img.src = src
-      }
-      reader.readAsDataURL(file)
+    async (file: File) => {
+      const data = await readCanvasImageFile(file)
+      if (!data) return
+      const assetId = addAsset(data.src)
+      const defaultW = Math.min(data.width, 400)
+      const defaultH = Math.round((defaultW / data.width) * data.height)
+      addCanvasElement({
+        id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: "image",
+        assetId,
+        x: 40,
+        y: 40,
+        width: defaultW,
+        height: defaultH,
+        opacity: 1,
+        locked: false,
+        isSvg: data.isSvg || undefined,
+      })
     },
     [addAsset, addCanvasElement],
   )
@@ -209,9 +181,11 @@ export function AssetSection() {
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? []).filter(
-        (f) => f.type.startsWith("image/") || isSvgFile(f),
+        (file) =>
+          file.type.startsWith("image/") ||
+          file.name.toLowerCase().endsWith(".svg"),
       )
-      files.forEach(addImageFile)
+      files.forEach((file) => void addImageFile(file))
       e.target.value = ""
     },
     [addImageFile],

@@ -6,6 +6,10 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Home } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+} from "@workspace/ui/components/context-menu"
 import { LocaleToggle } from "@/components/i18n/LocaleSwitcher"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
@@ -18,12 +22,13 @@ import {
   DESIGN_ART_PAD,
 } from "@/modules/design/lib/design/imageProjection"
 import { CanvasElementLayer } from "./CanvasElementLayer"
+import { DesignCanvasContextMenu } from "./DesignCanvasContextMenu"
 import { KeycapEditorModal } from "./KeycapEditorModal"
 import { CanvasToolbar } from "./CanvasToolbar"
 import { useViewport } from "@/modules/design/hooks/useViewport"
 import { usePanInteraction } from "@/modules/design/hooks/usePanInteraction"
 import { useMarqueeSelection } from "@/modules/design/hooks/useMarqueeSelection"
-import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
+import { useDesignCanvasContextMenu } from "@/modules/design/hooks/useDesignCanvasContextMenu"
 import { useAutoExport } from "@/modules/design/hooks/useAutoExport"
 import { generateJig } from "@/lib/export"
 import {
@@ -321,8 +326,6 @@ export function DesignCanvas() {
   const deselectAll = useDesignUIStore((s) => s.deselectAll)
   const setKeycapOverride = useDesignUIStore((s) => s.setKeycapOverride)
   const canvasElements = useDesignUIStore((s) => s.canvasElements)
-  const addAsset = useDesignUIStore((s) => s.addAsset)
-  const addCanvasElement = useDesignUIStore((s) => s.addCanvasElement)
   const removeCanvasElement = useDesignUIStore((s) => s.removeCanvasElement)
   const updateCanvasElement = useDesignUIStore((s) => s.updateCanvasElement)
   const undo = useTemporalDesignStore((s) => s.undo)
@@ -367,6 +370,20 @@ export function DesignCanvas() {
     disabled: !!keycapEditTarget,
     layoutKey: `${show3dPreview}:${templateId}`,
   })
+
+  const contextMenu = useDesignCanvasContextMenu({
+    containerRef,
+    viewport,
+    keys,
+    artW,
+    artH,
+    artPad: ART_PAD,
+    disabled: !!keycapEditTarget,
+  })
+  const {
+    addImageFilesAt,
+    handleContextMenuCapture,
+  } = contextMenu
 
   // ─── 拖放状态 ────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false)
@@ -470,71 +487,19 @@ export function DesignCanvas() {
       if (!container) return
 
       const files = Array.from(e.dataTransfer.files).filter(
-        (f) => f.type.startsWith("image/") || isSvgFile(f),
+        (file) =>
+          file.type.startsWith("image/") ||
+          file.name.toLowerCase().endsWith(".svg"),
       )
       if (files.length === 0) return
 
-      // 计算 drop 位置相对于画板的坐标（世界坐标）
       const rect = container.getBoundingClientRect()
-      const clientX = e.clientX - rect.left
-      const clientY = e.clientY - rect.top
-
-      files.forEach((file) => {
-        if (isSvgFile(file)) {
-          readSvgFile(file).then((result) => {
-            if (!result) return
-            const assetId = addAsset(result.src)
-            const vp = viewport
-            const defaultW = Math.min(result.w, artW - ART_PAD * 2)
-            const defaultH = Math.round((defaultW / result.w) * result.h)
-            const artX = Math.round((clientX - vp.x) / vp.zoom - defaultW / 2)
-            const artY = Math.round((clientY - vp.y) / vp.zoom - defaultH / 2)
-            addCanvasElement({
-              id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-              type: "image",
-              assetId,
-              x: Math.max(0, artX),
-              y: Math.max(0, artY),
-              width: defaultW,
-              height: defaultH,
-              opacity: 1,
-              locked: false,
-              isSvg: true,
-            })
-          })
-          return
-        }
-
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          const src = ev.target?.result as string
-          if (!src) return
-          const img = new Image()
-          img.onload = () => {
-            const assetId = addAsset(src)
-            const vp = viewport
-            const artX = Math.round((clientX - vp.x) / vp.zoom - img.width / 2)
-            const artY = Math.round((clientY - vp.y) / vp.zoom - img.height / 2)
-            const defaultW = Math.min(img.width, artW - ART_PAD * 2)
-            const defaultH = Math.round((defaultW / img.width) * img.height)
-            addCanvasElement({
-              id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-              type: "image",
-              assetId,
-              x: Math.max(0, artX),
-              y: Math.max(0, artY),
-              width: defaultW,
-              height: defaultH,
-              opacity: 1,
-              locked: false,
-            })
-          }
-          img.src = src
-        }
-        reader.readAsDataURL(file)
+      void addImageFilesAt(files, {
+        x: (e.clientX - rect.left - viewport.x) / viewport.zoom,
+        y: (e.clientY - rect.top - viewport.y) / viewport.zoom,
       })
     },
-    [addAsset, addCanvasElement, artW, viewport],
+    [addImageFilesAt, viewport],
   )
 
   const isModalOpen = !!keycapEditTarget
@@ -762,29 +727,32 @@ export function DesignCanvas() {
         </div>
       )}
 
-      <div
-        ref={containerRef}
-        className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-          cursor: isPanning
-            ? "grabbing"
-            : isSpacePressed
-              ? "grab"
-              : keycapStyleTransferRequest
-                ? "copy"
-                : "default",
-        }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+      <ContextMenu>
+        <ContextMenuTrigger
+          render={<div />}
+          ref={containerRef}
+          className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
+          style={{
+            backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+            cursor: isPanning
+              ? "grabbing"
+              : isSpacePressed
+                ? "grab"
+                : keycapStyleTransferRequest
+                  ? "copy"
+                  : "default",
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onClick={handleClick}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onContextMenuCapture={handleContextMenuCapture}
+        >
         {/* 画板 */}
         <div
           ref={artboardRef}
@@ -886,7 +854,12 @@ export function DesignCanvas() {
             onClose={() => setKeycapEditTarget(null)}
           />
         )}
-      </div>
+        </ContextMenuTrigger>
+        <DesignCanvasContextMenu
+          controller={contextMenu}
+          onFitToScreen={fitToScreen}
+        />
+      </ContextMenu>
     </div>
   )
 }
