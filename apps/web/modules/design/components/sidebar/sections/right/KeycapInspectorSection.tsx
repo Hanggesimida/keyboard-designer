@@ -1,7 +1,8 @@
 ﻿"use client"
 
 import { useTranslations } from "next-intl"
-import { EyeOff, Lock } from "lucide-react"
+import { EyeOff, Lock, Paintbrush, X } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { PanelSection } from "../../panel-section"
@@ -15,6 +16,15 @@ export function KeycapInspectorSection() {
   const layers = useDesignUIStore((s) => s.layers)
   const activeLayerId = useDesignUIStore((s) => s.activeLayerId)
   const layerKeycapOverrides = useDesignUIStore((s) => s.layerKeycapOverrides)
+  const keycapStyleTransferRequest = useDesignUIStore(
+    (s) => s.keycapStyleTransferRequest,
+  )
+  const beginKeycapStyleTransfer = useDesignUIStore(
+    (s) => s.beginKeycapStyleTransfer,
+  )
+  const cancelKeycapStyleTransfer = useDesignUIStore(
+    (s) => s.cancelKeycapStyleTransfer,
+  )
 
   const activeLayer = layers.find((l) => l.id === activeLayerId) ?? null
   const layerOverrides = activeLayerId
@@ -31,6 +41,44 @@ export function KeycapInspectorSection() {
   else if (isLayerLocked) disabledReason = t("layerLocked")
   else if (isLayerHidden) disabledReason = t("layerHidden")
 
+  const styleTransferControls = activeLayerId ? (
+    keycapStyleTransferRequest ? (
+      <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2">
+        <Paintbrush className="size-3.5 shrink-0 text-primary" />
+        <span className="min-w-0 flex-1 text-[11px] text-foreground">
+          {t("pickStyleSource")}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className="shrink-0 cursor-pointer"
+          title={t("cancelReuseStyle")}
+          onClick={cancelKeycapStyleTransfer}
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
+    ) : (
+      <Button
+        type="button"
+        variant="outline"
+        size="xs"
+        disabled={editorDisabled}
+        className="w-full cursor-pointer"
+        onClick={() =>
+          beginKeycapStyleTransfer({
+            targetLayerId: activeLayerId,
+            targetKeycapIds: selectedKeycapIds,
+          })
+        }
+      >
+        <Paintbrush className="size-3.5" />
+        {t("reuseStyle")}
+      </Button>
+    )
+  ) : null
+
   if (selectedKeycapIds.length === 0) {
     return (
       <PanelSection title={t("keycapStyle")}>
@@ -44,30 +92,34 @@ export function KeycapInspectorSection() {
   if (selectedKeycapIds.length > 1) {
     return (
       <PanelSection title={t("keycapStyle")}>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-muted-foreground">
-            {t("selectedCount", { count: selectedKeycapIds.length })}
-          </span>
-          <span className="text-[10px] text-muted-foreground/60">{t("batchEdit")}</span>
-        </div>
-
-        {editorDisabled && disabledReason && (
-          <div className="mt-2 flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
-            {isLayerLocked && <Lock className="size-3 shrink-0" />}
-            {isLayerHidden && <EyeOff className="size-3 shrink-0" />}
-            <span>{disabledReason}</span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              {t("selectedCount", { count: selectedKeycapIds.length })}
+            </span>
+            <span className="text-[10px] text-muted-foreground/60">{t("batchEdit")}</span>
           </div>
-        )}
 
-        {activeLayerId && (
-          <MultiKeycapEditor
-            key={`multi:${activeLayerId}:${selectedKeycapIds.join(",")}`}
-            selectedIds={selectedKeycapIds}
-            layerId={activeLayerId}
-            layerOverrides={layerOverrides}
-            disabled={editorDisabled}
-          />
-        )}
+          {editorDisabled && disabledReason && (
+            <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
+              {isLayerLocked && <Lock className="size-3 shrink-0" />}
+              {isLayerHidden && <EyeOff className="size-3 shrink-0" />}
+              <span>{disabledReason}</span>
+            </div>
+          )}
+
+          {styleTransferControls}
+
+          {activeLayerId && (
+            <MultiKeycapEditor
+              key={`multi:${activeLayerId}:${selectedKeycapIds.join(",")}`}
+              selectedIds={selectedKeycapIds}
+              layerId={activeLayerId}
+              layerOverrides={layerOverrides}
+              disabled={editorDisabled || !!keycapStyleTransferRequest}
+            />
+          )}
+        </div>
       </PanelSection>
     )
   }
@@ -90,23 +142,27 @@ export function KeycapInspectorSection() {
 
   return (
     <PanelSection title={t("keycapStyle")}>
-      {editorDisabled && disabledReason && (
-        <div className="mt-3 flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
-          {isLayerLocked && <Lock className="size-3 shrink-0" />}
-          {isLayerHidden && <EyeOff className="size-3 shrink-0" />}
-          <span>{disabledReason}</span>
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        {editorDisabled && disabledReason && (
+          <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
+            {isLayerLocked && <Lock className="size-3 shrink-0" />}
+            {isLayerHidden && <EyeOff className="size-3 shrink-0" />}
+            <span>{disabledReason}</span>
+          </div>
+        )}
 
-      {activeLayerId && (
-        <SingleKeycapEditor
-          key={`${activeLayerId}:${key.keyId}`}
-          keyDef={key}
-          override={override}
-          layerId={activeLayerId}
-          disabled={editorDisabled}
-        />
-      )}
+        {styleTransferControls}
+
+        {activeLayerId && (
+          <SingleKeycapEditor
+            key={`${activeLayerId}:${key.keyId}`}
+            keyDef={key}
+            override={override}
+            layerId={activeLayerId}
+            disabled={editorDisabled || !!keycapStyleTransferRequest}
+          />
+        )}
+      </div>
     </PanelSection>
   )
 }

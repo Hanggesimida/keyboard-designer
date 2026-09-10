@@ -417,6 +417,9 @@
       "resetKey": "重置该键",
       "clearLegends": "清空文案",
       "resetSelected": "重置所有选中键帽",
+      "reuseStyle": "复用设计",
+      "pickStyleSource": "请点击一个来源键帽",
+      "cancelReuseStyle": "取消复用设计",
       "textPosition": "文字位置",
       "gradient": "渐变"
     },

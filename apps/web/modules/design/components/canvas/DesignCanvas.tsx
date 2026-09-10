@@ -35,6 +35,7 @@ import {
   buildGlobalDistributedColors,
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
+import { createKeycapStyleTransferPatch } from "@/modules/design/lib/keycap-inspector/keycapStyleTransfer"
 import { Preview3DChunkFallback } from "../preview3d/Preview3DOverlay"
 
 const Keycap3DPreview = dynamic(
@@ -305,8 +306,17 @@ export function DesignCanvas() {
   const artboardRef = useRef<HTMLDivElement>(null)
   const artboardBg = useDesignUIStore((s) => s.artboardBackground)
   const selectedKeycapIds = useDesignUIStore((s) => s.selectedKeycapIds)
+  const keycapStyleTransferRequest = useDesignUIStore(
+    (s) => s.keycapStyleTransferRequest,
+  )
   const setSelectedKeycapIds = useDesignUIStore((s) => s.setSelectedKeycapIds)
   const toggleKeycapSelection = useDesignUIStore((s) => s.toggleKeycapSelection)
+  const cancelKeycapStyleTransfer = useDesignUIStore(
+    (s) => s.cancelKeycapStyleTransfer,
+  )
+  const setMultipleKeycapOverrides = useDesignUIStore(
+    (s) => s.setMultipleKeycapOverrides,
+  )
   const setActiveLayer = useDesignUIStore((s) => s.setActiveLayer)
   const deselectAll = useDesignUIStore((s) => s.deselectAll)
   const setKeycapOverride = useDesignUIStore((s) => s.setKeycapOverride)
@@ -389,6 +399,12 @@ export function DesignCanvas() {
   // Delete/Backspace 键删除、方向键微调选中画布元素（单键帽编辑模式打开时由模态框处理）
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && keycapStyleTransferRequest) {
+        e.preventDefault()
+        cancelKeycapStyleTransfer()
+        return
+      }
+
       const tag = (e.target as HTMLElement).tagName
       if (tag === "INPUT" || tag === "TEXTAREA") return
       if (keycapEditTarget) return
@@ -421,7 +437,13 @@ export function DesignCanvas() {
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [keycapEditTarget, removeCanvasElement, updateCanvasElement])
+  }, [
+    cancelKeycapStyleTransfer,
+    keycapEditTarget,
+    keycapStyleTransferRequest,
+    removeCanvasElement,
+    updateCanvasElement,
+  ])
 
   // ─── 从文件系统拖入图片 / SVG ────────────────────────
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -553,13 +575,47 @@ export function DesignCanvas() {
 
   // ─── 键帽选中处理 ────────────────────────────────────
   const handleSelectKeycap = useCallback((layerId: string, keyId: string, shiftKey: boolean) => {
+    if (keycapStyleTransferRequest) {
+      const sourceKey = keys.find((key) => key.keyId === keyId)
+      if (!sourceKey) {
+        cancelKeycapStyleTransfer()
+        return
+      }
+
+      const state = useDesignUIStore.getState()
+      const patch = createKeycapStyleTransferPatch({
+        sourceKey,
+        keys,
+        override: state.layerKeycapOverrides[layerId]?.[keyId],
+        globalStyle: state.globalKeycapStyle,
+        globalFontFamily: state.fontFamily,
+        globalFontWeight: state.fontWeight,
+        globalFontStyle: state.fontStyle,
+      })
+      setMultipleKeycapOverrides(
+        keycapStyleTransferRequest.targetLayerId,
+        keycapStyleTransferRequest.targetKeycapIds,
+        patch,
+      )
+      cancelKeycapStyleTransfer()
+      return
+    }
+
     setActiveLayer(layerId)
     if (shiftKey) {
       toggleKeycapSelection(keyId)
     } else {
       setSelectedKeycapIds([keyId])
     }
-  }, [setActiveLayer, toggleKeycapSelection, setSelectedKeycapIds])
+  }, [
+    cancelKeycapStyleTransfer,
+    keycapStyleTransferRequest,
+    keys,
+    setActiveLayer,
+    setMultipleKeycapOverrides,
+    setSelectedKeycapIds,
+    toggleKeycapSelection,
+  ])
 
   // ─── 进入单键帽编辑模式（打开模态框） ──────────────────
   const handleEnterLabelEdit = useCallback(
@@ -712,7 +768,13 @@ export function DesignCanvas() {
         style={{
           backgroundImage: "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
-          cursor: isPanning ? "grabbing" : isSpacePressed ? "grab" : "default",
+          cursor: isPanning
+            ? "grabbing"
+            : isSpacePressed
+              ? "grab"
+              : keycapStyleTransferRequest
+                ? "copy"
+                : "default",
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}

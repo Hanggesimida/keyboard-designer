@@ -417,6 +417,9 @@
       "resetKey": "Reset this key",
       "clearLegends": "Clear legends",
       "resetSelected": "Reset selected keycaps",
+      "reuseStyle": "Reuse design",
+      "pickStyleSource": "Click a source keycap",
+      "cancelReuseStyle": "Cancel design reuse",
       "textPosition": "Text position",
       "gradient": "Gradient"
     },

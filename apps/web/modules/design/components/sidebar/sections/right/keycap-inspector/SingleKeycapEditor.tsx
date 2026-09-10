@@ -92,7 +92,6 @@ export function SingleKeycapEditor({
             onClick={() => e.handleLabelChange("")}
             tabIndex={-1}
           >
-            <X className="h-3 w-3" />
             {t("clear")}
           </Button>
         </div>

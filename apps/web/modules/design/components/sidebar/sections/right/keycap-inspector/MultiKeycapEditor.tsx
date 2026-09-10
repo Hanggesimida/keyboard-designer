@@ -91,7 +91,7 @@ export function MultiKeycapEditor({
   return (
     <div
       className={cn(
-        "mt-2 flex flex-col gap-3",
+        "flex flex-col gap-3",
         disabled && "pointer-events-none opacity-60",
       )}
     >
@@ -200,7 +200,6 @@ export function MultiKeycapEditor({
           onClick={() => e.applyPatch({ labelText: "" })}
           tabIndex={-1}
         >
-          <X className="h-3 w-3" />
           {t("clearLegends")}
         </Button>
       </div>

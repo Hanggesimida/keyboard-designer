@@ -162,6 +162,11 @@ export type TemplateId = (typeof TEMPLATES)[number]["id"]
  */
 export type LayerKeycapOverrides = Record<string, Record<string, KeycapOverride>>
 
+export interface KeycapStyleTransferRequest {
+  targetLayerId: string
+  targetKeycapIds: string[]
+}
+
 interface DesignUIState {
   templateId: TemplateId
   layers: Layer[]
@@ -175,6 +180,8 @@ interface DesignUIState {
   globalKeycapStyle: GlobalKeycapStyle
   /** 当前多选的键帽 ID 列表（空数组表示未选中任何键帽） */
   selectedKeycapIds: string[]
+  /** 等待用户在画布上选择样式来源的临时请求；纯 UI 状态，不参与 undo */
+  keycapStyleTransferRequest: KeycapStyleTransferRequest | null
   /** 按图层分组的单键覆盖。第一层 key 为 layerId，第二层 key 为 keycapId */
   layerKeycapOverrides: LayerKeycapOverrides
   /** 画板上的自由元素（图片/贴纸等） */
@@ -217,6 +224,10 @@ interface DesignUIActions {
   setSelectedKeycapIds: (ids: string[], options?: { additive?: boolean }) => void
   /** 切换单个键帽的选中状态（用于 Shift+点击，不清除已选中的画布图片） */
   toggleKeycapSelection: (id: string) => void
+  /** 保存当前目标选区并进入键帽样式来源选择模式 */
+  beginKeycapStyleTransfer: (request: KeycapStyleTransferRequest) => void
+  /** 退出键帽样式来源选择模式 */
+  cancelKeycapStyleTransfer: () => void
   /** 清空键帽与画布元素选中（保留活动图层） */
   clearSelection: () => void
   /** 清空全部选中态，含活动图层（点击画布空白） */
@@ -318,6 +329,7 @@ const initialLayers: Layer[] = [
 export type UndoableDesignState = Omit<
   DesignUIState,
   | "selectedKeycapIds"
+  | "keycapStyleTransferRequest"
   | "activeLayerId"
   | "selectedElementId"
   | "keycapEditTarget"
@@ -365,6 +377,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     fontStyle: "normal",
     globalKeycapStyle: initialGlobalKeycapStyle,
     selectedKeycapIds: [],
+    keycapStyleTransferRequest: null,
     layerKeycapOverrides: {},
     canvasElements: [],
     selectedElementId: null,
@@ -391,6 +404,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         fontStyle: "normal",
         canvasElements: [],
         selectedKeycapIds: [],
+        keycapStyleTransferRequest: null,
         selectedElementId: null,
         activeLayerId: null,
         keycapEditTarget: null,
@@ -399,15 +413,25 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         pressedKeyIds: [],
       }),
 
-    setTemplateId: (id) => set({ templateId: id, selectedKeycapIds: [], pressedKeyIds: [] }),
+    setTemplateId: (id) =>
+      set({
+        templateId: id,
+        selectedKeycapIds: [],
+        keycapStyleTransferRequest: null,
+        pressedKeyIds: [],
+      }),
 
     setSelectedKeycapIds: (ids, options) =>
       set((s) => {
         if (ids.length === 0) {
-          return { selectedKeycapIds: ids }
+          return {
+            selectedKeycapIds: ids,
+            keycapStyleTransferRequest: null,
+          }
         }
         return {
           selectedKeycapIds: ids,
+          keycapStyleTransferRequest: null,
           activeLayerId: s.activeLayerId ?? s.layers[0]?.id ?? null,
           ...(options?.additive ? {} : { selectedElementId: null }),
         }
@@ -421,18 +445,41 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
           : [...s.selectedKeycapIds, id]
         return {
           selectedKeycapIds: nextIds,
+          keycapStyleTransferRequest: null,
           ...(!isRemoving
             ? { activeLayerId: s.activeLayerId ?? s.layers[0]?.id ?? null }
             : {}),
         }
       }),
 
-    clearSelection: () => set({ selectedKeycapIds: [], selectedElementId: null }),
+    beginKeycapStyleTransfer: (request) =>
+      set({
+        keycapStyleTransferRequest: {
+          ...request,
+          targetKeycapIds: [...new Set(request.targetKeycapIds)],
+        },
+      }),
+
+    cancelKeycapStyleTransfer: () =>
+      set({ keycapStyleTransferRequest: null }),
+
+    clearSelection: () =>
+      set({
+        selectedKeycapIds: [],
+        selectedElementId: null,
+        keycapStyleTransferRequest: null,
+      }),
 
     deselectAll: () =>
-      set({ selectedKeycapIds: [], selectedElementId: null, activeLayerId: null }),
+      set({
+        selectedKeycapIds: [],
+        selectedElementId: null,
+        activeLayerId: null,
+        keycapStyleTransferRequest: null,
+      }),
 
-    setActiveLayer: (id) => set({ activeLayerId: id }),
+    setActiveLayer: (id) =>
+      set({ activeLayerId: id, keycapStyleTransferRequest: null }),
 
     toggleLayerVisible: (id) =>
       set((s) => ({
@@ -445,6 +492,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
           s.layers.find((l) => l.id === id)?.visible === true
             ? []
             : s.selectedKeycapIds,
+        keycapStyleTransferRequest: null,
       })),
 
     toggleLayerLocked: (id) =>
@@ -452,6 +500,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         layers: s.layers.map((l) =>
           l.id === id ? { ...l, locked: !l.locked } : l,
         ),
+        keycapStyleTransferRequest: null,
       })),
 
     toggleLayerLabelsHidden: (id) =>
@@ -477,6 +526,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         return {
           layers: next,
           activeLayerId,
+          keycapStyleTransferRequest: null,
           layerKeycapOverrides: nextOverrides,
         }
       }),
@@ -637,6 +687,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     setSelectedElementId: (id, options) =>
       set({
         selectedElementId: id,
+        keycapStyleTransferRequest: null,
         ...(id !== null && !options?.additive
           ? { selectedKeycapIds: [], activeLayerId: null }
           : {}),
@@ -714,6 +765,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
       const undoable = { ...state }
       const excluded: (keyof DesignUIState)[] = [
         "selectedKeycapIds",
+        "keycapStyleTransferRequest",
         "activeLayerId",
         "selectedElementId",
         "keycapEditTarget",
