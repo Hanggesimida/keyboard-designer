@@ -543,7 +543,7 @@
         "polishedMetal": "Polished metal",
         "ceramic": "Ceramic"
       },
-      "hint": "Drag to orbit · scroll to zoom · right-click to pan",
+      "hint": "Drag to orbit · scroll to zoom · middle-click or Space to pan",
       "loadFailed": "3D preview failed to load",
       "webglError": "WebGL context error. Retry or close the preview.",
       "retry": "Retry"

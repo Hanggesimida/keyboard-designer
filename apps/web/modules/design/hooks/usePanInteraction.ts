@@ -1,6 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useLatestRef } from "@/hooks/useLatestRef"
+import { useSpacePressed } from "@/modules/design/hooks/useSpacePressed"
 
 interface UsePanInteractionParams {
   onPanBy: (dx: number, dy: number) => void
@@ -9,52 +11,32 @@ interface UsePanInteractionParams {
 }
 
 export function usePanInteraction({ onPanBy, disabled = false }: UsePanInteractionParams) {
-  const [isSpacePressed, setIsSpacePressed] = useState(false)
+  const isSpacePressed = useSpacePressed(disabled)
+  const isSpacePressedRef = useLatestRef(isSpacePressed)
   const [isPanning, setIsPanning] = useState(false)
   const dragging = useRef(false)
   const lastPointer = useRef({ x: 0, y: 0 })
-  const isSpacePressedRef = useRef(false)
   const panFromSpaceLeftRef = useRef(false)
 
-  if (disabled) {
-    if (isSpacePressed) setIsSpacePressed(false)
-    if (isPanning) setIsPanning(false)
-  }
+  useEffect(() => {
+    if (!disabled) return
+    dragging.current = false
+    panFromSpaceLeftRef.current = false
+  }, [disabled])
 
   useEffect(() => {
-    if (disabled) {
-      isSpacePressedRef.current = false
-      dragging.current = false
-      panFromSpaceLeftRef.current = false
-      return
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== "Space" || isSpacePressedRef.current) return
-      const tag = document.activeElement?.tagName
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
-      e.preventDefault()
-      isSpacePressedRef.current = true
-      setIsSpacePressed(true)
-    }
+    if (disabled) return
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code !== "Space") return
-      isSpacePressedRef.current = false
-      setIsSpacePressed(false)
-      if (panFromSpaceLeftRef.current && dragging.current) {
-        dragging.current = false
-        panFromSpaceLeftRef.current = false
-        setIsPanning(false)
-      }
+      if (!panFromSpaceLeftRef.current || !dragging.current) return
+      dragging.current = false
+      panFromSpaceLeftRef.current = false
+      setIsPanning(false)
     }
 
-    window.addEventListener("keydown", handleKeyDown)
     window.addEventListener("keyup", handleKeyUp)
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("keyup", handleKeyUp)
-    }
+    return () => window.removeEventListener("keyup", handleKeyUp)
   }, [disabled])
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
@@ -68,17 +50,17 @@ export function usePanInteraction({ onPanBy, disabled = false }: UsePanInteracti
     lastPointer.current = { x: e.clientX, y: e.clientY }
     setIsPanning(true)
     e.preventDefault()
-  }, [disabled])
+  }, [disabled, isSpacePressedRef])
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (!dragging.current) return
+      if (disabled || !dragging.current) return
       const dx = e.clientX - lastPointer.current.x
       const dy = e.clientY - lastPointer.current.y
       lastPointer.current = { x: e.clientX, y: e.clientY }
       onPanBy(dx, dy)
     },
-    [onPanBy],
+    [disabled, onPanBy],
   )
 
   const endPan = useCallback(() => {
@@ -89,7 +71,7 @@ export function usePanInteraction({ onPanBy, disabled = false }: UsePanInteracti
 
   return {
     isSpacePressed,
-    isPanning,
+    isPanning: disabled ? false : isPanning,
     onMouseDown,
     onMouseMove,
     onMouseUp: endPan,

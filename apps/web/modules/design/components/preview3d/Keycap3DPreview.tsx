@@ -15,6 +15,7 @@ import { buildPreviewSceneModel } from "@/modules/design/lib/preview3d/buildPrev
 import { exportPreview3dPng } from "@/modules/design/lib/preview3d/exportPreviewPng"
 import type { CameraView } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewDesignStateInput } from "@/modules/design/lib/preview3d/types"
+import { useSpacePressed } from "@/modules/design/hooks/useSpacePressed"
 import { Keyboard3DScene } from "./Keyboard3DScene"
 import { Preview3DErrorBoundary } from "./Preview3DErrorBoundary"
 import { Preview3DOverlay } from "./Preview3DOverlay"
@@ -145,6 +146,8 @@ export function Keycap3DPreview() {
     setCanvasKey((k) => k + 1)
   }, [])
 
+  const isSpacePressed = useSpacePressed()
+
   const applyCameraView = useCallback((view: CameraView) => {
     setCameraView(view)
     setCameraViewToken((t) => t + 1)
@@ -165,13 +168,13 @@ export function Keycap3DPreview() {
     (event: MouseEvent) => {
       const down = pointerDownRef.current
       pointerDownRef.current = null
-      if (!down) return
+      if (!down || isSpacePressed) return
       const dx = event.clientX - down.x
       const dy = event.clientY - down.y
       if (dx * dx + dy * dy > MISS_CLICK_DELTA_PX * MISS_CLICK_DELTA_PX) return
       clearSelection()
     },
-    [clearSelection],
+    [clearSelection, isSpacePressed],
   )
 
   return (
@@ -183,6 +186,7 @@ export function Keycap3DPreview() {
           backgroundImage:
             "radial-gradient(circle, var(--design-canvas-grid-dot) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
+          cursor: isSpacePressed ? "grab" : undefined,
         }}
         onPointerDownCapture={(e) => {
           if (e.button !== 0) return
@@ -206,7 +210,10 @@ export function Keycap3DPreview() {
           dpr={[1, 1.5]}
           frameloop="demand"
           shadows="percentage"
-          style={{ background: "transparent" }}
+          style={{
+            background: "transparent",
+            cursor: isSpacePressed ? "grab" : undefined,
+          }}
           onCreated={handleCreated}
           onPointerMissed={handlePointerMissed}
         >

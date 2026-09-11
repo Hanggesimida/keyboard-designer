@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, type ComponentRef } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, type ComponentRef } from "react"
 import { useTheme } from "next-themes"
 import { useThree } from "@react-three/fiber"
 import {
@@ -9,11 +9,13 @@ import {
   Lightformer,
   OrbitControls,
 } from "@react-three/drei"
+import { useLatestRef } from "@/hooks/useLatestRef"
+import { useSpacePressed } from "@/modules/design/hooks/useSpacePressed"
 import {
   PREVIEW_3D_BG_DARK,
   PREVIEW_3D_BG_LIGHT,
 } from "@/modules/design/lib/preview3d/constants"
-import type { DirectionalLight } from "three"
+import { MOUSE, type DirectionalLight } from "three"
 import {
   computeCameraFitPose,
   computeCameraTopPose,
@@ -148,12 +150,14 @@ function CameraRig({
   templateId,
   cameraView,
   cameraViewToken,
+  isSpacePressed,
 }: {
   center: Vec3
   extents: { width: number; depth: number }
   templateId: string
   cameraView: CameraView
   cameraViewToken: number
+  isSpacePressed: boolean
 }) {
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -227,6 +231,11 @@ function CameraRig({
       minPolarAngle={0}
       maxPolarAngle={Math.PI / 2.05}
       target={center}
+      mouseButtons={{
+        LEFT: isSpacePressed ? MOUSE.PAN : MOUSE.ROTATE,
+        MIDDLE: MOUSE.PAN,
+        RIGHT: MOUSE.PAN,
+      }}
     />
   )
 }
@@ -256,6 +265,15 @@ export function Keyboard3DScene({
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
   const invalidate = useThree((s) => s.invalidate)
+  const isSpacePressed = useSpacePressed()
+  const isSpacePressedRef = useLatestRef(isSpacePressed)
+  const handleSelectKeycap = useCallback(
+    (keyId: string, shiftKey: boolean) => {
+      if (isSpacePressedRef.current) return
+      onSelectKeycap?.(keyId, shiftKey)
+    },
+    [isSpacePressedRef, onSelectKeycap],
+  )
   const visibleCase = showCase ? sceneModel.case : null
   const minX = visibleCase
     ? Math.min(sceneModel.bounds.min[0], visibleCase.bounds.min[0])
@@ -306,6 +324,7 @@ export function Keyboard3DScene({
         templateId={sceneModel.templateId}
         cameraView={cameraView}
         cameraViewToken={cameraViewToken}
+        isSpacePressed={isSpacePressed}
       />
 
       {visibleCase ? (
@@ -331,7 +350,7 @@ export function Keyboard3DScene({
                   modelPath={key.modelPath}
                   onSelect={
                     onSelectKeycap
-                      ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
+                      ? (shiftKey) => handleSelectKeycap(key.id, shiftKey)
                       : undefined
                   }
                 />
@@ -341,7 +360,7 @@ export function Keyboard3DScene({
                   previewKey={key}
                   onSelect={
                     onSelectKeycap
-                      ? (shiftKey) => onSelectKeycap(key.id, shiftKey)
+                      ? (shiftKey) => handleSelectKeycap(key.id, shiftKey)
                       : undefined
                   }
                 />

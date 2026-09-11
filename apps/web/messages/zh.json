@@ -543,7 +543,7 @@
         "polishedMetal": "抛光金属",
         "ceramic": "陶瓷"
       },
-      "hint": "拖动旋转 · 滚轮缩放 · 右键平移",
+      "hint": "拖动旋转 · 滚轮缩放 · 中键或空格平移",
       "loadFailed": "3D 预览加载失败",
       "webglError": "WebGL 上下文异常，请重试或关闭预览。",
       "retry": "重试"
