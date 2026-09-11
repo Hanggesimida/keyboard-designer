@@ -4,6 +4,7 @@ import {
   LAYOUT_REGISTRY,
   type LayoutData,
 } from "@/modules/design/data/layouts"
+import { migrateLayoutElements } from "@/modules/design/lib/design/layoutRevision"
 import type {
   DesignPayload,
   ExportCanvasElement,
@@ -522,15 +523,30 @@ async function loadJigPositions(): Promise<JigPosition[]> {
 }
 
 export async function generateJigSvg(design: DesignPayload): Promise<string> {
-  const parsed = parseDesign(design)
-  const labelsHidden = (design.layers ?? []).some(
+  const layout = LAYOUT_REGISTRY[design.templateId]
+  const migration = layout
+    ? migrateLayoutElements(
+        design.templateId,
+        design.layoutRevision,
+        design.canvasElements ?? [],
+      )
+    : null
+  const currentDesign = migration
+    ? {
+        ...design,
+        layoutRevision: migration.layoutRevision,
+        canvasElements: migration.elements,
+      }
+    : design
+  const parsed = parseDesign(currentDesign)
+  const labelsHidden = (currentDesign.layers ?? []).some(
     (layer) => layer.labelsHidden === true,
   )
   const [template, positions] = await Promise.all([
     loadJigTemplate(),
     loadJigPositions(),
   ])
-  const context = createContext(design, positions)
+  const context = createContext(currentDesign, positions)
   const keyLayers = await buildKeyLayers(context, parsed, labelsHidden)
   const images = buildImageLayers(context, parsed)
   return inject(template, images.defs, [

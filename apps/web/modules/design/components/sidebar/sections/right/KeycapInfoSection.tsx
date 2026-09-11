@@ -17,10 +17,10 @@ export function KeycapInfoSection() {
   if (!key) return null
 
   return (
-    <PanelSection title={t("keycapInfo")} first collapsible defaultOpen={false}>
+    <PanelSection title={t("keycapInfo")} collapsible defaultOpen={false}>
       <div className="flex flex-col gap-2">
         <InfoRow label={t("label")} value={key.label} />
-        <InfoRow label="Key ID" value={key.keyId} />
+        <InfoRow label={t("keyId")} value={key.keyId} />
         <InfoRow label={t("row")} value={key.rowLabel} />
         {key.rowLevel && <InfoRow label={t("rowLevel")} value={key.rowLevel} />}
         <div className="my-0.5 border-t border-border/40" />

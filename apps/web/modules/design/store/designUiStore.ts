@@ -1,7 +1,10 @@
 import { create, useStore } from "zustand"
 import { temporal } from "zundo"
 import type { TemporalState } from "zundo"
-import { DEFAULT_ARTBOARD_BG, DEFAULT_KEYCAP_COLORS } from "@/modules/design/lib/designDefaults"
+import {
+  DEFAULT_KEYBOARD_CASE_PAINT,
+  DEFAULT_KEYCAP_COLORS,
+} from "@/modules/design/lib/designDefaults"
 import {
   PREVIEW_3D_HEIGHT_DEFAULT,
   PREVIEW_3D_HEIGHT_MAX,
@@ -171,7 +174,8 @@ interface DesignUIState {
   templateId: TemplateId
   layers: Layer[]
   activeLayerId: string | null
-  artboardBackground: string
+  /** 键盘外壳涂装：纯色或 CSS linear-gradient。 */
+  keyboardCasePaint: string
   fontFamily: string
   /** 全局字重：400 = 常规，700 = 加粗 */
   fontWeight: number
@@ -217,7 +221,7 @@ interface DesignUIState {
 }
 
 interface DesignUIActions {
-  /** 将所有设计修改重置为初始默认状态（键帽覆盖、全局样式、画板背景、画布元素等） */
+  /** 将所有设计修改重置为初始默认状态（键帽覆盖、全局样式、外壳涂装、画布元素等） */
   resetAll: () => void
   setTemplateId: (id: TemplateId) => void
   /** 将选中集合替换为给定 ID 列表；additive 为 true 时保留已选中的画布图片 */
@@ -239,7 +243,7 @@ interface DesignUIActions {
   setLayerOpacity: (id: string, opacity: number) => void
   removeLayer: (id: string) => void
   renameLayer: (id: string, name: string) => void
-  setArtboardBackground: (color: string) => void
+  setKeyboardCasePaint: (paint: string) => void
   setFontFamily: (font: string) => void
   setFontWeight: (weight: number) => void
   setFontStyle: (style: string) => void
@@ -374,7 +378,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     templateId: "ansi-108",
     layers: initialLayers,
     activeLayerId: null,
-    artboardBackground: DEFAULT_ARTBOARD_BG,
+    keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
     fontFamily: "var(--font-ibm-plex-mono)",
     fontWeight: 400,
     fontStyle: "normal",
@@ -401,7 +405,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         layers: initialLayers,
         globalKeycapStyle: initialGlobalKeycapStyle,
         layerKeycapOverrides: {},
-        artboardBackground: DEFAULT_ARTBOARD_BG,
+        keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,
         fontStyle: "normal",
@@ -539,7 +543,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         layers: s.layers.map((l) => (l.id === id ? { ...l, name } : l)),
       })),
 
-    setArtboardBackground: (color) => set({ artboardBackground: color }),
+    setKeyboardCasePaint: (paint) => set({ keyboardCasePaint: paint }),
     setFontFamily: (font) => set({ fontFamily: font }),
     setFontWeight: (weight) => set({ fontWeight: weight }),
     setFontStyle: (style) => set({ fontStyle: style }),
@@ -551,6 +555,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
 
     resetGlobalKeycapStyleSettings: () =>
       set({
+        keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
         globalKeycapStyle: initialGlobalKeycapStyle,
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,

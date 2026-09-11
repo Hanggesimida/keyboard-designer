@@ -20,8 +20,8 @@ const FONT_SIZE_MAX = 32
 
 export function GlobalKeycapSection() {
   const t = useTranslations("Design.inspector")
-  const artboardBackground = useDesignUIStore((s) => s.artboardBackground)
-  const setArtboardBackground = useDesignUIStore((s) => s.setArtboardBackground)
+  const keyboardCasePaint = useDesignUIStore((s) => s.keyboardCasePaint)
+  const setKeyboardCasePaint = useDesignUIStore((s) => s.setKeyboardCasePaint)
   const globalKeycapStyle = useDesignUIStore((s) => s.globalKeycapStyle)
   const setGlobalKeycapStyle = useDesignUIStore((s) => s.setGlobalKeycapStyle)
   const resetGlobalKeycapStyleSettings = useDesignUIStore(
@@ -33,7 +33,6 @@ export function GlobalKeycapSection() {
   const setFontWeight = useDesignUIStore((s) => s.setFontWeight)
   const fontStyle = useDesignUIStore((s) => s.fontStyle)
   const setFontStyle = useDesignUIStore((s) => s.setFontStyle)
-  const selectedKeycapIds = useDesignUIStore((s) => s.selectedKeycapIds)
 
   const fontCaps = getFontCapabilities(fontFamily)
   const isBold = fontWeight === 700
@@ -56,12 +55,7 @@ export function GlobalKeycapSection() {
   }
 
   return (
-    <PanelSection
-      title={t("globalTitle")}
-      first={selectedKeycapIds.length !== 1}
-      collapsible
-      defaultOpen={false}
-    >
+    <PanelSection title={t("globalTitle")} first>
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <FontFamilySelect
@@ -136,8 +130,8 @@ export function GlobalKeycapSection() {
 
         <ColorRow
           label={t("keyboardColor")}
-          value={artboardBackground}
-          onChange={setArtboardBackground}
+          value={keyboardCasePaint}
+          onChange={setKeyboardCasePaint}
         />
         <ColorRow
           label={t("textColor")}

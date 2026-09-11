@@ -116,7 +116,7 @@ export function buildPreviewSceneModel(
   const keyboardCase = buildKeyboardCase(
     designState.templateId,
     caseBounds,
-    designState.artboardBackground,
+    designState.keyboardCasePaint,
   )
 
   const geometryRevision = [
@@ -152,7 +152,7 @@ export function buildPreviewSceneModel(
     .join(",")
 
   const appearanceRevision = [
-    designState.artboardBackground,
+    designState.keyboardCasePaint,
     g.color,
     g.labelColor,
     g.borderColor,

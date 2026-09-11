@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useRef, useState, useEffect, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from "react"
+import { useRef, useState, useEffect, useCallback, useId, useMemo, type PointerEvent as ReactPointerEvent } from "react"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
@@ -14,7 +14,11 @@ import { LocaleToggle } from "@/components/i18n/LocaleSwitcher"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
-import { flattenLayout } from "@/modules/design/lib/design/layout"
+import {
+  flattenLayout,
+  getLayoutBounds,
+  getLayoutPixelSize,
+} from "@/modules/design/lib/design/layout"
 import type { KeyDef } from "@/modules/design/types/design"
 import { KeycapNode } from "./KeycapNode"
 import {
@@ -36,9 +40,17 @@ import {
   PREVIEW_3D_HEIGHT_MIN,
 } from "@/modules/design/lib/preview3d/constants"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
+import { getCurrentLayoutRevision } from "@/modules/design/lib/design/layoutRevision"
 import {
   buildGlobalDistributedColors,
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
+import {
+  DEFAULT_KEYBOARD_CASE_PAINT,
+} from "@/modules/design/lib/designDefaults"
+import {
+  getLinearGradientProjection,
+  resolvePaint,
+} from "@/modules/design/lib/design/gradientUtils"
 import { keyCentersFromDefs } from "@/modules/design/lib/design/distributeGradientColors"
 import { createKeycapStyleTransferPatch } from "@/modules/design/lib/keycap-inspector/keycapStyleTransfer"
 import { Preview3DChunkFallback } from "../preview3d/Preview3DOverlay"
@@ -50,18 +62,71 @@ const Keycap3DPreview = dynamic(
 
 // ─── 常量 ──────────────────────────────────────────────
 const ART_PAD = DESIGN_ART_PAD // 画板内边距（与 3D 投影规格共用）
+const KEYBOARD_CASE_RADIUS = 8
 
-function getTemplateBounds(keys: KeyDef[], unit: number) {
-  let maxX = 0
-  let maxY = 0
-  for (const k of keys) {
-    maxX = Math.max(maxX, k.x + k.w)
-    maxY = Math.max(maxY, k.y + k.h)
+function KeyboardCase2D({
+  keys,
+  unit,
+  paintValue,
+}: {
+  keys: KeyDef[]
+  unit: number
+  paintValue: string
+}) {
+  const gradientId = `keyboard-case-${useId().replaceAll(":", "")}`
+  const baseKeys = keys.filter((key) => key.section === "base")
+  const bounds = getLayoutBounds(baseKeys)
+  const rect = {
+    minX: bounds.minX * unit - ART_PAD,
+    minY: bounds.minY * unit - ART_PAD,
+    maxX: bounds.maxX * unit + ART_PAD,
+    maxY: bounds.maxY * unit + ART_PAD,
   }
-  return {
-    width: Math.ceil(maxX * unit),
-    height: Math.ceil(maxY * unit),
-  }
+  const paint = resolvePaint(paintValue, DEFAULT_KEYBOARD_CASE_PAINT)
+  const projection =
+    paint.kind === "linear-gradient"
+      ? getLinearGradientProjection(paint.gradient.angle, rect)
+      : null
+
+  return (
+    <g pointerEvents="none" data-keyboard-case>
+      {paint.kind === "linear-gradient" && projection ? (
+        <defs>
+          <linearGradient
+            id={gradientId}
+            gradientUnits="userSpaceOnUse"
+            x1={projection.start[0]}
+            y1={projection.start[1]}
+            x2={projection.end[0]}
+            y2={projection.end[1]}
+          >
+            {paint.gradient.stops.map((stop) => (
+              <stop
+                key={stop.id}
+                offset={`${stop.pos}%`}
+                stopColor={stop.color}
+              />
+            ))}
+          </linearGradient>
+        </defs>
+      ) : null}
+      <rect
+        x={rect.minX}
+        y={rect.minY}
+        width={rect.maxX - rect.minX}
+        height={rect.maxY - rect.minY}
+        rx={KEYBOARD_CASE_RADIUS}
+        fill={
+          paint.kind === "linear-gradient"
+            ? `url(#${gradientId})`
+            : paint.color
+        }
+        style={{
+          filter: "drop-shadow(0 16px 24px rgb(0 0 0 / 0.24))",
+        }}
+      />
+    </g>
+  )
 }
 
 // ─── 键帽 Clip 图层 ────────────────────────────────────
@@ -176,6 +241,7 @@ function KeyboardTemplate({
   const activeLayerId = useDesignUIStore((s) => s.activeLayerId)
   const layerKeycapOverrides = useDesignUIStore((s) => s.layerKeycapOverrides)
   const globalKeycapStyle = useDesignUIStore((s) => s.globalKeycapStyle)
+  const keyboardCasePaint = useDesignUIStore((s) => s.keyboardCasePaint)
   const fontFamily = useDesignUIStore((s) => s.fontFamily)
   const fontWeight = useDesignUIStore((s) => s.fontWeight)
   const fontStyle = useDesignUIStore((s) => s.fontStyle)
@@ -252,6 +318,7 @@ function KeyboardTemplate({
     >
       {/* 透明底层捕获空白区域点击 */}
       <rect width={width} height={height} fill="transparent" />
+      <KeyboardCase2D keys={keys} unit={unit} paintValue={keyboardCasePaint} />
 
       {hasClippedImages ? (
         <>
@@ -309,7 +376,6 @@ export function DesignCanvas() {
   const t = useTranslations("Design.canvas")
   const containerRef = useRef<HTMLDivElement>(null)
   const artboardRef = useRef<HTMLDivElement>(null)
-  const artboardBg = useDesignUIStore((s) => s.artboardBackground)
   const selectedKeycapIds = useDesignUIStore((s) => s.selectedKeycapIds)
   const keycapStyleTransferRequest = useDesignUIStore(
     (s) => s.keycapStyleTransferRequest,
@@ -352,7 +418,7 @@ export function DesignCanvas() {
     const layout = getLayoutData(templateId)
     const u = layout.baseUnit
     const allKeys = flattenLayout(layout)
-    const b = getTemplateBounds(allKeys, u)
+    const b = getLayoutPixelSize(allKeys, u)
     return {
       keys: allKeys,
       unit: u,
@@ -614,7 +680,7 @@ export function DesignCanvas() {
   const handleGenerateJig = useCallback(async () => {
     const {
       templateId: tid,
-      artboardBackground,
+      keyboardCasePaint: casePaint,
       fontFamily,
       globalKeycapStyle,
       layers,
@@ -631,7 +697,8 @@ export function DesignCanvas() {
     const design = normalizeDesignColorFields({
       version: 1,
       templateId: tid,
-      artboardBackground,
+      layoutRevision: getCurrentLayoutRevision(tid),
+      keyboardCasePaint: casePaint,
       fontFamily,
       globalKeycapStyle,
       layers,
@@ -756,14 +823,12 @@ export function DesignCanvas() {
         {/* 画板 */}
         <div
           ref={artboardRef}
-          className="absolute rounded-sm shadow-2xl"
+          className="absolute"
           style={{
             width: artW,
             height: artH,
-            backgroundColor: artboardBg,
             transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
             transformOrigin: "0 0",
-            transition: "background-color 0.15s",
             willChange: "transform",
           }}
         >

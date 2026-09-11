@@ -28,6 +28,7 @@ import {
 } from "@/modules/design/lib/design/exportArtboard"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
+import { getCurrentLayoutRevision } from "@/modules/design/lib/design/layoutRevision"
 import { generateJig } from "@/lib/export"
 import { ApiError } from "@/lib/api/request"
 import {
@@ -63,6 +64,13 @@ function triggerBlobDownload(blob: Blob, filename: string) {
 function ToolbarSeparator() {
   return <Separator orientation="vertical" />
 }
+
+/** 视口 ≥ 1280px 显示文字；更窄时只留图标，避免与两侧栏抢宽度。 */
+function ToolbarLabel({ children }: { children: React.ReactNode }) {
+  return <span className="hidden xl:inline">{children}</span>
+}
+
+const toolbarBtnClass = "max-xl:size-6 max-xl:px-0"
 
 function subscribeNoSaveHint(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange)
@@ -182,7 +190,7 @@ export function CanvasToolbar({
     try {
       const {
         templateId,
-        artboardBackground,
+        keyboardCasePaint,
         fontFamily,
         globalKeycapStyle,
         layers,
@@ -199,7 +207,8 @@ export function CanvasToolbar({
       const design = normalizeDesignColorFields({
         version: 1,
         templateId,
-        artboardBackground,
+        layoutRevision: getCurrentLayoutRevision(templateId),
+        keyboardCasePaint,
         fontFamily,
         globalKeycapStyle,
         layers,
@@ -241,22 +250,26 @@ export function CanvasToolbar({
       <Button
         type="button"
         variant="ghost"
-        size="icon-xs"
+        size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.undo")}
         disabled={!canUndo}
         onClick={(e) => { e.stopPropagation(); onUndo() }}
       >
-        <Undo2 />
+        <Undo2 className="size-3.5" />
+        <ToolbarLabel>{t("toolbar.undoLabel")}</ToolbarLabel>
       </Button>
       <Button
         type="button"
         variant="ghost"
-        size="icon-xs"
+        size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.redo")}
         disabled={!canRedo}
         onClick={(e) => { e.stopPropagation(); onRedo() }}
       >
-        <Redo2 />
+        <Redo2 className="size-3.5" />
+        <ToolbarLabel>{t("toolbar.redoLabel")}</ToolbarLabel>
       </Button>
 
       <ToolbarSeparator />
@@ -264,15 +277,16 @@ export function CanvasToolbar({
       <Button
         type="button"
         variant="ghost"
-        size="icon-xs"
+        size="xs"
         title={show3dPreview ? t("toolbar.hide3d") : t("toolbar.show3d")}
-        className={show3dPreview ? "text-foreground bg-accent" : undefined}
+        className={show3dPreview ? `${toolbarBtnClass} text-foreground bg-accent` : toolbarBtnClass}
         onClick={(e) => {
           e.stopPropagation()
           toggleShow3dPreview()
         }}
       >
-        <Boxes />
+        <Boxes className="size-3.5" />
+        <ToolbarLabel>{t("toolbar.preview3d")}</ToolbarLabel>
       </Button>
 
       <ToolbarSeparator />
@@ -283,14 +297,15 @@ export function CanvasToolbar({
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="xs"
               title={t("toolbar.resetLayout")}
-              className="hover:text-destructive"
+              className={`${toolbarBtnClass} hover:text-destructive`}
               onClick={(e) => e.stopPropagation()}
             />
           }
         >
-          <RotateCcw />
+          <RotateCcw className="size-3.5" />
+          <ToolbarLabel>{t("toolbar.resetLabel")}</ToolbarLabel>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -319,46 +334,50 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.exportPng")}
         disabled={exporting !== null}
         onClick={handleExportPng}
       >
         {exporting === "png" ? <Spinner className="size-3.5" /> : <FileImage className="size-3.5" />}
-        PNG
+        <ToolbarLabel>PNG</ToolbarLabel>
       </Button>
 
       <Button
         type="button"
         variant="ghost"
         size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.exportSvg")}
         disabled={exporting !== null}
         onClick={handleExportSvg}
       >
         {exporting === "svg" ? <Spinner className="size-3.5" /> : <FileCode2 className="size-3.5" />}
-        SVG
+        <ToolbarLabel>SVG</ToolbarLabel>
       </Button>
 
       <Button
         type="button"
         variant="ghost"
         size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.exportJson")}
         onClick={handleExportJson}
       >
         <FileJson2 className="size-3.5" />
-        JSON
+        <ToolbarLabel>JSON</ToolbarLabel>
       </Button>
 
       <Button
         type="button"
         variant="ghost"
         size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.importJson")}
         onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
       >
         <FolderOpen className="size-3.5" />
-        {t("toolbar.import")}
+        <ToolbarLabel>{t("toolbar.import")}</ToolbarLabel>
       </Button>
 
       <ToolbarSeparator />
@@ -367,12 +386,13 @@ export function CanvasToolbar({
         type="button"
         variant="ghost"
         size="xs"
+        className={toolbarBtnClass}
         title={t("toolbar.jigTitle")}
         disabled={exporting !== null}
         onClick={handleGenerateJig}
       >
         {exporting === "jig" ? <Spinner className="size-3.5" /> : <Wrench className="size-3.5" />}
-        {t("toolbar.jig")}
+        <ToolbarLabel>{t("toolbar.jig")}</ToolbarLabel>
       </Button>
 
       <input

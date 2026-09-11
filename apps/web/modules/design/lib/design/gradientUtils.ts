@@ -14,10 +14,26 @@ export interface LinearGradient {
   stops: GradientStop[]
 }
 
+export interface PaintBounds2D {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+export type ResolvedPaint =
+  | { kind: "solid"; color: string }
+  | { kind: "linear-gradient"; gradient: LinearGradient }
+
+export interface LinearGradientProjection {
+  start: [number, number]
+  end: [number, number]
+}
+
 // ─── Detection ────────────────────────────────────────────────────────────────
 
 export function isGradientValue(value: string): boolean {
-  return value.startsWith("linear-gradient(")
+  return value.trim().startsWith("linear-gradient(")
 }
 
 // ─── Serialization ────────────────────────────────────────────────────────────
@@ -31,7 +47,9 @@ export function gradientToCSS(g: LinearGradient): string {
 // ─── Parsing ──────────────────────────────────────────────────────────────────
 
 export function parseCssLinearGradient(css: string): LinearGradient | null {
-  const m = css.match(/^linear-gradient\(\s*(\d+(?:\.\d+)?)deg\s*,\s*(.+)\)\s*$/)
+  const m = css.trim().match(
+    /^linear-gradient\(\s*(-?\d+(?:\.\d+)?)deg\s*,\s*(.+)\)\s*$/,
+  )
   if (!m) return null
   const angle = parseFloat(m[1]!)
   const stopsPart = m[2]!
@@ -47,7 +65,64 @@ export function parseCssLinearGradient(css: string): LinearGradient | null {
     })
   }
   if (stops.length < 2) return null
-  return { type: "linear", angle, stops }
+  return {
+    type: "linear",
+    angle: ((angle % 360) + 360) % 360,
+    stops: stops
+      .map((stop) => ({
+        ...stop,
+        pos: Math.min(100, Math.max(0, stop.pos)),
+      }))
+      .sort((a, b) => a.pos - b.pos),
+  }
+}
+
+/** 将任意外部字符串收敛为渲染层可安全消费的纯色或线性渐变。 */
+export function resolvePaint(
+  value: string,
+  fallback: string,
+): ResolvedPaint {
+  if (isGradientValue(value)) {
+    const gradient = parseCssLinearGradient(value)
+    if (gradient) return { kind: "linear-gradient", gradient }
+  }
+  const color = colord(value)
+  if (color.isValid()) return { kind: "solid", color: color.toHex() }
+  const fallbackColor = colord(fallback)
+  return {
+    kind: "solid",
+    color: fallbackColor.isValid() ? fallbackColor.toHex() : "#000000",
+  }
+}
+
+/**
+ * 计算 CSS 线性渐变在指定矩形中的起止点。
+ * 设计 Y 与 Three Z 都向下递增，因此同一结果可直接用于 2D XY 与 3D XZ。
+ */
+export function getLinearGradientProjection(
+  angleDeg: number,
+  bounds: PaintBounds2D,
+): LinearGradientProjection {
+  const width = Math.max(0, bounds.maxX - bounds.minX)
+  const height = Math.max(0, bounds.maxY - bounds.minY)
+  const centerX = (bounds.minX + bounds.maxX) / 2
+  const centerY = (bounds.minY + bounds.maxY) / 2
+  const rad = (angleDeg * Math.PI) / 180
+  const directionX = Math.sin(rad)
+  const directionY = -Math.cos(rad)
+  const halfLength =
+    (Math.abs(directionX) * width + Math.abs(directionY) * height) / 2
+
+  return {
+    start: [
+      centerX - directionX * halfLength,
+      centerY - directionY * halfLength,
+    ],
+    end: [
+      centerX + directionX * halfLength,
+      centerY + directionY * halfLength,
+    ],
+  }
 }
 
 // ─── Color interpolation ──────────────────────────────────────────────────────
@@ -97,24 +172,3 @@ export function makeDefaultGradient(fromHex: string): LinearGradient {
   }
 }
 
-// ─── SVG gradient conversion ──────────────────────────────────────────────────
-
-/**
- * Convert a CSS gradient angle to SVG linearGradient x1/y1/x2/y2
- * (in objectBoundingBox coordinates).
- * CSS angle: 0deg = to top, 90deg = to right, clockwise.
- */
-export function cssAngleToSvgCoords(angleDeg: number): {
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-} {
-  const rad = (angleDeg * Math.PI) / 180
-  return {
-    x1: 0.5 - 0.5 * Math.sin(rad),
-    y1: 0.5 + 0.5 * Math.cos(rad),
-    x2: 0.5 + 0.5 * Math.sin(rad),
-    y2: 0.5 - 0.5 * Math.cos(rad),
-  }
-}

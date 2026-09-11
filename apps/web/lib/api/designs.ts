@@ -18,8 +18,10 @@ import type { ExportCanvasElement } from '@/modules/design/lib/design/exportArtb
 export interface DesignData {
   version: 1;
   templateId: TemplateId;
+  /** 缺省表示旧版布局坐标，加载时迁移到模板当前修订。 */
+  layoutRevision?: number;
   layers: Layer[];
-  artboardBackground: string;
+  keyboardCasePaint: string;
   fontFamily: string;
   fontWeight: number;
   fontStyle: string;

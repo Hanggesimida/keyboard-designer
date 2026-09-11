@@ -19,6 +19,11 @@ import {
   getCaseMaterialPreset,
   type CaseMaterialPresetId,
 } from "@/modules/design/lib/preview3d/caseMaterialPresets"
+import {
+  createCaseGradientTexture,
+  installCasePaintShader,
+  type CasePaintUniforms,
+} from "@/modules/design/lib/preview3d/casePaintMaterial"
 import type { PreviewCase } from "@/modules/design/lib/preview3d/types"
 
 /** 壳体不参与拾取，点击穿透到键帽 / pointer missed */
@@ -30,6 +35,7 @@ interface MaterialState {
   metalness?: number
   roughness?: number
   envMapIntensity?: number
+  paintUniforms?: CasePaintUniforms
 }
 
 interface PreparedCaseScene {
@@ -59,17 +65,23 @@ function prepareCaseScene(source: Object3D): PreparedCaseScene {
 
     const material = sourceMaterial.clone()
     materialClones.set(sourceMaterial, material)
-    materials.push(
-      isStandardMaterial(material)
-        ? {
-            material,
-            baseColor: material.color.clone(),
-            metalness: material.metalness,
-            roughness: material.roughness,
-            envMapIntensity: material.envMapIntensity,
-          }
-        : { material },
-    )
+    if (isStandardMaterial(material)) {
+      const isCaseSurface =
+        material.name === CASE_BODY_MATERIAL_NAME ||
+        material.name === CASE_EDGE_MATERIAL_NAME
+      materials.push({
+        material,
+        baseColor: material.color.clone(),
+        metalness: material.metalness,
+        roughness: material.roughness,
+        envMapIntensity: material.envMapIntensity,
+        paintUniforms: isCaseSurface
+          ? installCasePaintShader(material)
+          : undefined,
+      })
+    } else {
+      materials.push({ material })
+    }
     return material
   }
 
@@ -101,9 +113,21 @@ export function KeyboardCaseMesh({
   const { scene } = useGLTF(keyboardCase.modelPath)
   const invalidate = useThree((state) => state.invalidate)
   const prepared = useMemo(() => prepareCaseScene(scene), [scene])
+  const gradientTexture = useMemo(
+    () =>
+      keyboardCase.bodyPaint.kind === "linear-gradient"
+        ? createCaseGradientTexture(keyboardCase.bodyPaint.gradient)
+        : null,
+    [keyboardCase.bodyPaint],
+  )
 
   useEffect(() => {
     const preset = getCaseMaterialPreset(materialPreset)
+    const projection = keyboardCase.paintProjection
+    const useGradient =
+      keyboardCase.bodyPaint.kind === "linear-gradient" &&
+      projection !== null &&
+      gradientTexture !== null
 
     for (const state of prepared.materials) {
       if (!isStandardMaterial(state.material)) continue
@@ -113,7 +137,21 @@ export function KeyboardCaseMesh({
       const isBody = material.name === CASE_BODY_MATERIAL_NAME
       const isEdge = material.name === CASE_EDGE_MATERIAL_NAME
       if (isBody || isEdge) {
-        material.color.set(keyboardCase.bodyColor)
+        material.color.set(
+          useGradient
+            ? "#ffffff"
+            : keyboardCase.bodyPaint.kind === "solid"
+              ? keyboardCase.bodyPaint.color
+              : keyboardCase.bodyPaint.gradient.stops[0]?.color ?? "#2a2d32",
+        )
+        if (state.paintUniforms) {
+          state.paintUniforms.enabled.value = useGradient ? 1 : 0
+          state.paintUniforms.gradientMap.value = gradientTexture
+          if (projection) {
+            state.paintUniforms.start.value.set(...projection.start)
+            state.paintUniforms.end.value.set(...projection.end)
+          }
+        }
       }
 
       const isCaseSurface = isBody || isEdge
@@ -134,11 +172,20 @@ export function KeyboardCaseMesh({
     invalidate()
   }, [
     invalidate,
-    keyboardCase.bodyColor,
+    gradientTexture,
+    keyboardCase.bodyPaint,
+    keyboardCase.paintProjection,
     materialPreset,
     prepared,
     reflective,
   ])
+
+  useEffect(
+    () => () => {
+      gradientTexture?.dispose()
+    },
+    [gradientTexture],
+  )
 
   useEffect(() => {
     return () => {

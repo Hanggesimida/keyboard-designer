@@ -13,6 +13,13 @@ export interface LayoutBounds {
   height: number
 }
 
+export interface LayoutPixelSize {
+  width: number
+  height: number
+}
+
+type LayoutRect = Pick<KeyDef, "x" | "y" | "w" | "h">
+
 const EMPTY_LAYOUT_BOUNDS: LayoutBounds = {
   minX: 0,
   minY: 0,
@@ -45,7 +52,9 @@ export function flattenLayout(layout: LayoutData): KeyDef[] {
  * 一次遍历得到完整设计坐标 bounds。
  * 空布局返回 1×1 占位包围盒，避免除零与相机 fit 崩溃。
  */
-export function getLayoutBounds(keys: KeyDef[]): LayoutBounds {
+export function getLayoutBounds(
+  keys: ReadonlyArray<LayoutRect>,
+): LayoutBounds {
   if (keys.length === 0) return { ...EMPTY_LAYOUT_BOUNDS }
 
   let minX = Infinity
@@ -79,5 +88,18 @@ export function getLayoutBounds(keys: KeyDef[]): LayoutBounds {
     maxY,
     width: width > 0 ? width : 1,
     height: height > 0 ? height : 1,
+  }
+}
+
+/** 使用 tight bounds 计算布局像素尺寸，供画板、缩略图与纹理图集共用。 */
+export function getLayoutPixelSize(
+  keys: ReadonlyArray<LayoutRect>,
+  baseUnit: number,
+): LayoutPixelSize {
+  const unit = Number.isFinite(baseUnit) && baseUnit > 0 ? baseUnit : 54
+  const bounds = getLayoutBounds(keys)
+  return {
+    width: Math.max(1, Math.ceil(bounds.width * unit)),
+    height: Math.max(1, Math.ceil(bounds.height * unit)),
   }
 }

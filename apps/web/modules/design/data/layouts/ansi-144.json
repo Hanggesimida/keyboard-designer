@@ -2,6 +2,7 @@
   "id": "ansi-144",
   "name": "ANSI 144 Full Supplement",
   "totalKeys": 144,
+  "revision": 1,
   "baseUnit": 54,
   "rows": [
     {

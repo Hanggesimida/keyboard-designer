@@ -1,9 +1,8 @@
 /** 模板与 base 键区包围盒 → 真实 GLB 外壳视图模型（纯函数，无 Three）。 */
 
-import { colord } from "colord"
 import {
-  isGradientValue,
-  parseCssLinearGradient,
+  getLinearGradientProjection,
+  resolvePaint,
 } from "@/modules/design/lib/design/gradientUtils"
 import {
   CASE_BODY_COLOR,
@@ -13,22 +12,10 @@ import { resolveCaseModelAsset } from "./caseModelContract"
 import type { KeyboardWorldBounds } from "./layoutToWorld"
 import type { PreviewCase } from "./types"
 
-function resolveKeyboardHex(keyboardColor: string): string {
-  if (isGradientValue(keyboardColor)) {
-    const first = parseCssLinearGradient(keyboardColor)?.stops[0]?.color
-    if (first) {
-      const parsed = colord(first)
-      if (parsed.isValid()) return parsed.toHex()
-    }
-  }
-  const parsed = colord(keyboardColor)
-  return parsed.isValid() ? parsed.toHex() : CASE_BODY_COLOR
-}
-
 export function buildKeyboardCase(
   templateId: string,
   bounds: KeyboardWorldBounds,
-  keyboardColor: string,
+  keyboardPaint: string,
 ): PreviewCase | null {
   const asset = resolveCaseModelAsset(templateId)
   if (!asset) return null
@@ -47,7 +34,16 @@ export function buildKeyboardCase(
     localMax[1] * MODEL_SCALE,
     cz + localMax[2] * MODEL_SCALE,
   ]
-  const bodyColor = resolveKeyboardHex(keyboardColor)
+  const bodyPaint = resolvePaint(keyboardPaint, CASE_BODY_COLOR)
+  const paintProjection =
+    bodyPaint.kind === "linear-gradient"
+      ? getLinearGradientProjection(bodyPaint.gradient.angle, {
+          minX: min[0],
+          minY: min[2],
+          maxX: max[0],
+          maxY: max[2],
+        })
+      : null
 
   return {
     modelPath: asset.path,
@@ -65,6 +61,7 @@ export function buildKeyboardCase(
       width: max[0] - min[0],
       depth: max[2] - min[2],
     },
-    bodyColor,
+    bodyPaint,
+    paintProjection,
   }
 }

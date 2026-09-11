@@ -62,7 +62,8 @@ export interface ExportCanvasElement {
 export interface DesignPayload {
   version?: number
   templateId: string
-  artboardBackground?: string
+  layoutRevision?: number
+  keyboardCasePaint?: string
   fontFamily?: string
   globalKeycapStyle?: GlobalKeycapStyle
   layers?: Array<{ id: string; labelsHidden?: boolean }>

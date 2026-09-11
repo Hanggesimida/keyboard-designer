@@ -19,6 +19,8 @@ export interface LayoutData {
   id: string
   name: string
   totalKeys: number
+  /** 布局坐标修订号；设计数据据此迁移画布元素坐标。 */
+  revision: number
   baseUnit: number
   rows: LayoutRow[]
 }
@@ -30,7 +32,7 @@ export const LAYOUT_REGISTRY: Record<string, LayoutData> = {
   "ansi-144": ansi144 as unknown as LayoutData,
   "ansi-61": ansi61 as unknown as LayoutData,
   "ansi-68": ansi68 as unknown as LayoutData,
-  "ansi-81": ansi81 as unknown as LayoutData
+  "ansi-81": ansi81 as unknown as LayoutData,
 }
 
 export function getLayoutData(templateId: string): LayoutData {

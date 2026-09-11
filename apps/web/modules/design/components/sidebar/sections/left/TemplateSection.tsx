@@ -13,6 +13,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import { TEMPLATES, useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
+import { getLayoutPixelSize } from "@/modules/design/lib/design/layout"
 import { PanelSection } from "../../panel-section"
 
 function getBaseKeysBounds(templateId: string) {
@@ -21,15 +22,10 @@ function getBaseKeysBounds(templateId: string) {
   const baseKeys = layout.rows
     .filter((r) => (r.section ?? "base") === "base")
     .flatMap((r) => r.keys)
-  let maxX = 0
-  let maxY = 0
-  for (const k of baseKeys) {
-    maxX = Math.max(maxX, k.x + k.w)
-    maxY = Math.max(maxY, k.y + k.h)
-  }
+  const size = getLayoutPixelSize(baseKeys, unit)
   return {
-    w: Math.ceil(maxX * unit),
-    h: Math.ceil(maxY * unit),
+    w: size.width,
+    h: size.height,
   }
 }
 

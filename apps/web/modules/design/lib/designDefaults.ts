@@ -11,5 +11,5 @@ export const DEFAULT_KEYCAP_COLORS = {
   labelColor: "#d0d0d0",
 } as const
 
-/** 对应 --design-artboard-bg */
-export const DEFAULT_ARTBOARD_BG = "#2c2c2c"
+/** 新建设计的默认键盘外壳涂装。 */
+export const DEFAULT_KEYBOARD_CASE_PAINT = "#2c2c2c"

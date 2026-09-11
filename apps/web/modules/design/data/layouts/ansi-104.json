@@ -2,6 +2,7 @@
   "id": "ansi-104",
   "name": "ANSI 104 Fullsize",
   "totalKeys": 104,
+  "revision": 1,
   "baseUnit": 54,
   "rows": [
     {

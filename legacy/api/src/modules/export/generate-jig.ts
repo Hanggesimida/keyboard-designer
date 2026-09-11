@@ -49,6 +49,29 @@ const KEY_PAD_RIGHT = 11
 const KEY_LABEL_SIZE = 7
 const KEY_LABEL_OPTICAL_CENTER_RATIO = 0.09
 const ART_PAD = 28
+const INITIAL_LAYOUT_REVISION = 1
+
+const LAYOUT_COORDINATE_MIGRATIONS: Readonly<
+  Record<
+    string,
+    ReadonlyArray<{
+      fromRevision: number
+      toRevision: number
+      offsetXU: number
+      offsetYU: number
+    }>
+  >
+> = {
+  "ansi-61": [
+    { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -1.25 },
+  ],
+  "ansi-68": [
+    { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -1.25 },
+  ],
+  "ansi-81": [
+    { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -0.25 },
+  ],
+}
 
 // ─── 类型定义 ─────────────────────────────────────────────────────────────
 
@@ -105,6 +128,7 @@ interface DesignLayer {
 export interface DesignPayload {
   version?: number
   templateId: string
+  layoutRevision?: number
   artboardBackground?: string
   fontFamily?: string
   globalKeycapStyle?: GlobalKeycapStyle
@@ -126,6 +150,7 @@ interface ParsedDesign {
 interface Layout {
   keys: Record<string, LayoutKey>
   baseUnit: number
+  revision: number
 }
 
 interface JigLookupParams {
@@ -374,7 +399,7 @@ function parseDesign(design: DesignPayload): ParsedDesign {
 function loadTemplateLayout(templateId: string): Layout {
   const layoutPath = resolveDesignDataPath('layouts', `${templateId}.json`);
   if (!layoutPath || !fs.existsSync(layoutPath)) {
-    return { keys: {}, baseUnit: 54 };
+    return { keys: {}, baseUnit: 54, revision: 1 };
   }
 
   const layout = JSON.parse(fs.readFileSync(layoutPath, "utf-8").replace(/^\uFEFF/, ""))
@@ -395,7 +420,49 @@ function loadTemplateLayout(templateId: string): Layout {
       }
     }
   }
-  return { keys, baseUnit: Number(layout.baseUnit ?? 54) }
+  return {
+    keys,
+    baseUnit: Number(layout.baseUnit ?? 54),
+    revision: Number(layout.revision ?? 1),
+  }
+}
+
+function migrateCanvasElements(
+  templateId: string,
+  sourceRevision: number | undefined,
+  layout: Layout,
+  elements: ReadonlyArray<CanvasElement>,
+): CanvasElement[] {
+  let revision = sourceRevision ?? INITIAL_LAYOUT_REVISION
+  if (
+    !Number.isInteger(revision) ||
+    revision < INITIAL_LAYOUT_REVISION ||
+    revision > layout.revision
+  ) {
+    throw new Error(
+      `不支持布局 ${templateId} 的坐标修订 ${String(sourceRevision)}`,
+    )
+  }
+
+  let migrated = elements.map((element) => ({ ...element }))
+  while (revision < layout.revision) {
+    const migration = LAYOUT_COORDINATE_MIGRATIONS[templateId]?.find(
+      (candidate) => candidate.fromRevision === revision,
+    )
+    if (!migration) {
+      throw new Error(
+        `缺少布局 ${templateId} 从修订 ${revision} 到 ${layout.revision} 的坐标迁移`,
+      )
+    }
+
+    migrated = migrated.map((element) => ({
+      ...element,
+      x: element.x + migration.offsetXU * layout.baseUnit,
+      y: element.y + migration.offsetYU * layout.baseUnit,
+    }))
+    revision = migration.toRevision
+  }
+  return migrated
 }
 
 function getKeyStyle(keyId: string, design: ParsedDesign, defaultLabel: string): KeyStyle {
@@ -887,7 +954,13 @@ export async function generateJigSvg(
 
   const layout = parsedDesign.templateId
     ? loadTemplateLayout(parsedDesign.templateId)
-    : { keys: {}, baseUnit: 54 }
+    : { keys: {}, baseUnit: 54, revision: INITIAL_LAYOUT_REVISION }
+  parsedDesign.canvasElements = migrateCanvasElements(
+    parsedDesign.templateId,
+    design.layoutRevision,
+    layout,
+    parsedDesign.canvasElements,
+  )
 
   const positionsPath = resolveDesignDataPath(
     'jig',

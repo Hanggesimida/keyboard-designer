@@ -79,19 +79,9 @@ export function KeycapInspectorSection() {
     )
   ) : null
 
-  if (selectedKeycapIds.length === 0) {
-    return (
-      <PanelSection title={t("keycapStyle")}>
-        <p className="py-1 text-center text-[11px] text-muted-foreground">
-          {t("noKeycap")}
-        </p>
-      </PanelSection>
-    )
-  }
-
   if (selectedKeycapIds.length > 1) {
     return (
-      <PanelSection title={t("keycapStyle")}>
+      <PanelSection title={t("selectionTitle")} first>
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] text-muted-foreground">
@@ -130,18 +120,10 @@ export function KeycapInspectorSection() {
     : undefined
   const key = KEYS_BY_ID.get(selectedKeycapId) ?? null
 
-  if (!key) {
-    return (
-      <PanelSection title={t("keycapStyle")}>
-        <p className="py-1 text-center text-[11px] text-muted-foreground">
-          {t("noKeycap")}
-        </p>
-      </PanelSection>
-    )
-  }
+  if (!key) return null
 
   return (
-    <PanelSection title={t("keycapStyle")}>
+    <PanelSection title={t("selectionTitle")} first>
       <div className="flex flex-col gap-2">
         {editorDisabled && disabledReason && (
           <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">

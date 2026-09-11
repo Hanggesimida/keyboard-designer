@@ -1,4 +1,5 @@
 import type { KeyDef } from "@/modules/design/types/design"
+import { getLayoutPixelSize } from "./layout"
 import {
   getIsoBasePoints,
   getIsoTopFacePoints,
@@ -92,17 +93,7 @@ export function keyboardSvgSize(
   keys: ReadonlyArray<Pick<KeyDef, "x" | "y" | "w" | "h">>,
   baseUnit: number,
 ): { width: number; height: number } {
-  const unit = safeUnit(baseUnit)
-  let maxX = 0
-  let maxY = 0
-  for (const key of keys) {
-    maxX = Math.max(maxX, key.x + key.w)
-    maxY = Math.max(maxY, key.y + key.h)
-  }
-  return {
-    width: Math.max(1, Math.ceil(maxX * unit)),
-    height: Math.max(1, Math.ceil(maxY * unit)),
-  }
+  return getLayoutPixelSize(keys, safeUnit(baseUnit))
 }
 
 /**

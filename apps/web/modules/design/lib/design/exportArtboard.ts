@@ -17,6 +17,12 @@ import {
   type TextDescriptor,
 } from "@/lib/export"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
+import { getLayoutData } from "@/modules/design/data/layouts"
+import {
+  getCurrentLayoutRevision,
+  isSupportedLayoutRevision,
+  migrateLayoutElements,
+} from "@/modules/design/lib/design/layoutRevision"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -239,9 +245,8 @@ function createSvgImageEl(ns: string, el: CanvasImageElement, src: string): SVGI
 
 /**
  * 将当前画板状态合成为一个完整的 SVG 字符串：
- * 1. 背景色矩形
- * 2. 克隆已渲染的键盘 SVG（已含 clipToKeycaps 图片）
- * 3. HTML 层自由图片（含 clipToKeycapId 按键裁剪）
+ * 1. 克隆已渲染的键盘 SVG（含外壳与 clipToKeycaps 图片）
+ * 2. HTML 层自由图片（含 clipToKeycapId 按键裁剪）
  *
  * 注：<text> 元素仍保留在输出中，由后续 replaceSvgTextsWithPaths 转曲。
  */
@@ -264,14 +269,7 @@ export function buildExportSvgString({
   exportSvg.setAttribute("height", String(artH))
   exportSvg.setAttribute("viewBox", `0 0 ${artW} ${artH}`)
 
-  const { artboardBackground, canvasElements: elements, assetMap } =
-    useDesignUIStore.getState()
-
-  const bg = document.createElementNS(SVG_NS, "rect")
-  bg.setAttribute("width", String(artW))
-  bg.setAttribute("height", String(artH))
-  bg.setAttribute("fill", artboardBackground)
-  exportSvg.appendChild(bg)
+  const { canvasElements: elements, assetMap } = useDesignUIStore.getState()
 
   const kbGroup = document.createElementNS(SVG_NS, "g")
   kbGroup.setAttribute("transform", `translate(${artPad},${artPad})`)
@@ -411,7 +409,8 @@ export type ExportCanvasElement = Omit<CanvasElement, "assetId"> & {
 export interface ImportPayload {
   version: number
   templateId: TemplateId
-  artboardBackground: string
+  layoutRevision?: number
+  keyboardCasePaint: string
   fontFamily: string
   globalKeycapStyle: GlobalKeycapStyle
   layers: Layer[]
@@ -455,8 +454,19 @@ export async function parseImportJson(
     }
   }
 
+  const layout = getLayoutData(obj["templateId"])
   if (
-    typeof obj["artboardBackground"] !== "string" ||
+    obj["layoutRevision"] !== undefined &&
+    !isSupportedLayoutRevision(layout, obj["layoutRevision"])
+  ) {
+    return {
+      ok: false,
+      error: "incompatible",
+    }
+  }
+
+  if (
+    typeof obj["keyboardCasePaint"] !== "string" ||
     typeof obj["globalKeycapStyle"] !== "object" ||
     obj["globalKeycapStyle"] === null ||
     !Array.isArray(obj["layers"]) ||
@@ -475,7 +485,16 @@ export async function parseImportJson(
 
 /** 将解析后的设计数据应用到 store，覆盖当前全部设计状态 */
 export function applyImportData(data: ImportPayload) {
-  const normalized = normalizeDesignColorFields(data)
+  const migration = migrateLayoutElements(
+    data.templateId,
+    data.layoutRevision,
+    data.canvasElements,
+  )
+  const normalized = normalizeDesignColorFields({
+    ...data,
+    layoutRevision: migration.layoutRevision,
+    canvasElements: migration.elements,
+  })
   // 将导出格式（内联 src）转换为运行时格式（assetId + assetMap）
   const assetMap: Record<string, string> = {}
   const canvasElements: CanvasElement[] = normalized.canvasElements.map((el) => {
@@ -490,7 +509,7 @@ export function applyImportData(data: ImportPayload) {
 
   useDesignUIStore.setState({
     templateId: normalized.templateId,
-    artboardBackground: normalized.artboardBackground,
+    keyboardCasePaint: normalized.keyboardCasePaint,
     fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
     globalKeycapStyle: normalized.globalKeycapStyle,
     layers: normalized.layers,
@@ -508,7 +527,7 @@ export function applyImportData(data: ImportPayload) {
 export function exportArtboardJson() {
   const {
     templateId,
-    artboardBackground,
+    keyboardCasePaint,
     fontFamily,
     globalKeycapStyle,
     layers,
@@ -526,7 +545,8 @@ export function exportArtboardJson() {
   const payload = normalizeDesignColorFields({
     version: 1,
     templateId,
-    artboardBackground,
+    layoutRevision: getCurrentLayoutRevision(templateId),
+    keyboardCasePaint,
     fontFamily,
     globalKeycapStyle,
     layers,

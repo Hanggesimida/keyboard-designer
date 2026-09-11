@@ -3,6 +3,10 @@ import type {
   ImageProjectionAtlasSpec,
   TextureMatrixElements,
 } from "@/modules/design/lib/design/imageProjection"
+import type {
+  LinearGradientProjection,
+  ResolvedPaint,
+} from "@/modules/design/lib/design/gradientUtils"
 
 /** 与 React / Zustand / Three 无关的单键预览数据 */
 export interface PreviewKey {
@@ -79,8 +83,10 @@ export interface PreviewCase {
   scale: number
   /** 包含脚垫与 USB 结构的世界包围盒 */
   bounds: PreviewSceneBounds
-  /** 主体色，来自全局「键盘颜色」 */
-  bodyColor: string
+  /** 主体涂装，来自全局「键盘颜色」。 */
+  bodyPaint: ResolvedPaint
+  /** 渐变在 Three XZ 平面中的世界坐标投影；纯色时为 null。 */
+  paintProjection: LinearGradientProjection | null
 }
 
 /** 渲染层只消费此模型，不直接读 layout JSON / store */
@@ -114,8 +120,8 @@ export interface PreviewDesignStateInput {
   fontFamily: string
   fontWeight: number
   fontStyle: string
-  /** 全局「键盘颜色」（store.artboardBackground） */
-  artboardBackground: string
+  /** 全局键盘外壳涂装（store.keyboardCasePaint） */
+  keyboardCasePaint: string
   globalKeycapStyle: {
     color: string
     labelColor: string

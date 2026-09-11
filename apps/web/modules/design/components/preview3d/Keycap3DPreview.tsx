@@ -53,7 +53,7 @@ export function Keycap3DPreview() {
       fontFamily: s.fontFamily,
       fontWeight: s.fontWeight,
       fontStyle: s.fontStyle,
-      artboardBackground: s.artboardBackground,
+      keyboardCasePaint: s.keyboardCasePaint,
       globalKeycapStyle: s.globalKeycapStyle,
       layers: s.layers,
       activeLayerId: s.activeLayerId,
@@ -84,7 +84,7 @@ export function Keycap3DPreview() {
       fontFamily: storeSlice.fontFamily,
       fontWeight: storeSlice.fontWeight,
       fontStyle: storeSlice.fontStyle,
-      artboardBackground: storeSlice.artboardBackground,
+      keyboardCasePaint: storeSlice.keyboardCasePaint,
       globalKeycapStyle: {
         color: storeSlice.globalKeycapStyle.color,
         labelColor: storeSlice.globalKeycapStyle.labelColor,
