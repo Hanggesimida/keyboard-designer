@@ -10,13 +10,17 @@ import {
 } from "@/modules/design/lib/preview3d/constants"
 import {
   KEYCAP_MATERIAL_NAME,
-  KEYCAP_MODEL_PATHS,
+  KEYCAP_MODEL_PATHS_BY_PROFILE,
 } from "@/modules/design/lib/preview3d/modelContract"
 import {
   createKeycapDyeSubMaterial,
   syncDyeSubAppearance,
 } from "@/modules/design/lib/preview3d/keycapDyeSubMaterial"
 import type { PreviewKey } from "@/modules/design/lib/preview3d/types"
+import {
+  DEFAULT_KEYCAP_PROFILE,
+  type KeycapProfile,
+} from "@/modules/design/types/design"
 import { useSharedDyeSubUniforms } from "./KeycapDecalProvider"
 
 /** 超过此像素位移视为拖拽（旋转相机），不触发选中 */
@@ -191,6 +195,10 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
   )
 }
 
-for (const path of KEYCAP_MODEL_PATHS) {
-  useGLTF.preload(path)
+export function preloadKeycapProfile(profile: KeycapProfile): void {
+  for (const path of KEYCAP_MODEL_PATHS_BY_PROFILE[profile]) {
+    useGLTF.preload(path)
+  }
 }
+
+preloadKeycapProfile(DEFAULT_KEYCAP_PROFILE)

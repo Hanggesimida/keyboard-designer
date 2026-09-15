@@ -15,6 +15,11 @@ import {
   DEFAULT_CASE_MATERIAL_PRESET_ID,
   type CaseMaterialPresetId,
 } from "@/modules/design/lib/preview3d/caseMaterialPresets"
+import {
+  DEFAULT_KEYCAP_PROFILE,
+  normalizeKeycapProfile,
+  type KeycapProfile,
+} from "@/modules/design/types/design"
 
 function clampPreview3dHeight(height: number): number {
   return Math.min(PREVIEW_3D_HEIGHT_MAX, Math.max(PREVIEW_3D_HEIGHT_MIN, Math.round(height)))
@@ -173,6 +178,8 @@ export interface KeycapStyleTransferRequest {
 
 interface DesignUIState {
   templateId: TemplateId
+  /** 全局键帽三维造型；不改变 2D 编辑几何。 */
+  keycapProfile: KeycapProfile
   layers: Layer[]
   activeLayerId: string | null
   /** 键盘外壳涂装：纯色或 CSS linear-gradient。 */
@@ -225,6 +232,7 @@ interface DesignUIActions {
   /** 将所有设计修改重置为初始默认状态（键帽覆盖、全局样式、外壳涂装、画布元素等） */
   resetAll: () => void
   setTemplateId: (id: TemplateId) => void
+  setKeycapProfile: (profile: KeycapProfile) => void
   /** 将选中集合替换为给定 ID 列表；additive 为 true 时保留已选中的画布图片 */
   setSelectedKeycapIds: (ids: string[], options?: { additive?: boolean }) => void
   /** 切换单个键帽的选中状态（用于 Shift+点击，不清除已选中的画布图片） */
@@ -377,6 +385,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
   temporal(
   (set, get) => ({
     templateId: "ansi-108",
+    keycapProfile: DEFAULT_KEYCAP_PROFILE,
     layers: initialLayers,
     activeLayerId: null,
     keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
@@ -403,6 +412,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     resetAll: () =>
       set({
         templateId: "ansi-108",
+        keycapProfile: DEFAULT_KEYCAP_PROFILE,
         layers: initialLayers,
         globalKeycapStyle: initialGlobalKeycapStyle,
         layerKeycapOverrides: {},
@@ -426,6 +436,12 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         templateId: id,
         selectedKeycapIds: [],
         keycapStyleTransferRequest: null,
+        pressedKeyIds: [],
+      }),
+
+    setKeycapProfile: (keycapProfile) =>
+      set({
+        keycapProfile: normalizeKeycapProfile(keycapProfile),
         pressedKeyIds: [],
       }),
 

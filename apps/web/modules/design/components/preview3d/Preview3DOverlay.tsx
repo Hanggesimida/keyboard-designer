@@ -174,7 +174,7 @@ export function Preview3DOverlay({
             <SelectTrigger
               size="sm"
               disabled={!showCase}
-              className="h-7 w-[112px] border-0 bg-transparent px-2 text-[11px] shadow-none"
+              className="h-7 w-[96px] border-0 bg-transparent px-2 text-[11px] shadow-none"
               aria-label={t("caseMaterial")}
               title={t("caseMaterial")}
             >

@@ -7,6 +7,7 @@ import type {
   CanvasElement,
 } from '@/modules/design/store/designUiStore';
 import type { ExportCanvasElement } from '@/modules/design/lib/design/exportArtboard';
+import type { KeycapProfile } from '@/modules/design/types/design';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,8 @@ import type { ExportCanvasElement } from '@/modules/design/lib/design/exportArtb
 export interface DesignData {
   version: 1;
   templateId: TemplateId;
+  /** 缺省表示使用历史设计的标准键帽造型。 */
+  keycapProfile?: KeycapProfile;
   /** 缺省表示旧版布局坐标，加载时迁移到模板当前修订。 */
   layoutRevision?: number;
   layers: Layer[];

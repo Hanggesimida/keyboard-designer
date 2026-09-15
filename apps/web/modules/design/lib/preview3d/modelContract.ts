@@ -1,7 +1,7 @@
 /**
  * GLB 键帽模型资产契约与尺寸族查表。
  *
- * 资产事实（对 apps/web/public/models/keycaps/*.glb 实测）：
+ * 资产事实（对 apps/web/public/models/keycaps/standard/*.glb 实测）：
  * - 单位：米；1U footprint ≈ 0.0181m（相对 19.05mm 键距自带 ~5% 缝隙）
  * - 原点：键帽底面中心（y_min = 0，X/Z 对称）；node.translation = [0,0,0]，无 rotation
  * - 坐标系：Y-up（X 宽、Y 高、Z 深），与 Three.js 一致
@@ -9,12 +9,16 @@
  * - 缩放：MODEL_SCALE 将米换算为 `1u = 1 world unit`
  */
 
-import type { KeyShape } from "@/modules/design/types/design"
+import type {
+  KeycapProfile,
+  KeyShape,
+} from "@/modules/design/types/design"
 
 /** GLB 内统一材质名 */
 export const KEYCAP_MATERIAL_NAME = "Keycap"
 
 export interface KeycapModelLookup {
+  profile: KeycapProfile
   /** 布局原始宽度（u），非 gap 后 sizeU */
   w: number
   /** 布局原始高度（u） */
@@ -41,47 +45,62 @@ function sizeTokenForFilename(n: number): string {
 }
 
 function buildRegistryKey(
+  profile: KeycapProfile,
   w: number,
   h: number,
-  rowLevel: string,
+  rowLevel: string | undefined,
   shape: KeyShape,
 ): string {
-  return `${formatSizeU(w)}x${formatSizeU(h)}|${rowLevel}|${shape}`
+  const row = profile === "moa" ? "uniform" : rowLevel
+  return `${formatSizeU(w)}x${formatSizeU(h)}|${row ?? ""}|${shape}`
 }
 
 const MODEL_DIR = "/models/keycaps"
+const STANDARD_MODEL_DIR = `${MODEL_DIR}/standard`
 
 /**
  * 尺寸族查表：`${w}x${h}|${rowLevel}|${shape}` → GLB 路径。
  * 仅登记磁盘上真实存在的资产；未登记组合走占位 + 缺失提示。
  */
-export const KEYCAP_MODEL_REGISTRY: Readonly<Record<string, string>> = {
-  "1x1|R1|rect": `${MODEL_DIR}/R1_1u.glb`,
-  "1x1|R2|rect": `${MODEL_DIR}/R2_1u.glb`,
-  "1x1|R3|rect": `${MODEL_DIR}/R3_1u.glb`,
-  "1x1|R4|rect": `${MODEL_DIR}/R4_1u.glb`,
-  "1.25x1|R1|rect": `${MODEL_DIR}/R1_1_25u.glb`,
-  "1.5x1|R1|rect": `${MODEL_DIR}/R1_1_5u.glb`,
-  "1.5x1|R3|rect": `${MODEL_DIR}/R3_1_5u.glb`,
-  "1.75x1|R1|rect": `${MODEL_DIR}/R1_1_75u.glb`,
-  "1.75x1|R2|rect": `${MODEL_DIR}/R2_1_75u.glb`,
-  "1.75x1|R2|stepped": `${MODEL_DIR}/R2_1_75u_Stepped.glb`,
-  "2x1|R1|rect": `${MODEL_DIR}/R1_2u.glb`,
-  "2x1|R4|rect": `${MODEL_DIR}/R4_2u.glb`,
-  "2.25x1|R1|rect": `${MODEL_DIR}/R1_2_25u.glb`,
-  "2.25x1|R2|rect": `${MODEL_DIR}/R2_2_25u.glb`,
-  "2.75x1|R1|rect": `${MODEL_DIR}/R1_2_75u.glb`,
-  "1x2|R1|rect": `${MODEL_DIR}/R1_2u_Vertical.glb`,
-  "1x2|R3|rect": `${MODEL_DIR}/R2-R3_2u_Vertical.glb`,
-  "1.5x2|R1|iso": `${MODEL_DIR}/R2-R3_ISOEnter.glb`,
-  "6.25x1|R1|rect": `${MODEL_DIR}/R1_6_25u.glb`,
-  "7x1|R1|rect": `${MODEL_DIR}/R1_7u.glb`,
+const STANDARD_MODEL_REGISTRY: Readonly<Record<string, string>> = {
+  "1x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_1u.glb`,
+  "1x1|R2|rect": `${STANDARD_MODEL_DIR}/R2_1u.glb`,
+  "1x1|R3|rect": `${STANDARD_MODEL_DIR}/R3_1u.glb`,
+  "1x1|R4|rect": `${STANDARD_MODEL_DIR}/R4_1u.glb`,
+  "1.25x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_1_25u.glb`,
+  "1.5x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_1_5u.glb`,
+  "1.5x1|R3|rect": `${STANDARD_MODEL_DIR}/R3_1_5u.glb`,
+  "1.75x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_1_75u.glb`,
+  "1.75x1|R2|rect": `${STANDARD_MODEL_DIR}/R2_1_75u.glb`,
+  "1.75x1|R2|stepped": `${STANDARD_MODEL_DIR}/R2_1_75u_Stepped.glb`,
+  "2x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_2u.glb`,
+  "2x1|R4|rect": `${STANDARD_MODEL_DIR}/R4_2u.glb`,
+  "2.25x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_2_25u.glb`,
+  "2.25x1|R2|rect": `${STANDARD_MODEL_DIR}/R2_2_25u.glb`,
+  "2.75x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_2_75u.glb`,
+  "1x2|R1|rect": `${STANDARD_MODEL_DIR}/R1_2u_Vertical.glb`,
+  "1x2|R3|rect": `${STANDARD_MODEL_DIR}/R2-R3_2u_Vertical.glb`,
+  "1.5x2|R1|iso": `${STANDARD_MODEL_DIR}/R2-R3_ISOEnter.glb`,
+  "6.25x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_6_25u.glb`,
+  "7x1|R1|rect": `${STANDARD_MODEL_DIR}/R1_7u.glb`,
 }
 
-/** 去重后的全部模型路径，供 preload */
-export const KEYCAP_MODEL_PATHS: readonly string[] = Array.from(
-  new Set(Object.values(KEYCAP_MODEL_REGISTRY)),
-)
+const MOA_MODEL_REGISTRY: Readonly<Record<string, string>> = {}
+
+const MODEL_REGISTRIES: Readonly<
+  Record<KeycapProfile, Readonly<Record<string, string>>>
+> = {
+  standard: STANDARD_MODEL_REGISTRY,
+  moa: MOA_MODEL_REGISTRY,
+}
+
+/** 按 Profile 去重后的模型路径，供按需 preload。 */
+export const KEYCAP_MODEL_PATHS_BY_PROFILE: Readonly<
+  Record<KeycapProfile, readonly string[]>
+> = {
+  standard: Array.from(new Set(Object.values(STANDARD_MODEL_REGISTRY))),
+  moa: Array.from(new Set(Object.values(MOA_MODEL_REGISTRY))),
+}
 
 function basenameFromPath(path: string): string {
   const i = path.lastIndexOf("/")
@@ -96,14 +115,27 @@ function basenameFromPath(path: string): string {
  */
 export function expectedKeycapModelName(key: KeycapModelLookup): string | null {
   const rowLevel = key.rowLevel?.trim()
-  if (!rowLevel) return null
+  if (key.profile === "standard" && !rowLevel) return null
 
-  const registryKey = buildRegistryKey(key.w, key.h, rowLevel, key.shape)
-  const registered = KEYCAP_MODEL_REGISTRY[registryKey]
+  const registryKey = buildRegistryKey(
+    key.profile,
+    key.w,
+    key.h,
+    rowLevel,
+    key.shape,
+  )
+  const registered = MODEL_REGISTRIES[key.profile][registryKey]
   if (registered) return basenameFromPath(registered)
 
   const wTok = sizeTokenForFilename(key.w)
   const hTok = sizeTokenForFilename(key.h)
+
+  if (key.profile === "moa") {
+    if (key.shape === "iso") return "MOA_ISOEnter.glb"
+    if (key.shape === "stepped") return `MOA_${wTok}u_Stepped.glb`
+    if (key.h > key.w + 0.01) return `MOA_${hTok}u_Vertical.glb`
+    return `MOA_${wTok}u.glb`
+  }
 
   if (key.shape === "iso") {
     return `R2-R3_ISOEnter.glb`
@@ -129,14 +161,20 @@ export function resolveKeycapModel(
   key: KeycapModelLookup,
 ): KeycapModelRef | null {
   const rowLevel = key.rowLevel?.trim()
-  if (!rowLevel) return null
+  if (key.profile === "standard" && !rowLevel) return null
 
-  const registryKey = buildRegistryKey(key.w, key.h, rowLevel, key.shape)
-  const path = KEYCAP_MODEL_REGISTRY[registryKey]
+  const registryKey = buildRegistryKey(
+    key.profile,
+    key.w,
+    key.h,
+    rowLevel,
+    key.shape,
+  )
+  const path = MODEL_REGISTRIES[key.profile][registryKey]
   if (!path) {
     if (process.env.NODE_ENV === "development") {
       console.warn(
-        `[Preview3D] 无匹配 GLB 模型，将使用占位键帽: ${registryKey}（期望 ${expectedKeycapModelName(key) ?? "?"}）`,
+        `[Preview3D] 无匹配 GLB 模型，将使用占位键帽: ${key.profile}|${registryKey}（期望 ${expectedKeycapModelName(key) ?? "?"}）`,
       )
     }
     return null

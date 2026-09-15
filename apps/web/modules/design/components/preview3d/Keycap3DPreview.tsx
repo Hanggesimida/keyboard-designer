@@ -17,6 +17,7 @@ import type { CameraView } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewDesignStateInput } from "@/modules/design/lib/preview3d/types"
 import { useSpacePressed } from "@/modules/design/hooks/useSpacePressed"
 import { Keyboard3DScene } from "./Keyboard3DScene"
+import { preloadKeycapProfile } from "./KeycapMesh"
 import { Preview3DErrorBoundary } from "./Preview3DErrorBoundary"
 import { Preview3DOverlay } from "./Preview3DOverlay"
 
@@ -51,6 +52,7 @@ export function Keycap3DPreview() {
   const storeSlice = useDesignUIStore(
     useShallow((s) => ({
       templateId: s.templateId,
+      keycapProfile: s.keycapProfile,
       fontFamily: s.fontFamily,
       fontWeight: s.fontWeight,
       fontStyle: s.fontStyle,
@@ -80,9 +82,14 @@ export function Keycap3DPreview() {
     (s) => s.setCaseMaterialPreset,
   )
 
+  useEffect(() => {
+    preloadKeycapProfile(storeSlice.keycapProfile)
+  }, [storeSlice.keycapProfile])
+
   const sceneModel = useMemo(() => {
     const designSnapshot: PreviewDesignStateInput = {
       templateId: storeSlice.templateId,
+      keycapProfile: storeSlice.keycapProfile,
       fontFamily: storeSlice.fontFamily,
       fontWeight: storeSlice.fontWeight,
       fontStyle: storeSlice.fontStyle,

@@ -9,7 +9,11 @@
 } from "@/modules/design/store/designUiStore"
 import type { TemplateId } from "@/modules/design/store/designUiStore"
 import { KEY_RADIUS_BASE, KEYCAP_GAP } from "@/modules/design/components/canvas/KeycapNode"
-import type { KeyDef } from "@/modules/design/types/design"
+import {
+  normalizeKeycapProfile,
+  type KeycapProfile,
+  type KeyDef,
+} from "@/modules/design/types/design"
 import { FONT_ASSETS } from "@/lib/fontAssets"
 import { normalizeFontFamilyRef } from "@/lib/fonts/fontRef"
 import {
@@ -23,7 +27,6 @@ import {
   isSupportedLayoutRevision,
   migrateLayoutElements,
 } from "@/modules/design/lib/design/layoutRevision"
-
 const SVG_NS = "http://www.w3.org/2000/svg"
 
 export interface ExportArtboardParams {
@@ -409,6 +412,7 @@ export type ExportCanvasElement = Omit<CanvasElement, "assetId"> & {
 export interface ImportPayload {
   version: number
   templateId: TemplateId
+  keycapProfile: KeycapProfile
   layoutRevision?: number
   keyboardCasePaint: string
   fontFamily: string
@@ -480,7 +484,13 @@ export async function parseImportJson(
     }
   }
 
-  return { ok: true, data: normalizeDesignColorFields(raw as ImportPayload) }
+  return {
+    ok: true,
+    data: normalizeDesignColorFields({
+      ...(raw as ImportPayload),
+      keycapProfile: normalizeKeycapProfile(obj["keycapProfile"]),
+    }),
+  }
 }
 
 /** 将解析后的设计数据应用到 store，覆盖当前全部设计状态 */
@@ -509,6 +519,7 @@ export function applyImportData(data: ImportPayload) {
 
   useDesignUIStore.setState({
     templateId: normalized.templateId,
+    keycapProfile: normalizeKeycapProfile(normalized.keycapProfile),
     keyboardCasePaint: normalized.keyboardCasePaint,
     fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
     globalKeycapStyle: normalized.globalKeycapStyle,
@@ -527,6 +538,7 @@ export function applyImportData(data: ImportPayload) {
 export function exportArtboardJson() {
   const {
     templateId,
+    keycapProfile,
     keyboardCasePaint,
     fontFamily,
     globalKeycapStyle,
@@ -545,6 +557,7 @@ export function exportArtboardJson() {
   const payload = normalizeDesignColorFields({
     version: 1,
     templateId,
+    keycapProfile,
     layoutRevision: getCurrentLayoutRevision(templateId),
     keyboardCasePaint,
     fontFamily,

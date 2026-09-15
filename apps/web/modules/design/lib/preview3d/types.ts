@@ -1,4 +1,8 @@
-import type { KeyShape, KeySection } from "@/modules/design/types/design"
+import type {
+  KeycapProfile,
+  KeyShape,
+  KeySection,
+} from "@/modules/design/types/design"
 import type {
   ImageProjectionAtlasSpec,
   TextureMatrixElements,
@@ -116,6 +120,7 @@ export interface PreviewSceneModel {
 /** buildPreviewSceneModel 所需的设计状态快照（纯数据，非 Zustand） */
 export interface PreviewDesignStateInput {
   templateId: string
+  keycapProfile: KeycapProfile
   /** 全局字体（store 根字段，不在 globalKeycapStyle 内） */
   fontFamily: string
   fontWeight: number

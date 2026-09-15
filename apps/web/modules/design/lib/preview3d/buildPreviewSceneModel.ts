@@ -72,6 +72,7 @@ export function buildPreviewSceneModel(
     const { position, size } = keyDefToWorld(key, baseUnit)
     const shape = normalizeKeyShape(key.shape)
     const lookup = {
+      profile: designState.keycapProfile,
       w: key.w,
       h: key.h,
       rowLevel: key.rowLevel,
@@ -120,7 +121,7 @@ export function buildPreviewSceneModel(
   )
 
   const geometryRevision = [
-    `${designState.templateId}:${flatKeys.length}`,
+    `${designState.templateId}:${designState.keycapProfile}:${flatKeys.length}`,
     keyboardCase?.modelPath ?? "no-case",
     keys
       .map(

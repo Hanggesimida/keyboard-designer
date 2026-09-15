@@ -12,6 +12,16 @@ export type KeyShape = "rect" | "iso" | "stepped"
 
 export type KeySection = "base" | "supplement"
 
+/** 全局键帽造型；standard 保持历史设计使用的现有模型。 */
+export type KeycapProfile = "standard" | "moa"
+
+export const DEFAULT_KEYCAP_PROFILE: KeycapProfile = "standard"
+
+/** MOA 暂未开放；导入历史或未知值时统一使用可用的标准造型。 */
+export function normalizeKeycapProfile(value: unknown): KeycapProfile {
+  return value === "standard" ? "standard" : DEFAULT_KEYCAP_PROFILE
+}
+
 export interface KeyDef {
   keyId: string
   label: string
