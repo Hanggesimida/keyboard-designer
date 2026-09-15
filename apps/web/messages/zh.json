@@ -201,6 +201,7 @@
   "Design": {
     "layouts": {
       "ansi-104": "ANSI 104 全尺寸",
+      "ansi-99": "ANSI 99 紧凑全尺寸",
       "ansi-87": "ANSI 87 TKL",
       "ansi-108": "ANSI 108 全尺寸",
       "ansi-61": "ANSI 61 (60%)",

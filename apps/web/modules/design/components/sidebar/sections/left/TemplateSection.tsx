@@ -31,6 +31,7 @@ function getBaseKeysBounds(templateId: string) {
 
 const LAYOUT_IDS = [
   "ansi-104",
+  "ansi-99",
   "ansi-87",
   "ansi-108",
   "ansi-61",

@@ -149,6 +149,7 @@ export interface GlobalKeycapStyle {
 
 export const TEMPLATES = [
   { id: "ansi-104", label: "ANSI 104 全尺寸", enabled: true },
+  { id: "ansi-99", label: "ANSI 99 紧凑全尺寸", enabled: true },
   { id: "ansi-87", label: "ANSI 87 TKL", enabled: true },
   { id: "ansi-108", label: "ANSI 108 全尺寸", enabled: true },
   { id: "ansi-61", label: "ANSI 61 (60%)", enabled: true },

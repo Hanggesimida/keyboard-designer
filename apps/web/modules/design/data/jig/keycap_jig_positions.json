@@ -2490,7 +2490,7 @@
         "unit": 1.0,
         "shape": "normal",
         "index": 104,
-        "key_id": "KC_DEL",
+        "key_id": "KC_RALT",
         "top_face_rx": 3.89,
         "top_face_rx_outer": 5.17,
         "row_level": "R1"

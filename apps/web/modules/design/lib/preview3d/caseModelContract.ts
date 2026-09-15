@@ -74,6 +74,13 @@ const ANSI_104_CASE = defineCaseAsset(
   -0.067286,
   0.066031,
 )
+const ANSI_99_CASE = defineCaseAsset(
+  "ansi-99",
+  -0.189856,
+  0.189856,
+  -0.068495,
+  0.067221,
+)
 const ANSI_108_CASE = defineCaseAsset(
   "ansi-108",
   -0.220812,
@@ -88,6 +95,7 @@ export const CASE_MODEL_REGISTRY: Readonly<Record<string, CaseModelAsset>> = {
   "ansi-81": ANSI_81_CASE,
   "ansi-87": ANSI_87_CASE,
   "ansi-104": ANSI_104_CASE,
+  "ansi-99": ANSI_99_CASE,
   "ansi-108": ANSI_108_CASE,
   // 144 的 base 区与 108 完全一致；supplement 区不需要外壳。
   "ansi-144": ANSI_108_CASE,

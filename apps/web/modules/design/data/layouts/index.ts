@@ -1,5 +1,6 @@
 import type { KeyDef } from "@/modules/design/types/design"
 import ansi104 from "./ansi-104.json"
+import ansi99 from "./ansi-99.json"
 import ansi87 from "./ansi-87.json"
 import ansi108 from "./ansi-108.json"
 import ansi144 from "./ansi-144.json"
@@ -27,6 +28,7 @@ export interface LayoutData {
 
 export const LAYOUT_REGISTRY: Record<string, LayoutData> = {
   "ansi-104": ansi104 as unknown as LayoutData,
+  "ansi-99": ansi99 as unknown as LayoutData,
   "ansi-87": ansi87 as unknown as LayoutData,
   "ansi-108": ansi108 as unknown as LayoutData,
   "ansi-144": ansi144 as unknown as LayoutData,
