@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl"
 import {
   ArrowDownToLine,
   Box,
+  ChevronUp,
   ImageDown,
   RotateCcw,
   Sparkles,
@@ -56,6 +57,7 @@ interface Preview3DOverlayProps {
   exporting?: boolean
   onResetCamera: () => void
   onTopView: () => void
+  onCollapse: () => void
   onExportPng?: () => void
   showCase: boolean
   onToggleCase: () => void
@@ -73,6 +75,7 @@ export function Preview3DOverlay({
   exporting = false,
   onResetCamera,
   onTopView,
+  onCollapse,
   onExportPng,
   showCase,
   onToggleCase,
@@ -89,14 +92,14 @@ export function Preview3DOverlay({
     <>
       {loading && <Preview3DLoadingCover />}
 
-      <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-10 flex flex-col items-start gap-2">
+      <div className="pointer-events-none absolute bottom-3 left-3 right-12 z-10 flex flex-col items-start gap-2">
         {hasMissing && (
           <div className="max-w-full rounded border border-amber-500/40 bg-amber-950/85 px-3 py-2 text-[11px] leading-relaxed text-amber-100 backdrop-blur-sm shadow-sm">
             <span className="font-medium text-amber-50">{t("missingModels")}</span>
             <span className="break-all">{missingModels.join("、")}</span>
           </div>
         )}
-        <div className="pointer-events-auto flex items-center rounded-lg border border-border bg-popover/80 pl-1 pr-2 backdrop-blur-sm">
+        <div className="pointer-events-auto flex max-w-full flex-wrap items-center rounded-lg border border-border bg-popover/80 pl-1 pr-2 backdrop-blur-sm">
           <Button
             type="button"
             variant="ghost"
@@ -211,6 +214,20 @@ export function Preview3DOverlay({
           </span>
         </div>
       </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="absolute bottom-3 right-3 z-10 size-7 cursor-pointer border border-border bg-popover/80 text-foreground backdrop-blur-sm"
+        title={t("collapse")}
+        onClick={(e) => {
+          e.stopPropagation()
+          onCollapse()
+        }}
+      >
+        <ChevronUp className="size-3.5" />
+      </Button>
     </>
   )
 }

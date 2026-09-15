@@ -70,6 +70,7 @@ export function Keycap3DPreview() {
   const setSelectedKeycapIds = useDesignUIStore((s) => s.setSelectedKeycapIds)
   const toggleKeycapSelection = useDesignUIStore((s) => s.toggleKeycapSelection)
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
+  const setShow3dPreview = useDesignUIStore((s) => s.setShow3dPreview)
   const show3dCase = useDesignUIStore((s) => s.show3dCase)
   const toggleShow3dCase = useDesignUIStore((s) => s.toggleShow3dCase)
   const show3dRealism = useDesignUIStore((s) => s.show3dRealism)
@@ -236,6 +237,7 @@ export function Keycap3DPreview() {
           exporting={exporting}
           onResetCamera={() => applyCameraView("fit")}
           onTopView={() => applyCameraView("top")}
+          onCollapse={() => setShow3dPreview(false)}
           onExportPng={handleExportPng}
           showCase={show3dCase}
           onToggleCase={toggleShow3dCase}

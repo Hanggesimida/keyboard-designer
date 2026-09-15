@@ -8,12 +8,13 @@ import type { Vec3 } from "./layoutToWorld"
 export interface CameraFitPose {
   position: Vec3
   target: Vec3
+  up: Vec3
 }
 
 export type CameraView = "fit" | "top"
 
 function fitDistance(
-  extents: { width: number; depth: number },
+  extents: { width: number; height: number },
   aspect: number,
   fovDeg: number,
 ): number {
@@ -22,11 +23,11 @@ function fitDistance(
   const hFov = 2 * Math.atan(Math.tan(vFov / 2) * safeAspect)
 
   const halfW = (extents.width / 2) * CAMERA_FIT_PADDING
-  const halfD = (extents.depth / 2) * CAMERA_FIT_PADDING
+  const halfH = (extents.height / 2) * CAMERA_FIT_PADDING
 
   const distForWidth = halfW / Math.tan(hFov / 2)
-  const distForDepth = halfD / Math.tan(vFov / 2)
-  return Math.max(distForWidth, distForDepth, 2)
+  const distForHeight = halfH / Math.tan(vFov / 2)
+  return Math.max(distForWidth, distForHeight, 2)
 }
 
 /**
@@ -39,12 +40,17 @@ export function computeCameraFitPose(
   aspect: number,
   fovDeg: number = CAMERA_FOV_DEG,
 ): CameraFitPose {
-  const distance = fitDistance(extents, aspect, fovDeg)
+  const distance = fitDistance(
+    { width: extents.width, height: extents.depth },
+    aspect,
+    fovDeg,
+  )
   const height = distance * CAMERA_HEIGHT_RATIO
 
   return {
     position: [center[0], height, center[2] + distance],
     target: [center[0], center[1], center[2]],
+    up: [0, 1, 0],
   }
 }
 
@@ -55,9 +61,14 @@ export function computeCameraTopPose(
   aspect: number,
   fovDeg: number = CAMERA_FOV_DEG,
 ): CameraFitPose {
-  const distance = fitDistance(extents, aspect, fovDeg)
+  const distance = fitDistance(
+    { width: extents.width, height: extents.depth },
+    aspect,
+    fovDeg,
+  )
   return {
     position: [center[0], distance, center[2]],
     target: [center[0], center[1], center[2]],
+    up: [0, 0, -1],
   }
 }

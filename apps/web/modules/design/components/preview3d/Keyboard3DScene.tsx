@@ -191,13 +191,13 @@ function CameraRig({
     }
 
     const aspect = size.width / Math.max(size.height, 1)
-    const { position, target } =
+    const { position, target, up } =
       viewRef.current === "top"
         ? computeCameraTopPose(center, extents, aspect)
         : computeCameraFitPose(center, extents, aspect)
 
     camera.position.set(position[0], position[1], position[2])
-    camera.up.set(0, 1, 0)
+    camera.up.set(up[0], up[1], up[2])
     camera.lookAt(target[0], target[1], target[2])
     camera.updateProjectionMatrix()
 
