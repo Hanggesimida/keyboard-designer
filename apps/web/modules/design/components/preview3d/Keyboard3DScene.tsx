@@ -229,7 +229,7 @@ function CameraRig({
       minDistance={2}
       maxDistance={40}
       minPolarAngle={0}
-      maxPolarAngle={Math.PI / 2.05}
+      maxPolarAngle={Math.PI}
       target={center}
       mouseButtons={{
         LEFT: isSpacePressed ? MOUSE.PAN : MOUSE.ROTATE,
