@@ -4,6 +4,11 @@ import {
   LAYOUT_REGISTRY,
   type LayoutData,
 } from "@/modules/design/data/layouts"
+import {
+  getRotatedRectBounds,
+  normalizeRotationDeg,
+  rotatePoint2D,
+} from "@/modules/design/lib/design/keyTransform"
 import { migrateLayoutElements } from "@/modules/design/lib/design/layoutRevision"
 import type {
   DesignPayload,
@@ -94,6 +99,7 @@ function layoutKeys(layout: LayoutData | undefined): Record<string, LayoutKey> {
         label: key.label ?? "",
         rowLevel: key.rowLevel,
         shape: key.shape,
+        rotationDeg: normalizeRotationDeg(key.rotationDeg),
       }
     })
   })
@@ -375,6 +381,33 @@ function designKeyRect(key: LayoutKey, baseUnit: number, topFace: boolean) {
   return { x: x + 11, y: y + 6, w: w - 22, h: h - 16 }
 }
 
+function imageInKeyLocalSpace(
+  image: { x: number; y: number; width: number; height: number; rotation?: number },
+  key: LayoutKey,
+  baseUnit: number,
+  alreadyLocal = false,
+) {
+  if (alreadyLocal) return image
+  const deg = normalizeRotationDeg(key.rotationDeg)
+  if (deg === 0) return image
+  const cx = (key.x + key.w / 2) * baseUnit
+  const cy = (key.y + key.h / 2) * baseUnit
+  const local = rotatePoint2D(
+    image.x + image.width / 2,
+    image.y + image.height / 2,
+    cx,
+    cy,
+    -deg,
+  )
+  return {
+    x: local.x - image.width / 2,
+    y: local.y - image.height / 2,
+    width: image.width,
+    height: image.height,
+    rotation: (image.rotation ?? 0) - deg,
+  }
+}
+
 function buildImageLayers(context: RenderContext, design: ParsedDesign) {
   const defs: string[] = []
   const perKey: string[] = ['<g id="jig-image-layer">']
@@ -390,17 +423,23 @@ function buildImageLayers(context: RenderContext, design: ParsedDesign) {
     shape: JigShape,
     designRect: { x: number; y: number; w: number; h: number },
     jigRect: { x: number; y: number; w: number; h: number },
+    alreadyLocal = false,
   ) => {
     const clipId = `jig-clip-${clipIndex++}`
     defs.push(`<clipPath id="${clipId}">${shapeMarkup(shape)}</clipPath>`)
     const mapped = mapImage({
-      image: {
-        x: image.x - ART_PAD,
-        y: image.y - ART_PAD,
-        width: image.width,
-        height: image.height,
-        rotation: image.rotation,
-      },
+      image: imageInKeyLocalSpace(
+        {
+          x: image.x - ART_PAD,
+          y: image.y - ART_PAD,
+          width: image.width,
+          height: image.height,
+          rotation: image.rotation,
+        },
+        key,
+        context.baseUnit,
+        alreadyLocal,
+      ),
       design: designRect,
       jig: jigRect,
       rotated: isJigRotated(key, position),
@@ -438,6 +477,7 @@ function buildImageLayers(context: RenderContext, design: ParsedDesign) {
         shape,
         designKeyRect(key, context.baseUnit, true),
         jigRect,
+        true,
       )
       return
     }
@@ -450,14 +490,22 @@ function buildImageLayers(context: RenderContext, design: ParsedDesign) {
       const position = context.positionsByKey.get(keyId)
       if (!position) return
       const designRect = designKeyRect(key, context.baseUnit, false)
-      if (
-        !explicit &&
-        (image.x - ART_PAD + image.width <= designRect.x ||
-          image.x - ART_PAD >= designRect.x + designRect.w ||
-          image.y - ART_PAD + image.height <= designRect.y ||
-          image.y - ART_PAD >= designRect.y + designRect.h)
-      ) {
-        return
+      if (!explicit) {
+        const bounds = getRotatedRectBounds(
+          designRect.x,
+          designRect.y,
+          designRect.w,
+          designRect.h,
+          key.rotationDeg,
+        )
+        if (
+          image.x - ART_PAD + image.width <= bounds.minX ||
+          image.x - ART_PAD >= bounds.maxX ||
+          image.y - ART_PAD + image.height <= bounds.minY ||
+          image.y - ART_PAD >= bounds.maxY
+        ) {
+          return
+        }
       }
       const shape = resolveBaseShape(position, context.topScale)
       const jigRect = resolveMappingRect(position, true)

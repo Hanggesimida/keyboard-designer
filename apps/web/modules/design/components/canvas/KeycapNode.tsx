@@ -5,6 +5,7 @@ import type { GlobalKeycapStyle, KeycapOverride } from "@/modules/design/store/d
 import { registerTextMetrics } from "@/modules/design/store/textMetricsRegistry"
 import { toCssFontFamily } from "@/lib/fonts/fontRef"
 import { useLatestRef } from "@/hooks/useLatestRef"
+import type { KeyDef } from "@/modules/design/types/design"
 import {
   KEYCAP_GAP as _GAP,
   KEY_PAD_LEFT,
@@ -22,6 +23,11 @@ import {
   roundedPolygonPath,
 } from "@/modules/design/lib/design/keycapGeometry"
 import {
+  normalizeRotationDeg,
+  rotatePoint2D,
+  svgKeyRotateTransform,
+} from "@/modules/design/lib/design/keyTransform"
+import {
   computeKeycapLabelDrawOrigin,
   getKeycapBaseRect,
 } from "@/modules/design/lib/design/keycapLabelLayout"
@@ -30,19 +36,6 @@ import {
   resolveKeycapBodyColor,
   resolveLayerKeycapFields,
 } from "@/modules/design/lib/design/resolveKeycapAppearance"
-
-export interface KeyDef {
-  keyId: string
-  label: string
-  x: number
-  y: number
-  w: number
-  h: number
-  shape: string
-  rowLevel?: string
-  /** 键所属区域：标准键盘区（base）或增补键帽区（supplement） */
-  section?: "base" | "supplement"
-}
 
 /** 键帽间距（SVG 单位），供对齐计算使用 */
 export const KEYCAP_GAP = _GAP
@@ -193,6 +186,8 @@ export function KeycapNode({
   const topHRef = useLatestRef(topH)
   const textHalfSizeRef = useLatestRef(textHalfSize)
   const onLabelOffsetChangeRef = useLatestRef(onLabelOffsetChange)
+  const rotationDegRef = useLatestRef(normalizeRotationDeg(keyDef.rotationDeg))
+  const rotateTransform = svgKeyRotateTransform(keyDef, unit)
 
   const dragStartRef = useRef<{
     mouseX: number
@@ -235,8 +230,9 @@ export function KeycapNode({
       const maxOffY = Math.max(0, topHRef.current / 2 - textHalfSizeRef.current.h)
       const rawDx = (ev.clientX - start.mouseX) / z
       const rawDy = (ev.clientY - start.mouseY) / z
-      const newOffX = clamp(start.offsetX + rawDx, -maxOffX, maxOffX)
-      const newOffY = clamp(start.offsetY + rawDy, -maxOffY, maxOffY)
+      const local = rotatePoint2D(rawDx, rawDy, 0, 0, -rotationDegRef.current)
+      const newOffX = clamp(start.offsetX + local.x, -maxOffX, maxOffX)
+      const newOffY = clamp(start.offsetY + local.y, -maxOffY, maxOffY)
       setDragDelta({ x: newOffX - start.offsetX, y: newOffY - start.offsetY })
     }
 
@@ -253,8 +249,9 @@ export function KeycapNode({
       const maxOffY = Math.max(0, topHRef.current / 2 - textHalfSizeRef.current.h)
       const rawDx = (ev.clientX - start.mouseX) / z
       const rawDy = (ev.clientY - start.mouseY) / z
-      const finalX = clamp(start.offsetX + rawDx, -maxOffX, maxOffX)
-      const finalY = clamp(start.offsetY + rawDy, -maxOffY, maxOffY)
+      const local = rotatePoint2D(rawDx, rawDy, 0, 0, -rotationDegRef.current)
+      const finalX = clamp(start.offsetX + local.x, -maxOffX, maxOffX)
+      const finalY = clamp(start.offsetY + local.y, -maxOffY, maxOffY)
 
       // 没有实际移动时不写入 store（避免空undo记录）
       const moved =
@@ -308,6 +305,8 @@ export function KeycapNode({
     ))
 
   const pressTransform = isPressed ? "translate(0, 2.5)" : undefined
+  const groupTransform =
+    [pressTransform, rotateTransform].filter(Boolean).join(" ") || undefined
 
   const clickHandler = {
     onClick: (e: React.MouseEvent<SVGGElement>) => {
@@ -323,7 +322,7 @@ export function KeycapNode({
       const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
       const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
       return (
-        <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={pressTransform} style={{ cursor: "pointer" }} {...clickHandler}>
+        <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={groupTransform} style={{ cursor: "pointer" }} {...clickHandler}>
           <path
             d={isoBasePath}
             fill={fill}
@@ -339,7 +338,7 @@ export function KeycapNode({
       )
     }
     return (
-      <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={pressTransform} style={{ cursor: "pointer" }} {...clickHandler}>
+      <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={groupTransform} style={{ cursor: "pointer" }} {...clickHandler}>
         <rect
           x={px} y={py} width={pw} height={ph} rx={KEY_RADIUS_BASE}
           fill={fill}
@@ -364,7 +363,7 @@ export function KeycapNode({
       const isoBasePath = roundedPolygonPath(getIsoBasePoints(px, py, pw, ph), KEY_RADIUS_BASE)
       const isoTopPath = roundedPolygonPath(getIsoTopFacePoints(px, py, pw, ph), getIsoTopFaceRadii(KEY_RADIUS_TOP))
       return (
-        <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={pressTransform} style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
+        <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={groupTransform} style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
           {/* 顶面边框 */}
           <path
             d={isoTopPath}
@@ -424,7 +423,7 @@ export function KeycapNode({
       )
     }
     return (
-    <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={pressTransform} style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
+    <g data-keycap="true" data-keycap-id={keyDef.keyId} transform={groupTransform} style={{ cursor: isLabelEditing ? "default" : "pointer" }} {...clickHandler}>
         {/* 顶面边框 */}
         {topFaceRects.map((r, i) => (
           <rect
@@ -495,7 +494,7 @@ export function KeycapNode({
       <g
         data-keycap="true"
         data-keycap-id={keyDef.keyId}
-        transform={pressTransform}
+        transform={groupTransform}
         {...clickHandler}
         style={{ cursor: isLabelEditing ? "default" : "pointer" }}
       >
@@ -577,7 +576,7 @@ export function KeycapNode({
     <g
       data-keycap="true"
       data-keycap-id={keyDef.keyId}
-      transform={pressTransform}
+      transform={groupTransform}
       {...clickHandler}
       style={{ cursor: isLabelEditing ? "default" : "pointer" }}
     >

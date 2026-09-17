@@ -1,6 +1,14 @@
 import type { KeyDef } from "@/modules/design/types/design"
 import { getLayoutPixelSize } from "./layout"
 import {
+  getKeySlotCenterPx,
+  getRotatedRectBounds,
+  normalizeRotationDeg,
+  rotatePoints2D,
+  rotateRectAroundPivot,
+  type Point2D,
+} from "./keyTransform"
+import {
   getIsoBasePoints,
   getIsoTopFacePoints,
   getIsoTopFaceRadii,
@@ -67,13 +75,14 @@ export interface ImageProjectionAtlasSpec {
   revision: string
 }
 
-interface ProjectionKey {
+export interface ProjectionKey {
   keyId: string
   x: number
   y: number
   w: number
   h: number
   shape: string
+  rotationDeg?: number
 }
 
 export interface BuildImageProjectionSpecInput {
@@ -90,7 +99,7 @@ function safeUnit(baseUnit: number): number {
 }
 
 export function keyboardSvgSize(
-  keys: ReadonlyArray<Pick<KeyDef, "x" | "y" | "w" | "h">>,
+  keys: ReadonlyArray<Pick<KeyDef, "x" | "y" | "w" | "h" | "rotationDeg">>,
   baseUnit: number,
 ): { width: number; height: number } {
   return getLayoutPixelSize(keys, safeUnit(baseUnit))
@@ -152,40 +161,90 @@ function roundedRectPath(
   ].join(" ")
 }
 
+function rectCorners(x: number, y: number, w: number, h: number): Point2D[] {
+  return [
+    { x, y },
+    { x: x + w, y },
+    { x: x + w, y: y + h },
+    { x, y: y + h },
+  ]
+}
+
+function transformClipPoints(
+  points: ReadonlyArray<Point2D>,
+  cx: number,
+  cy: number,
+  deg: number,
+  originX: number,
+  originY: number,
+): Point2D[] {
+  return rotatePoints2D(points, cx, cy, deg).map((point) => ({
+    x: point.x - originX,
+    y: point.y - originY,
+  }))
+}
+
 export function keycapProjectionPaths(
   key: ProjectionKey,
   baseUnit: number,
   topFace: boolean,
+  origin: { x?: number; y?: number } = {},
 ): string[] {
   const unit = safeUnit(baseUnit)
   const x = key.x * unit + KEYCAP_GAP / 2
   const y = key.y * unit + KEYCAP_GAP / 2
   const width = key.w * unit - KEYCAP_GAP
   const height = key.h * unit - KEYCAP_GAP
+  const originX = origin.x ?? 0
+  const originY = origin.y ?? 0
+  const deg = normalizeRotationDeg(key.rotationDeg)
+  const cx = key.x * unit + (key.w * unit) / 2
+  const cy = key.y * unit + (key.h * unit) / 2
+
+  const emitPolygon = (
+    points: ReadonlyArray<Point2D>,
+    radius: number | number[],
+  ) =>
+    roundedPolygonPath(
+      transformClipPoints(points, cx, cy, deg, originX, originY),
+      radius,
+    )
 
   if (topFace) {
     if (key.shape === "iso") {
       return [
-        roundedPolygonPath(
+        emitPolygon(
           getIsoTopFacePoints(x, y, width, height),
           getIsoTopFaceRadii(KEY_RADIUS_TOP),
         ),
       ]
     }
-    return getTopFaceRects(key.shape, x, y, width, height).map((rect) =>
-      roundedRectPath(rect.x, rect.y, rect.w, rect.h, KEY_RADIUS_TOP),
-    )
+    return getTopFaceRects(key.shape, x, y, width, height).map((rect) => {
+      if (deg === 0) {
+        return roundedRectPath(
+          rect.x - originX,
+          rect.y - originY,
+          rect.w,
+          rect.h,
+          KEY_RADIUS_TOP,
+        )
+      }
+      return emitPolygon(
+        rectCorners(rect.x, rect.y, rect.w, rect.h),
+        KEY_RADIUS_TOP,
+      )
+    })
   }
 
   if (key.shape === "iso") {
     return [
-      roundedPolygonPath(
-        getIsoBasePoints(x, y, width, height),
-        KEY_RADIUS_BASE,
-      ),
+      emitPolygon(getIsoBasePoints(x, y, width, height), KEY_RADIUS_BASE),
     ]
   }
-  return [roundedRectPath(x, y, width, height, KEY_RADIUS_BASE)]
+  if (deg === 0) {
+    return [roundedRectPath(x - originX, y - originY, width, height, KEY_RADIUS_BASE)]
+  }
+  return [emitPolygon(rectCorners(x, y, width, height), KEY_RADIUS_BASE)]
 }
 
 /** 与 2D 画布一致：显式限制优先，否则按未旋转图片矩形与键帽底座 AABB 相交。 */
@@ -216,15 +275,18 @@ export function resolveProjectionKeys(
   const imageY = element.y + (options?.liveDy ?? 0) - artPad
 
   return keys.filter((key) => {
-    const keyX = key.x * unit + KEYCAP_GAP / 2
-    const keyY = key.y * unit + KEYCAP_GAP / 2
-    const keyWidth = key.w * unit - KEYCAP_GAP
-    const keyHeight = key.h * unit - KEYCAP_GAP
+    const bounds = getRotatedRectBounds(
+      key.x * unit + KEYCAP_GAP / 2,
+      key.y * unit + KEYCAP_GAP / 2,
+      key.w * unit - KEYCAP_GAP,
+      key.h * unit - KEYCAP_GAP,
+      key.rotationDeg,
+    )
     return (
-      imageX < keyX + keyWidth &&
-      imageX + element.width > keyX &&
-      imageY < keyY + keyHeight &&
-      imageY + element.height > keyY
+      imageX < bounds.maxX &&
+      imageX + element.width > bounds.minX &&
+      imageY < bounds.maxY &&
+      imageY + element.height > bounds.minY
     )
   })
 }
@@ -270,15 +332,33 @@ export function buildImageProjectionAtlasSpec(
     )
     if (clipPaths.length === 0) continue
 
-    items.push({
-      elementId: element.id,
-      assetId: element.assetId,
-      src,
+    const imageRect = {
       x: element.x + (live?.dx ?? 0) - artPad,
       y: element.y + (live?.dy ?? 0) - artPad,
       width: element.width,
       height: element.height,
       rotationDeg: element.rotation ?? 0,
+    }
+    const boundKey = element.clipToKeycapId
+      ? matchedKeys.find((key) => key.keyId === element.clipToKeycapId)
+      : undefined
+    const placed = boundKey
+      ? rotateRectAroundPivot(
+          imageRect,
+          getKeySlotCenterPx(boundKey, baseUnit),
+          normalizeRotationDeg(boundKey.rotationDeg),
+        )
+      : imageRect
+
+    items.push({
+      elementId: element.id,
+      assetId: element.assetId,
+      src,
+      x: placed.x,
+      y: placed.y,
+      width: placed.width,
+      height: placed.height,
+      rotationDeg: placed.rotationDeg,
       opacity: clamp01(element.opacity),
       clipPaths,
     })

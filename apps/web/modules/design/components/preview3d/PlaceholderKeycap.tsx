@@ -94,7 +94,11 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
   }
 
   return (
-    <group ref={groupRef} position={[x, y, z]}>
+    <group
+      ref={groupRef}
+      position={[x, y, z]}
+      rotation={[0, previewKey.rotationYRad, 0]}
+    >
       <mesh
         position={[0, PLACEHOLDER_KEY_HEIGHT / 2, 0]}
         material={material as never}

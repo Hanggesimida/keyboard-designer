@@ -55,6 +55,7 @@ export function buildPreviewSceneModel(
       w: k.w,
       h: k.h,
       shape: k.shape,
+      rotationDeg: k.rotationDeg,
     })),
     liveDragOverrides: designState.liveDragOverrides,
   })
@@ -69,7 +70,7 @@ export function buildPreviewSceneModel(
       defaultLabel: key.label,
       globalDistributedColors,
     })
-    const { position, size } = keyDefToWorld(key, baseUnit)
+    const { position, size, rotationYRad } = keyDefToWorld(key, baseUnit)
     const shape = normalizeKeyShape(key.shape)
     const lookup = {
       profile: designState.keycapProfile,
@@ -92,6 +93,7 @@ export function buildPreviewSceneModel(
       rowLevel: key.rowLevel,
       position,
       sizeU: [size[0], size[2]],
+      rotationYRad,
       modelPath: model?.path,
       color: appearance.color,
       labelColor: appearance.labelColor,
@@ -126,7 +128,7 @@ export function buildPreviewSceneModel(
     keys
       .map(
         (k) =>
-          `${k.id}:${k.sizeU[0]}x${k.sizeU[1]}:${k.shape}:${k.modelPath ?? "-"}`,
+          `${k.id}:${k.sizeU[0]}x${k.sizeU[1]}:${k.rotationYRad}:${k.shape}:${k.modelPath ?? "-"}`,
       )
       .join("|"),
   ].join(":")

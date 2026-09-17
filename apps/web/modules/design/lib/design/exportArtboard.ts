@@ -8,7 +8,12 @@
   TEMPLATES,
 } from "@/modules/design/store/designUiStore"
 import type { TemplateId } from "@/modules/design/store/designUiStore"
-import { KEY_RADIUS_BASE, KEYCAP_GAP } from "@/modules/design/components/canvas/KeycapNode"
+import { keycapProjectionPaths } from "@/modules/design/lib/design/imageProjection"
+import {
+  getKeySlotCenterPx,
+  normalizeRotationDeg,
+  rotateRectAroundPivot,
+} from "@/modules/design/lib/design/keyTransform"
 import {
   normalizeKeycapProfile,
   type KeycapProfile,
@@ -230,7 +235,11 @@ function triggerDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function createSvgImageEl(ns: string, el: CanvasImageElement, src: string): SVGImageElement {
+function createSvgImageEl(
+  ns: string,
+  el: Pick<CanvasImageElement, "x" | "y" | "width" | "height" | "opacity" | "rotation">,
+  src: string,
+): SVGImageElement {
   const img = document.createElementNS(ns, "image") as SVGImageElement
   img.setAttribute("href", src)
   img.setAttribute("x", String(el.x))
@@ -290,25 +299,46 @@ export function buildExportSvgString({
       const key = keys.find((k) => k.keyId === el.clipToKeycapId)
       if (!key) continue
       const clipId = `export-clip-${el.id}`
-      const kx = artPad + key.x * unit + KEYCAP_GAP / 2
-      const ky = artPad + key.y * unit + KEYCAP_GAP / 2
-      const kw = key.w * unit - KEYCAP_GAP
-      const kh = key.h * unit - KEYCAP_GAP
-
       const defs = document.createElementNS(SVG_NS, "defs")
       const clipPath = document.createElementNS(SVG_NS, "clipPath")
       clipPath.setAttribute("id", clipId)
-      const clipRect = document.createElementNS(SVG_NS, "rect")
-      clipRect.setAttribute("x", String(kx))
-      clipRect.setAttribute("y", String(ky))
-      clipRect.setAttribute("width", String(kw))
-      clipRect.setAttribute("height", String(kh))
-      clipRect.setAttribute("rx", String(KEY_RADIUS_BASE))
-      clipPath.appendChild(clipRect)
+      for (const d of keycapProjectionPaths(
+        key,
+        unit,
+        !!el.clipToTopFace,
+        { x: -artPad, y: -artPad },
+      )) {
+        const clipShape = document.createElementNS(SVG_NS, "path")
+        clipShape.setAttribute("d", d)
+        clipPath.appendChild(clipShape)
+      }
       defs.appendChild(clipPath)
       exportSvg.appendChild(defs)
 
-      const imgEl = createSvgImageEl(SVG_NS, el, assetMap[el.assetId] ?? "")
+      const pivot = getKeySlotCenterPx(key, unit)
+      const placed = rotateRectAroundPivot(
+        {
+          x: el.x,
+          y: el.y,
+          width: el.width,
+          height: el.height,
+          rotationDeg: el.rotation,
+        },
+        { x: artPad + pivot.x, y: artPad + pivot.y },
+        normalizeRotationDeg(key.rotationDeg),
+      )
+      const imgEl = createSvgImageEl(
+        SVG_NS,
+        {
+          x: placed.x,
+          y: placed.y,
+          width: placed.width,
+          height: placed.height,
+          opacity: el.opacity,
+          rotation: placed.rotationDeg,
+        },
+        assetMap[el.assetId] ?? "",
+      )
       imgEl.setAttribute("clip-path", `url(#${clipId})`)
       exportSvg.appendChild(imgEl)
     } else {

@@ -1,5 +1,9 @@
 import type { LayoutData } from "@/modules/design/data/layouts"
 import type { KeyDef, KeySection } from "@/modules/design/types/design"
+import {
+  getKeySlotBoundsU,
+  normalizeRotationDeg,
+} from "@/modules/design/lib/design/keyTransform"
 
 /** 设计坐标系下的布局包围盒（单位：u） */
 export interface LayoutBounds {
@@ -18,7 +22,7 @@ export interface LayoutPixelSize {
   height: number
 }
 
-type LayoutRect = Pick<KeyDef, "x" | "y" | "w" | "h">
+type LayoutRect = Pick<KeyDef, "x" | "y" | "w" | "h" | "rotationDeg">
 
 const EMPTY_LAYOUT_BOUNDS: LayoutBounds = {
   minX: 0,
@@ -44,6 +48,7 @@ export function flattenLayout(layout: LayoutData): KeyDef[] {
       h: Number.isFinite(key.h) ? Math.max(key.h, 0) : 0,
       x: Number.isFinite(key.x) ? key.x : 0,
       y: Number.isFinite(key.y) ? key.y : 0,
+      rotationDeg: normalizeRotationDeg(key.rotationDeg),
     }))
   })
 }
@@ -63,14 +68,11 @@ export function getLayoutBounds(
   let maxY = -Infinity
 
   for (const k of keys) {
-    const w = Number.isFinite(k.w) ? Math.max(k.w, 0) : 0
-    const h = Number.isFinite(k.h) ? Math.max(k.h, 0) : 0
-    const x = Number.isFinite(k.x) ? k.x : 0
-    const y = Number.isFinite(k.y) ? k.y : 0
-    minX = Math.min(minX, x)
-    maxX = Math.max(maxX, x + w)
-    minY = Math.min(minY, y)
-    maxY = Math.max(maxY, y + h)
+    const bounds = getKeySlotBoundsU(k)
+    minX = Math.min(minX, bounds.minX)
+    maxX = Math.max(maxX, bounds.maxX)
+    minY = Math.min(minY, bounds.minY)
+    maxY = Math.max(maxY, bounds.maxY)
   }
 
   if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {

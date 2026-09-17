@@ -12,6 +12,7 @@ import {
   computeKeycapLabelDrawOrigin,
   getKeycapTopFace,
 } from "@/modules/design/lib/design/keycapLabelLayout"
+import { getKeySlotCenterPx, normalizeRotationDeg } from "@/modules/design/lib/design/keyTransform"
 import { KEY_LABEL_SIZE } from "@/modules/design/lib/design/keycapGeometry"
 import {
   HEX_COLOR_FALLBACKS,
@@ -158,6 +159,7 @@ export function buildLegendDrawList(
         lineHeightRatio,
         labelText: fields.labelText,
       })
+      const pivot = getKeySlotCenterPx(key, baseUnit)
 
       items.push({
         keyId: key.keyId,
@@ -173,6 +175,9 @@ export function buildLegendDrawList(
         lineHeight: origin.lineHeight,
         textX: origin.textX,
         textYDraw: origin.textYDraw,
+        rotationDeg: normalizeRotationDeg(key.rotationDeg),
+        pivotX: pivot.x,
+        pivotY: pivot.y,
       })
     }
   }
@@ -204,6 +209,9 @@ export function buildLegendDrawList(
     layerRevision,
     overrideRevision(designState.layerKeycapOverrides),
     items.length,
+    items
+      .map((item) => `${item.keyId}:${item.rotationDeg}:${item.pivotX}:${item.pivotY}`)
+      .join(";"),
   ].join("|")
 
   return { items, svgWidth, svgHeight, matrixElements, revision }
@@ -281,6 +289,12 @@ export async function bakeLegendAtlas(
 
   for (const item of spec.items) {
     const family = resolveCanvasFontFamily(item.fontFamily)
+    ctx.save()
+    if (item.rotationDeg) {
+      ctx.translate(item.pivotX, item.pivotY)
+      ctx.rotate((item.rotationDeg * Math.PI) / 180)
+      ctx.translate(-item.pivotX, -item.pivotY)
+    }
     ctx.globalAlpha = item.opacity
     ctx.fillStyle = item.color
     ctx.font = `${item.fontStyle} ${item.fontWeight} ${item.fontSize}px ${family}`
@@ -293,6 +307,7 @@ export async function bakeLegendAtlas(
         item.letterSpacing,
       )
     })
+    ctx.restore()
   }
   ctx.globalAlpha = 1
 }

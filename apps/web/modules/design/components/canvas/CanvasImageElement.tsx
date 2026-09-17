@@ -6,6 +6,8 @@ import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import { KEY_RADIUS_BASE, KEYCAP_GAP } from "./KeycapNode"
 import type { KeyDef } from "@/modules/design/types/design"
+import { keycapProjectionPaths } from "@/modules/design/lib/design/imageProjection"
+import { normalizeRotationDeg } from "@/modules/design/lib/design/keyTransform"
 import {
   type ResizeHandle,
   computeResizePatch,
@@ -55,21 +57,15 @@ export function CanvasImageElement({
 }: CanvasImageElementProps) {
   const templateId = useDesignUIStore((s) => s.templateId)
   const src = useDesignUIStore((s) => s.assetMap[element.assetId] ?? "")
-  const keycapBoundsMap = useMemo(() => {
+  const keycapById = useMemo(() => {
     const layout = getLayoutData(templateId)
-    const unit = layout.baseUnit
-    const map: Record<string, { x: number; y: number; w: number; h: number }> = {}
+    const map: Record<string, KeyDef> = {}
     for (const row of layout.rows) {
       for (const key of row.keys as KeyDef[]) {
-        map[key.keyId] = {
-          x: _ART_PAD + key.x * unit + KEYCAP_GAP / 2,
-          y: _ART_PAD + key.y * unit + KEYCAP_GAP / 2,
-          w: key.w * unit - KEYCAP_GAP,
-          h: key.h * unit - KEYCAP_GAP,
-        }
+        map[key.keyId] = key
       }
     }
-    return map
+    return { map, unit: layout.baseUnit }
   }, [templateId])
 
   const [lockAspect, setLockAspect] = useState(true)
@@ -104,13 +100,32 @@ export function CanvasImageElement({
   const isFreePointer = pointerMode === "free"
   let keycapClipPath: string | undefined
   if (hasKeycapClip && element.clipToKeycapId) {
-    const bounds = keycapBoundsMap[element.clipToKeycapId]
-    if (bounds) {
-      const insetTop = bounds.y - dispY
-      const insetLeft = bounds.x - dispX
-      const insetRight = (dispX + dispW) - (bounds.x + bounds.w)
-      const insetBottom = (dispY + dispH) - (bounds.y + bounds.h)
-      keycapClipPath = `inset(${insetTop}px ${insetRight}px ${insetBottom}px ${insetLeft}px round ${KEY_RADIUS_BASE}px)`
+    const key = keycapById.map[element.clipToKeycapId]
+    if (key) {
+      const unit = keycapById.unit
+      if (normalizeRotationDeg(key.rotationDeg) !== 0) {
+        const paths = keycapProjectionPaths(
+          key,
+          unit,
+          !!element.clipToTopFace,
+          { x: dispX - _ART_PAD, y: dispY - _ART_PAD },
+        )
+        if (paths.length > 0) {
+          keycapClipPath = `path("${paths.join(" ")}")`
+        }
+      } else {
+        const bounds = {
+          x: _ART_PAD + key.x * unit + KEYCAP_GAP / 2,
+          y: _ART_PAD + key.y * unit + KEYCAP_GAP / 2,
+          w: key.w * unit - KEYCAP_GAP,
+          h: key.h * unit - KEYCAP_GAP,
+        }
+        const insetTop = bounds.y - dispY
+        const insetLeft = bounds.x - dispX
+        const insetRight = dispX + dispW - (bounds.x + bounds.w)
+        const insetBottom = dispY + dispH - (bounds.y + bounds.h)
+        keycapClipPath = `inset(${insetTop}px ${insetRight}px ${insetBottom}px ${insetLeft}px round ${KEY_RADIUS_BASE}px)`
+      }
     }
   }
 

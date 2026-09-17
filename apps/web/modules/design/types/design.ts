@@ -5,6 +5,7 @@
  * - 设计坐标：X 向右、Y 向下；单位为 u（1u = 布局网格一格）。
  * - Three 坐标：X 向右、Y 向上、Z 朝使用者（空格侧）；`1u = 1 world unit`。
  * - 键帽原点：底面中心（与 GLB 资产一致；Three 中 y = 0 贴地）。
+ * - 布局旋转：`rotationDeg` 以槽中心 `(x + w/2, y + h/2)` 为枢轴，设计坐标顺时针为正。
  */
 
 /** 布局中已知的键帽外形；未知值在适配层归一为 `"rect"` */
@@ -33,6 +34,11 @@ export interface KeyDef {
   w: number
   /** 键高（u） */
   h: number
+  /**
+   * 布局固定旋转（度），可选，缺省 0。
+   * 设计坐标顺时针为正；枢轴为槽中心 `(x + w/2, y + h/2)`。
+   */
+  rotationDeg?: number
   /** 原始 shape 字符串；未知值由 normalizeKeyShape 处理 */
   shape: string
   rowLevel?: string

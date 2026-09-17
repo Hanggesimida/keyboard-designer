@@ -26,6 +26,8 @@ export interface PreviewKey {
    * `[widthX, depthZ]`；高度由渲染层使用占位/模型常量。
    */
   sizeU: [number, number]
+  /** 绕世界 Y 轴旋转（弧度）；设计顺时针为正时取负值 */
+  rotationYRad: number
   /** 命中尺寸族时的 GLB 路径；未命中则走占位兜底 */
   modelPath?: string
   /** 整颗键帽本体色（纯色 hex，已做渐变降级与多层合成） */
@@ -55,6 +57,9 @@ export interface LegendDrawItem {
   lineHeight: number
   textX: number
   textYDraw: number
+  rotationDeg: number
+  pivotX: number
+  pivotY: number
 }
 
 /** 整盘刻字图集：烘焙输入 + 世界采样矩阵 */

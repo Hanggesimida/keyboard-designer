@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 import type { RefObject } from "react"
 import type { KeyDef } from "@/modules/design/types/design"
+import { getKeySlotBoundsU } from "@/modules/design/lib/design/keyTransform"
 import type { Viewport } from "@/modules/design/hooks/useViewport"
 import { useLatestRef } from "@/hooks/useLatestRef"
 
@@ -64,10 +65,11 @@ function getKeycapsInMarquee(
 
   return keys
     .filter((key) => {
-      const kx1 = key.x * unit
-      const ky1 = key.y * unit
-      const kx2 = (key.x + key.w) * unit
-      const ky2 = (key.y + key.h) * unit
+      const bounds = getKeySlotBoundsU(key)
+      const kx1 = bounds.minX * unit
+      const ky1 = bounds.minY * unit
+      const kx2 = bounds.maxX * unit
+      const ky2 = bounds.maxY * unit
       return kx1 < ax2 && kx2 > ax1 && ky1 < ay2 && ky2 > ay1
     })
     .map((key) => key.keyId)

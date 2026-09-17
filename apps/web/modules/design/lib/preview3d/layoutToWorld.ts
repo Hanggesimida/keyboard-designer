@@ -10,6 +10,7 @@
 
 import { KEYCAP_GAP } from "@/modules/design/lib/design/keycapGeometry"
 import { getLayoutBounds } from "@/modules/design/lib/design/layout"
+import { threeKeyRotationYRad } from "@/modules/design/lib/design/keyTransform"
 import type { KeyDef } from "@/modules/design/types/design"
 import { PLACEHOLDER_KEY_HEIGHT } from "./constants"
 
@@ -18,6 +19,7 @@ export type Vec3 = [number, number, number]
 export interface KeyWorldTransform {
   position: Vec3
   size: Vec3
+  rotationYRad: number
 }
 
 /** 世界坐标系下键盘完整 bounds（一次遍历） */
@@ -54,6 +56,7 @@ export function keyDefToWorld(key: KeyDef, baseUnit: number): KeyWorldTransform 
     // Y = 0：底面中心贴地（GLB 与占位盒均按此约定放置）
     position: [x + w / 2, 0, y + h / 2],
     size: [sx, sy, sz],
+    rotationYRad: threeKeyRotationYRad(key.rotationDeg),
   }
 }
 

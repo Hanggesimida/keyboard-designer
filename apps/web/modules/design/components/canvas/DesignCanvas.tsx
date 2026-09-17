@@ -19,6 +19,7 @@ import {
   getLayoutBounds,
   getLayoutPixelSize,
 } from "@/modules/design/lib/design/layout"
+import { svgKeyRotateTransform } from "@/modules/design/lib/design/keyTransform"
 import type { KeyDef } from "@/modules/design/types/design"
 import { KeycapNode } from "./KeycapNode"
 import {
@@ -350,19 +351,23 @@ function KeyboardTemplate({
               const centerX = (key.x + key.w / 2) * unit
               const labelY = (key.y + key.h) * unit + 3
               return (
-                <text
+                <g
                   key={`supplement-rl-${key.keyId}`}
-                  x={centerX}
-                  y={labelY}
-                  fontSize={6}
-                  fill="var(--muted-foreground)"
-                  fillOpacity={0.45}
-                  textAnchor="middle"
-                  dominantBaseline="hanging"
-                  style={{ userSelect: "none" }}
+                  transform={svgKeyRotateTransform(key, unit)}
                 >
-                  {key.rowLevel}
-                </text>
+                  <text
+                    x={centerX}
+                    y={labelY}
+                    fontSize={6}
+                    fill="var(--muted-foreground)"
+                    fillOpacity={0.45}
+                    textAnchor="middle"
+                    dominantBaseline="hanging"
+                    style={{ userSelect: "none" }}
+                  >
+                    {key.rowLevel}
+                  </text>
+                </g>
               )
             })}
         </g>

@@ -172,6 +172,7 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
       geometry={geometry as never}
       material={material as never}
       position={[x, y, z]}
+      rotation={[0, previewKey.rotationYRad, 0]}
       scale={MODEL_SCALE}
       castShadow
       receiveShadow

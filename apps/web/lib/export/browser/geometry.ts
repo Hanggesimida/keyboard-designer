@@ -37,6 +37,7 @@ export interface LayoutKey {
   label: string
   rowLevel?: string
   shape?: string
+  rotationDeg?: number
 }
 
 export type JigShape =
