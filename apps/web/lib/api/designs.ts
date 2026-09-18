@@ -9,6 +9,7 @@ import type {
 import type { ExportCanvasElement } from '@/modules/design/lib/design/exportArtboard';
 import type { KeycapProfile } from '@/modules/design/types/design';
 import type { MaterialSettings } from '@/modules/design/lib/design/materials';
+import type { LightingSettings } from '@/modules/design/lib/design/lighting';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,8 @@ export interface DesignData {
   caseMaterial?: MaterialSettings;
   /** 缺省时按旧设计使用默认键帽材质。 */
   keycapMaterial?: MaterialSettings;
+  /** 缺省时按旧设计使用默认关闭的 3D 灯效。 */
+  lightingSettings?: LightingSettings;
   fontFamily: string;
   fontWeight: number;
   fontStyle: string;

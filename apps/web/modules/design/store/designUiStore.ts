@@ -20,6 +20,14 @@ import {
   type MaterialSettings,
 } from "@/modules/design/lib/design/materials"
 import {
+  createDefaultLightingSettings,
+  normalizeLightingSettings,
+  type LightingChannelId,
+  type LightingEnvironment,
+  type LightingSettings,
+  type BacklightSettings,
+} from "@/modules/design/lib/design/lighting"
+import {
   DEFAULT_KEYCAP_PROFILE,
   normalizeKeycapProfile,
   type KeycapProfile,
@@ -234,6 +242,8 @@ interface DesignUIState {
   caseMaterial: MaterialSettings
   /** 全局键帽 3D 材质（设计数据，参与保存与 undo） */
   keycapMaterial: MaterialSettings
+  /** 3D 灯效（设计数据，参与保存与 undo） */
+  lightingSettings: LightingSettings
   /** 真实键盘当前按下的键帽 id（纯 UI，不参与 undo） */
   pressedKeyIds: string[]
 }
@@ -330,6 +340,11 @@ interface DesignUIActions {
   /** 切换键帽材质预设，并恢复该预设默认参数 */
   setKeycapMaterialPreset: (preset: MaterialPresetId) => void
   updateKeycapMaterial: (patch: MaterialParameterPatch) => void
+  setLightingEnvironment: (environment: LightingEnvironment) => void
+  updateLightingChannel: (
+    channel: LightingChannelId,
+    patch: Partial<BacklightSettings>,
+  ) => void
   /** 设置 3D 预览面板高度（会 clamp 并写入 localStorage） */
   setPreview3dHeight: (height: number) => void
   /** 从 localStorage 恢复预览高度（客户端挂载后调用，避免 SSR mismatch） */
@@ -442,6 +457,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     show3dRealism: true,
     caseMaterial: createMaterialSettings(DEFAULT_CASE_MATERIAL_ID),
     keycapMaterial: createMaterialSettings(DEFAULT_KEYCAP_MATERIAL_ID),
+    lightingSettings: createDefaultLightingSettings(),
     pressedKeyIds: [],
 
     resetAll: () =>
@@ -454,6 +470,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
         caseMaterial: createMaterialSettings(DEFAULT_CASE_MATERIAL_ID),
         keycapMaterial: createMaterialSettings(DEFAULT_KEYCAP_MATERIAL_ID),
+        lightingSettings: createDefaultLightingSettings(),
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,
         fontStyle: "normal",
@@ -612,6 +629,7 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
         caseMaterial: createMaterialSettings(DEFAULT_CASE_MATERIAL_ID),
         keycapMaterial: createMaterialSettings(DEFAULT_KEYCAP_MATERIAL_ID),
+        lightingSettings: createDefaultLightingSettings(),
         globalKeycapStyle: initialGlobalKeycapStyle,
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,
@@ -824,6 +842,23 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     updateKeycapMaterial: (patch) =>
       set((s) => ({
         keycapMaterial: applyMaterialParameterPatch(s.keycapMaterial, patch),
+      })),
+    setLightingEnvironment: (environment) =>
+      set((s) => ({
+        lightingSettings: {
+          ...s.lightingSettings,
+          environment,
+        },
+      })),
+    updateLightingChannel: (channel, patch) =>
+      set((s) => ({
+        lightingSettings: normalizeLightingSettings({
+          ...s.lightingSettings,
+          [channel]: {
+            ...s.lightingSettings[channel],
+            ...patch,
+          },
+        }),
       })),
     setPreview3dHeight: (height) => {
       const next = clampPreview3dHeight(height)

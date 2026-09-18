@@ -464,7 +464,44 @@
         "glass": "Glass",
         "wood": "Wood grain"
       },
+      "lighting": {
+        "title": "3D lighting",
+        "hint": "Only affects the 3D preview and 3D PNG; backlighting is more visible through transparent or translucent keycaps.",
+        "environment": "Preview environment",
+        "environments": {
+          "studio": "Studio",
+          "dark": "Dark room"
+        },
+        "underglow": "Underglow",
+        "backlight": "Keycap backlight",
+        "color": "Color",
+        "intensity": "Brightness",
+        "speed": "Speed",
+        "mode": "Effect",
+        "modes": {
+          "always": "Always on",
+          "onPress": "Light on press",
+          "breath": "Breathing",
+          "wave": "Wave",
+          "rainbow": "Rainbow"
+        },
+        "onPressHint": "A keycap lights up only while you hold the matching key on a physical keyboard.",
+        "breathHint": "The whole board gently pulses in the selected color.",
+        "waveHint": "A band of light sweeps in the selected direction.",
+        "rainbowHint": "A rainbow spectrum flows in the selected direction.",
+        "direction": "Direction",
+        "directions": {
+          "ltr": "Left to right",
+          "rtl": "Right to left",
+          "ttb": "Top to bottom",
+          "btt": "Bottom to top",
+          "diag": "Diagonal"
+        }
+      },
       "resetAll": "Reset all styles",
+      "resetAllTitle": "Reset all style settings?",
+      "resetAllBody": "This restores the global keyboard font, colors, 3D materials, and lighting to their defaults. Per-keycap overrides are not affected.",
+      "confirmReset": "Reset",
       "selectionTitle": "Selected keycap style",
       "selectedCount": "{count, plural, one {# keycap selected} other {# keycaps selected}}",
       "batchEdit": "Batch edit",

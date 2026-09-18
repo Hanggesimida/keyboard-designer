@@ -382,16 +382,23 @@ export interface HexColorPickerProps {
   /** Accepts a hex string (#rrggbb) or a CSS linear-gradient() string. */
   value: string
   onChange: (value: string) => void
+  /** 灯光等仅接受纯色的场景可关闭渐变入口。 */
+  allowGradient?: boolean
 }
 
-export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
+export function HexColorPicker({
+  value,
+  onChange,
+  allowGradient = true,
+}: HexColorPickerProps) {
   const t = useTranslations("Design.color")
 
   // ── Mode ──────────────────────────────────────────────────────────────────
 
   const [mode, setMode] = useState<ColorMode>(
-    isGradientValue(value) ? "gradient" : "solid",
+    allowGradient && isGradientValue(value) ? "gradient" : "solid",
   )
+  const activeMode: ColorMode = allowGradient ? mode : "solid"
 
   // ── Solid color state ──────────────────────────────────────────────────────
 
@@ -624,7 +631,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
       const result: { sRGBHex: string } = await eyeDropper.open()
       const hex = result.sRGBHex
       if (!isValidHex(hex)) return
-      if (mode === "gradient") {
+      if (activeMode === "gradient") {
         applyStopColor(hex, hexToHsv(hex))
       } else {
         const next = hexToHsv(hex)
@@ -635,7 +642,7 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
     } catch {
       // user cancelled
     }
-  }, [supportsEyeDropper, mode, applyStopColor, onChange])
+  }, [supportsEyeDropper, activeMode, applyStopColor, onChange])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -667,24 +674,26 @@ export function HexColorPicker({ value, onChange }: HexColorPickerProps) {
         collisionPadding={8}
       >
         {/* Mode tabs */}
-        <div className="mb-3 flex rounded-md bg-muted p-0.5 text-[11px]">
-          {(["solid", "gradient"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={`flex-1 rounded py-1 font-medium transition-colors ${
-                mode === m
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => handleModeSwitch(m)}
-            >
-              {m === "solid" ? t("solid") : t("gradient")}
-            </button>
-          ))}
-        </div>
+        {allowGradient && (
+          <div className="mb-3 flex rounded-md bg-muted p-0.5 text-[11px]">
+            {(["solid", "gradient"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={`flex-1 rounded py-1 font-medium transition-colors ${
+                  mode === m
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => handleModeSwitch(m)}
+              >
+                {m === "solid" ? t("solid") : t("gradient")}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {mode === "solid" ? (
+        {activeMode === "solid" ? (
           /* ── Solid mode ─────────────────────────────────────────────── */
           <div className="flex flex-col gap-3">
             <SvPanel

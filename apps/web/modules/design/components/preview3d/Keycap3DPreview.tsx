@@ -79,6 +79,7 @@ export function Keycap3DPreview() {
   const toggleShow3dRealism = useDesignUIStore((s) => s.toggleShow3dRealism)
   const caseMaterial = useDesignUIStore((s) => s.caseMaterial)
   const keycapMaterial = useDesignUIStore((s) => s.keycapMaterial)
+  const lightingSettings = useDesignUIStore((s) => s.lightingSettings)
 
   useEffect(() => {
     preloadKeycapProfile(storeSlice.keycapProfile)
@@ -232,6 +233,7 @@ export function Keycap3DPreview() {
               showRealism={show3dRealism}
               caseMaterial={caseMaterial}
               keycapMaterial={keycapMaterial}
+              lightingSettings={lightingSettings}
               onSelectKeycap={handleSelectKeycap}
             />
             <SceneReady onPending={markPending} onReady={markReady} />

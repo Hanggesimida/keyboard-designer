@@ -32,6 +32,10 @@ import {
   normalizeMaterialSettings,
   type MaterialSettings,
 } from "@/modules/design/lib/design/materials"
+import {
+  normalizeLightingSettings,
+  type LightingSettings,
+} from "@/modules/design/lib/design/lighting"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import {
   getCurrentLayoutRevision,
@@ -499,6 +503,7 @@ export interface ImportPayload {
   keyboardCasePaint: string
   caseMaterial: MaterialSettings
   keycapMaterial: MaterialSettings
+  lightingSettings: LightingSettings
   fontFamily: string
   globalKeycapStyle: GlobalKeycapStyle
   layers: Layer[]
@@ -581,6 +586,7 @@ export async function parseImportJson(
         obj["keycapMaterial"],
         DEFAULT_KEYCAP_MATERIAL_ID,
       ),
+      lightingSettings: normalizeLightingSettings(obj["lightingSettings"]),
     }),
   }
 }
@@ -603,6 +609,7 @@ export function applyImportData(data: ImportPayload) {
       data.keycapMaterial,
       DEFAULT_KEYCAP_MATERIAL_ID,
     ),
+    lightingSettings: normalizeLightingSettings(data.lightingSettings),
     canvasElements: migration.elements,
   })
   // 将导出格式（内联 src）转换为运行时格式（assetId + assetMap）
@@ -623,6 +630,7 @@ export function applyImportData(data: ImportPayload) {
     keyboardCasePaint: normalized.keyboardCasePaint,
     caseMaterial: normalized.caseMaterial,
     keycapMaterial: normalized.keycapMaterial,
+    lightingSettings: normalized.lightingSettings,
     fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
     globalKeycapStyle: normalized.globalKeycapStyle,
     layers: normalized.layers,
@@ -644,6 +652,7 @@ export function exportArtboardJson() {
     keyboardCasePaint,
     caseMaterial,
     keycapMaterial,
+    lightingSettings,
     fontFamily,
     globalKeycapStyle,
     layers,
@@ -666,6 +675,7 @@ export function exportArtboardJson() {
     keyboardCasePaint,
     caseMaterial,
     keycapMaterial,
+    lightingSettings,
     fontFamily,
     globalKeycapStyle,
     layers,

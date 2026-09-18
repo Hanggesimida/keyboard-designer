@@ -6,6 +6,7 @@ import { PanelChrome } from "./panel-chrome"
 import { KeycapInfoSection } from "./sections/right/KeycapInfoSection"
 import { GlobalKeycapSection } from "./sections/right/GlobalKeycapSection"
 import { GlobalMaterialSection } from "./sections/right/GlobalMaterialSection"
+import { GlobalLightingSection } from "./sections/right/GlobalLightingSection"
 import { KeycapInspectorSection } from "./sections/right/KeycapInspectorSection"
 import {
   InspectorScopeSwitcher,
@@ -49,6 +50,7 @@ export function DesignSidebarRight() {
         <>
           <GlobalKeycapSection />
           <GlobalMaterialSection />
+          <GlobalLightingSection />
         </>
       ) : (
         <>

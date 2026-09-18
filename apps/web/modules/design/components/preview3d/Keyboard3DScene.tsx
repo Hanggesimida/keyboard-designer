@@ -32,23 +32,38 @@ import {
 import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
 import type { MaterialSettings } from "@/modules/design/lib/design/materials"
+import type {
+  LightingEnvironment,
+  LightingSettings,
+} from "@/modules/design/lib/design/lighting"
 import {
   configureWoodGrainTexture,
   WOOD_GRAIN_TEXTURE_PATH,
 } from "@/modules/design/lib/preview3d/materialTextures"
 import { KeycapDecalProvider } from "./KeycapDecalProvider"
 import { KeyboardCaseMesh } from "./KeyboardCaseMesh"
+import { KeyboardLightingRig } from "./KeyboardLightingRig"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
 import { KeycapMesh } from "./KeycapMesh"
 
 const SHADOW_FLOOR_GAP_U = 0.015
 const SHADOW_MARGIN_U = 1
+const DARK_STUDIO_BG = "#05070d"
 
 /** 跟随浅色/深色模式设置 WebGL 背景；Three.Color 无法解析 oklch/lab，必须用 hex */
-function ThemeSceneBackground() {
+function ThemeSceneBackground({
+  environment,
+}: {
+  environment: LightingEnvironment
+}) {
   const { resolvedTheme } = useTheme()
   const invalidate = useThree((s) => s.invalidate)
-  const bg = resolvedTheme === "light" ? PREVIEW_3D_BG_LIGHT : PREVIEW_3D_BG_DARK
+  const bg =
+    environment === "dark"
+      ? DARK_STUDIO_BG
+      : resolvedTheme === "light"
+        ? PREVIEW_3D_BG_LIGHT
+        : PREVIEW_3D_BG_DARK
 
   useLayoutEffect(() => {
     invalidate()
@@ -63,13 +78,16 @@ function PreviewEnvironment({
   extents,
   floorY,
   shadowKey,
+  environment,
 }: {
   center: Vec3
   extents: { width: number; depth: number }
   floorY: number
   shadowKey: string
+  environment: LightingEnvironment
 }) {
   const keyLightRef = useRef<DirectionalLight>(null)
+  const isDark = environment === "dark"
   const shadowScale = Math.max(extents.width, extents.depth) + SHADOW_MARGIN_U * 2
   const shadowExtent = shadowScale / 2
 
@@ -83,15 +101,15 @@ function PreviewEnvironment({
   return (
     <>
       <hemisphereLight
-        color="#f8fafc"
-        groundColor="#525866"
-        intensity={0.32}
+        color={isDark ? "#94a3b8" : "#f8fafc"}
+        groundColor={isDark ? "#080b14" : "#525866"}
+        intensity={isDark ? 0.08 : 0.32}
       />
       <directionalLight
         ref={keyLightRef}
         position={[center[0] + 6, 10, center[2] + 8]}
         color="#fffaf2"
-        intensity={1.35}
+        intensity={isDark ? 0.52 : 1.35}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -109,7 +127,7 @@ function PreviewEnvironment({
         <Lightformer
           form="rect"
           color="#fff7ed"
-          intensity={2.8}
+          intensity={isDark ? 0.75 : 2.8}
           position={[-5, 5, 4]}
           rotation={[-Math.PI / 4, 0, 0]}
           scale={[10, 8, 1]}
@@ -117,7 +135,7 @@ function PreviewEnvironment({
         <Lightformer
           form="rect"
           color="#dbeafe"
-          intensity={1.15}
+          intensity={isDark ? 0.38 : 1.15}
           position={[5, 2, 1]}
           rotation={[0, Math.PI / 2, 0]}
           scale={[6, 4, 1]}
@@ -125,7 +143,7 @@ function PreviewEnvironment({
         <Lightformer
           form="rect"
           color="#ffffff"
-          intensity={0.9}
+          intensity={isDark ? 0.22 : 0.9}
           position={[0, 4, -6]}
           rotation={[Math.PI / 2, 0, 0]}
           scale={[8, 3, 1]}
@@ -146,12 +164,23 @@ function PreviewEnvironment({
   )
 }
 
-function BasicLighting() {
+function BasicLighting({
+  environment,
+}: {
+  environment: LightingEnvironment
+}) {
+  const isDark = environment === "dark"
   return (
     <>
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[8, 12, 6]} intensity={1.1} />
-      <directionalLight position={[-6, 4, -4]} intensity={0.35} />
+      <ambientLight intensity={isDark ? 0.14 : 0.55} />
+      <directionalLight
+        position={[8, 12, 6]}
+        intensity={isDark ? 0.45 : 1.1}
+      />
+      <directionalLight
+        position={[-6, 4, -4]}
+        intensity={isDark ? 0.12 : 0.35}
+      />
     </>
   )
 }
@@ -263,6 +292,7 @@ interface Keyboard3DSceneProps {
   showRealism?: boolean
   caseMaterial: MaterialSettings
   keycapMaterial: MaterialSettings
+  lightingSettings: LightingSettings
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
   onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
 }
@@ -275,6 +305,7 @@ export function Keyboard3DScene({
   showRealism = true,
   caseMaterial,
   keycapMaterial,
+  lightingSettings,
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
   const invalidate = useThree((s) => s.invalidate)
@@ -325,21 +356,30 @@ export function Keyboard3DScene({
 
   useEffect(() => {
     invalidate()
-  }, [invalidate, showCase, showRealism])
+  }, [invalidate, lightingSettings, showCase, showRealism])
 
   return (
     <>
-      <ThemeSceneBackground />
+      <ThemeSceneBackground environment={lightingSettings.environment} />
       {showRealism ? (
         <PreviewEnvironment
           center={center}
           extents={extents}
           floorY={floorY}
           shadowKey={`${sceneModel.templateId}:${showCase}`}
+          environment={lightingSettings.environment}
         />
       ) : (
-        <BasicLighting />
+        <BasicLighting environment={lightingSettings.environment} />
       )}
+
+      <KeyboardLightingRig
+        settings={lightingSettings}
+        keys={sceneModel.keys}
+        center={center}
+        extents={extents}
+        floorY={floorY}
+      />
 
       <CameraRig
         center={center}

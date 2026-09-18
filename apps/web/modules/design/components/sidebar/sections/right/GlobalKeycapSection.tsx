@@ -3,6 +3,17 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { Eye, EyeOff, RotateCcw } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -20,6 +31,8 @@ const FONT_SIZE_MAX = 32
 
 export function GlobalKeycapSection() {
   const t = useTranslations("Design.inspector")
+  const tCommon = useTranslations("Common")
+  const [resetOpen, setResetOpen] = useState(false)
   const keyboardCasePaint = useDesignUIStore((s) => s.keyboardCasePaint)
   const setKeyboardCasePaint = useDesignUIStore((s) => s.setKeyboardCasePaint)
   const globalKeycapStyle = useDesignUIStore((s) => s.globalKeycapStyle)
@@ -55,7 +68,46 @@ export function GlobalKeycapSection() {
   }
 
   return (
-    <PanelSection title={t("globalTitle")} first>
+    <PanelSection
+      title={t("globalTitle")}
+      first
+      action={
+        <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+          <AlertDialogTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                className="size-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                title={t("resetAll")}
+              />
+            }
+          >
+            <RotateCcw className="size-3" />
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("resetAllTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("resetAllBody")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  resetGlobalKeycapStyleSettings()
+                  setResetOpen(false)
+                }}
+              >
+                {t("confirmReset")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      }
+    >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <FontFamilySelect
@@ -169,19 +221,6 @@ export function GlobalKeycapSection() {
             </Button>
           }
         />
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-1 h-8 w-full gap-1.5 font-normal shadow-none cursor-pointer"
-          onClick={() => {
-            resetGlobalKeycapStyleSettings()
-          }}
-        >
-          <RotateCcw className="size-3.5 opacity-70" />
-          {t("resetAll")}
-        </Button>
       </div>
     </PanelSection>
   )
