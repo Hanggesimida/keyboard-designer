@@ -519,8 +519,8 @@ export function KeyboardLightingRig({
   floorY,
 }: KeyboardLightingRigProps) {
   const invalidate = useThree((state) => state.invalidate)
-  const glowTexture = useMemo(createGlowTexture, [])
-  const stripGlowTexture = useMemo(createStripGlowTexture, [])
+  const glowTexture = useMemo(() => createGlowTexture(), [])
+  const stripGlowTexture = useMemo(() => createStripGlowTexture(), [])
   const { underglow, backlight } = settings
   const stripY = floorY + 0.004
   const stripLengthX = extents.width + UNDERGLOW_STRIP_OVERHANG_U * 2
