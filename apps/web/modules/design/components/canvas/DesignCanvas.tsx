@@ -190,6 +190,7 @@ function ClippedImagesLayer({
               >
                 <image
                   href={item.src}
+                  xlinkHref={item.src}
                   x={item.x}
                   y={item.y}
                   width={item.width}

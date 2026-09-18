@@ -77,10 +77,8 @@ export function Keycap3DPreview() {
   const toggleShow3dCase = useDesignUIStore((s) => s.toggleShow3dCase)
   const show3dRealism = useDesignUIStore((s) => s.show3dRealism)
   const toggleShow3dRealism = useDesignUIStore((s) => s.toggleShow3dRealism)
-  const caseMaterialPreset = useDesignUIStore((s) => s.caseMaterialPreset)
-  const setCaseMaterialPreset = useDesignUIStore(
-    (s) => s.setCaseMaterialPreset,
-  )
+  const caseMaterial = useDesignUIStore((s) => s.caseMaterial)
+  const keycapMaterial = useDesignUIStore((s) => s.keycapMaterial)
 
   useEffect(() => {
     preloadKeycapProfile(storeSlice.keycapProfile)
@@ -232,7 +230,8 @@ export function Keycap3DPreview() {
               cameraViewToken={cameraViewToken}
               showCase={show3dCase}
               showRealism={show3dRealism}
-              caseMaterialPreset={caseMaterialPreset}
+              caseMaterial={caseMaterial}
+              keycapMaterial={keycapMaterial}
               onSelectKeycap={handleSelectKeycap}
             />
             <SceneReady onPending={markPending} onReady={markReady} />
@@ -250,8 +249,6 @@ export function Keycap3DPreview() {
           onToggleCase={toggleShow3dCase}
           showRealism={show3dRealism}
           onToggleRealism={toggleShow3dRealism}
-          caseMaterialPreset={caseMaterialPreset}
-          onCaseMaterialPresetChange={setCaseMaterialPreset}
           missingModels={sceneModel.missingModels}
         />
       </div>

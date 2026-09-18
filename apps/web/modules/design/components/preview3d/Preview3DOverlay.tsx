@@ -10,18 +10,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 import { Spinner } from "@workspace/ui/components/spinner"
-import {
-  CASE_MATERIAL_PRESETS,
-  type CaseMaterialPresetId,
-} from "@/modules/design/lib/preview3d/caseMaterialPresets"
 
 const PREVIEW_3D_SHELL_STYLE = {
   backgroundColor: "var(--design-preview3d-bg)",
@@ -63,8 +52,6 @@ interface Preview3DOverlayProps {
   onToggleCase: () => void
   showRealism: boolean
   onToggleRealism: () => void
-  caseMaterialPreset: CaseMaterialPresetId
-  onCaseMaterialPresetChange: (preset: CaseMaterialPresetId) => void
   /** 当前布局缺失的期望 GLB 文件名 */
   missingModels?: readonly string[]
 }
@@ -81,8 +68,6 @@ export function Preview3DOverlay({
   onToggleCase,
   showRealism,
   onToggleRealism,
-  caseMaterialPreset,
-  onCaseMaterialPresetChange,
   missingModels = [],
 }: Preview3DOverlayProps) {
   const t = useTranslations("Design.preview3d")
@@ -163,33 +148,6 @@ export function Preview3DOverlay({
           >
             <Box className="size-3.5" />
           </Button>
-          <Select
-            value={caseMaterialPreset}
-            onValueChange={(value) => {
-              if (typeof value === "string") {
-                onCaseMaterialPresetChange(value as CaseMaterialPresetId)
-              }
-            }}
-          >
-            <SelectTrigger
-              size="sm"
-              disabled={!showCase}
-              className="h-7 w-[96px] border-0 bg-transparent px-2 text-[11px] shadow-none"
-              aria-label={t("caseMaterial")}
-              title={t("caseMaterial")}
-            >
-              <SelectValue>
-                {t(`materials.${caseMaterialPreset}`)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent side="top" align="start">
-              {CASE_MATERIAL_PRESETS.map((preset) => (
-                <SelectItem key={preset.id} value={preset.id}>
-                  {t(`materials.${preset.id}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Button
             type="button"
             variant="ghost"

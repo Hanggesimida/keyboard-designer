@@ -10,7 +10,7 @@ import {
   LinearFilter,
   LinearMipmapLinearFilter,
   Matrix3,
-  MeshStandardMaterial,
+  MeshPhysicalMaterial,
   SRGBColorSpace,
   type Texture,
 } from "three"
@@ -19,6 +19,7 @@ import {
   KEYCAP_MATERIAL_METALNESS,
   KEYCAP_MATERIAL_ROUGHNESS,
 } from "@/modules/design/lib/preview3d/constants"
+import type { MaterialSettings } from "@/modules/design/lib/design/materials"
 
 /** 场景级共享的贴花 uniform（多颗键帽引用同一对象） */
 export interface SharedDyeSubUniforms {
@@ -51,29 +52,83 @@ export interface KeycapDyeSubMaterialOptions {
   wireframe?: boolean
   roughness?: number
   metalness?: number
+  surface?: MaterialSettings
+  woodMap?: Texture
 }
 
-const SHADER_CACHE_KEY = "keycap-dyesub-v5-pbt"
+interface KeycapSurfaceUniforms {
+  woodEnabled: { value: number }
+  woodMap: { value: Texture | null }
+  woodScale: { value: number }
+  grainStrength: { value: number }
+}
+
+const SURFACE_UNIFORMS = new WeakMap<
+  MeshPhysicalMaterial,
+  KeycapSurfaceUniforms
+>()
+const SHADER_CACHE_KEY = "keycap-dyesub-v6-physical-wood"
+
+function materialEnvMapIntensity(presetId: MaterialSettings["presetId"]): number {
+  if (presetId === "metal") return 1.2
+  if (presetId === "glass") return 1.35
+  if (presetId === "translucentPlastic") return 1
+  if (presetId === "wood") return 0.58
+  return KEYCAP_MATERIAL_ENV_MAP_INTENSITY
+}
+
+function materialIor(presetId: MaterialSettings["presetId"]): number {
+  return presetId === "glass" ? 1.52 : 1.47
+}
+
+function materialThickness(presetId: MaterialSettings["presetId"]): number {
+  return presetId === "glass" ? 0.16 : 0.12
+}
 
 /**
- * 创建带世界空间贴花的 Standard 材质。
+ * 创建带世界空间贴花的 Physical 材质。
  * 调用方负责 dispose；shared uniforms 由场景层持有与更新。
  */
 export function createKeycapDyeSubMaterial(
   options: KeycapDyeSubMaterialOptions,
-): MeshStandardMaterial {
+): MeshPhysicalMaterial {
   const selected = options.selected ?? false
-  const mat = new MeshStandardMaterial({
+  const surface = options.surface
+  const transparency = surface?.transparency ?? 0
+  const mat = new MeshPhysicalMaterial({
     color: options.color,
-    roughness: options.roughness ?? KEYCAP_MATERIAL_ROUGHNESS,
-    metalness: options.metalness ?? KEYCAP_MATERIAL_METALNESS,
-    envMapIntensity: KEYCAP_MATERIAL_ENV_MAP_INTENSITY,
+    roughness:
+      options.roughness ??
+      surface?.roughness ??
+      KEYCAP_MATERIAL_ROUGHNESS,
+    metalness:
+      options.metalness ??
+      surface?.metalness ??
+      KEYCAP_MATERIAL_METALNESS,
+    envMapIntensity: surface
+      ? materialEnvMapIntensity(surface.presetId)
+      : KEYCAP_MATERIAL_ENV_MAP_INTENSITY,
     emissive: selected ? "#5b8def" : "#000000",
     emissiveIntensity: selected ? 0.35 : 0,
-    transparent: options.transparent ?? false,
+    transparent: options.transparent ?? transparency > 0,
     opacity: options.opacity ?? 1,
     wireframe: options.wireframe ?? false,
+    transmission: transparency,
+    thickness: surface ? materialThickness(surface.presetId) : 0.12,
+    ior: surface ? materialIor(surface.presetId) : 1.47,
+    clearcoat: surface?.presetId === "glass" ? 0.12 : 0,
+    clearcoatRoughness: 0.08,
+    depthWrite: options.transparent ? false : transparency === 0,
   })
+  const surfaceUniforms: KeycapSurfaceUniforms = {
+    woodEnabled: { value: surface?.presetId === "wood" ? 1 : 0 },
+    woodMap: { value: options.woodMap ?? null },
+    woodScale: { value: 0.42 },
+    grainStrength: {
+      value: surface?.presetId === "mattePlastic" ? 0.08 : 0,
+    },
+  }
+  SURFACE_UNIFORMS.set(mat, surfaceUniforms)
 
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uMap = options.shared.uMap
@@ -82,6 +137,10 @@ export function createKeycapDyeSubMaterial(
     shader.uniforms.uLegendMap = options.shared.uLegendMap
     shader.uniforms.uLegendMatrix = options.shared.uLegendMatrix
     shader.uniforms.uHasLegend = options.shared.uHasLegend
+    shader.uniforms.uWoodEnabled = surfaceUniforms.woodEnabled
+    shader.uniforms.uWoodMap = surfaceUniforms.woodMap
+    shader.uniforms.uWoodScale = surfaceUniforms.woodScale
+    shader.uniforms.uSurfaceGrainStrength = surfaceUniforms.grainStrength
 
     shader.vertexShader = shader.vertexShader.replace(
       "void main() {",
@@ -110,8 +169,12 @@ uniform float uHasMap;
 uniform sampler2D uLegendMap;
 uniform mat3 uLegendMatrix;
 uniform float uHasLegend;
+uniform sampler2D uWoodMap;
+uniform float uWoodEnabled;
+uniform float uWoodScale;
 varying vec3 vWorldPos_dye;
 varying vec3 vWorldNormal_dye;
+uniform float uSurfaceGrainStrength;
 float pbtGrainHash(vec3 p) {
   p = fract(p * 0.1031);
   p += dot(p, p.yzx + 33.33);
@@ -127,7 +190,11 @@ void main() {
 #include <roughnessmap_fragment>
 {
   float pbtGrain = pbtGrainHash(floor(vWorldPos_dye * 64.0));
-  roughnessFactor = clamp(roughnessFactor + (pbtGrain - 0.5) * 0.08, 0.04, 1.0);
+  roughnessFactor = clamp(
+    roughnessFactor + (pbtGrain - 0.5) * uSurfaceGrainStrength,
+    0.04,
+    1.0
+  );
 }
 `,
     )
@@ -140,6 +207,20 @@ void main() {
   vec3 N = normalize(vWorldNormal_dye);
   vec3 P = vWorldPos_dye;
   float topW = smoothstep(0.25, 0.75, N.y);
+  if (uWoodEnabled > 0.5) {
+    vec3 woodWeights = pow(abs(N), vec3(4.0));
+    woodWeights /= max(
+      woodWeights.x + woodWeights.y + woodWeights.z,
+      0.0001
+    );
+    vec3 woodX = texture2D(uWoodMap, P.zy * uWoodScale).rgb;
+    vec3 woodY = texture2D(uWoodMap, P.xz * uWoodScale).rgb;
+    vec3 woodZ = texture2D(uWoodMap, P.xy * uWoodScale).rgb;
+    diffuseColor.rgb *=
+      woodX * woodWeights.x +
+      woodY * woodWeights.y +
+      woodZ * woodWeights.z;
+  }
   if (uHasMap > 0.5 && N.y > -0.2) {
     vec2 uv = (uImageMatrix * vec3(P.xz, 1.0)).xy;
     if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
@@ -165,7 +246,7 @@ void main() {
 }
 
 export function syncDyeSubAppearance(
-  material: MeshStandardMaterial,
+  material: MeshPhysicalMaterial,
   opts: { color: string; selected: boolean },
 ): void {
   material.color.set(opts.color)
@@ -176,6 +257,34 @@ export function syncDyeSubAppearance(
     material.emissive.set("#000000")
     material.emissiveIntensity = 0
   }
+}
+
+export function syncKeycapMaterialSurface(
+  material: MeshPhysicalMaterial,
+  surface: MaterialSettings,
+  woodMap: Texture | null,
+): void {
+  const uniforms = SURFACE_UNIFORMS.get(material)
+  const hadTransmission = material.transmission > 0
+  const hasTransmission = surface.transparency > 0
+
+  material.roughness = surface.roughness
+  material.metalness = surface.metalness
+  material.envMapIntensity = materialEnvMapIntensity(surface.presetId)
+  material.transmission = surface.transparency
+  material.transparent = hasTransmission
+  material.depthWrite = !hasTransmission
+  material.thickness = materialThickness(surface.presetId)
+  material.ior = materialIor(surface.presetId)
+  material.clearcoat = surface.presetId === "glass" ? 0.12 : 0
+  material.clearcoatRoughness = 0.08
+  if (uniforms) {
+    uniforms.woodEnabled.value = surface.presetId === "wood" ? 1 : 0
+    uniforms.woodMap.value = woodMap
+    uniforms.grainStrength.value =
+      surface.presetId === "mattePlastic" ? 0.08 : 0
+  }
+  if (hadTransmission !== hasTransmission) material.needsUpdate = true
 }
 
 /** 配置图片图集的颜色空间和采样方向。 */

@@ -5,6 +5,7 @@ import { useDesignUIStore } from "@/modules/design/store/designUiStore"
 import { PanelChrome } from "./panel-chrome"
 import { KeycapInfoSection } from "./sections/right/KeycapInfoSection"
 import { GlobalKeycapSection } from "./sections/right/GlobalKeycapSection"
+import { GlobalMaterialSection } from "./sections/right/GlobalMaterialSection"
 import { KeycapInspectorSection } from "./sections/right/KeycapInspectorSection"
 import {
   InspectorScopeSwitcher,
@@ -45,7 +46,10 @@ export function DesignSidebarRight() {
         onScopeChange={handleScopeChange}
       />
       {scope === "global" ? (
-        <GlobalKeycapSection />
+        <>
+          <GlobalKeycapSection />
+          <GlobalMaterialSection />
+        </>
       ) : (
         <>
           <KeycapInspectorSection />

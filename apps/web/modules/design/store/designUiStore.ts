@@ -12,9 +12,13 @@ import {
   PREVIEW_3D_HEIGHT_STORAGE_KEY,
 } from "@/modules/design/lib/preview3d/constants"
 import {
-  DEFAULT_CASE_MATERIAL_PRESET_ID,
-  type CaseMaterialPresetId,
-} from "@/modules/design/lib/preview3d/caseMaterialPresets"
+  clampMaterialParameter,
+  createMaterialSettings,
+  DEFAULT_CASE_MATERIAL_ID,
+  DEFAULT_KEYCAP_MATERIAL_ID,
+  type MaterialPresetId,
+  type MaterialSettings,
+} from "@/modules/design/lib/design/materials"
 import {
   DEFAULT_KEYCAP_PROFILE,
   normalizeKeycapProfile,
@@ -176,6 +180,10 @@ export interface KeycapStyleTransferRequest {
   targetKeycapIds: string[]
 }
 
+type MaterialParameterPatch = Partial<
+  Pick<MaterialSettings, "roughness" | "metalness" | "transparency">
+>
+
 interface DesignUIState {
   templateId: TemplateId
   /** 全局键帽三维造型；不改变 2D 编辑几何。 */
@@ -222,8 +230,10 @@ interface DesignUIState {
   show3dCase: boolean
   /** 3D 预览是否启用写实光照与接触阴影（纯 UI，不参与 undo） */
   show3dRealism: boolean
-  /** 3D 预览外壳材质（纯 UI，不参与设计保存或 undo） */
-  caseMaterialPreset: CaseMaterialPresetId
+  /** 外壳 3D 材质（设计数据，参与保存与 undo） */
+  caseMaterial: MaterialSettings
+  /** 全局键帽 3D 材质（设计数据，参与保存与 undo） */
+  keycapMaterial: MaterialSettings
   /** 真实键盘当前按下的键帽 id（纯 UI，不参与 undo） */
   pressedKeyIds: string[]
 }
@@ -314,8 +324,12 @@ interface DesignUIActions {
   toggleShow3dCase: () => void
   /** 切换 3D 写实增强 */
   toggleShow3dRealism: () => void
-  /** 设置 3D 预览外壳材质 */
-  setCaseMaterialPreset: (preset: CaseMaterialPresetId) => void
+  /** 切换外壳材质预设，并恢复该预设默认参数 */
+  setCaseMaterialPreset: (preset: MaterialPresetId) => void
+  updateCaseMaterial: (patch: MaterialParameterPatch) => void
+  /** 切换键帽材质预设，并恢复该预设默认参数 */
+  setKeycapMaterialPreset: (preset: MaterialPresetId) => void
+  updateKeycapMaterial: (patch: MaterialParameterPatch) => void
   /** 设置 3D 预览面板高度（会 clamp 并写入 localStorage） */
   setPreview3dHeight: (height: number) => void
   /** 从 localStorage 恢复预览高度（客户端挂载后调用，避免 SSR mismatch） */
@@ -338,6 +352,27 @@ const initialLayers: Layer[] = [
   { id: "layer-default-keycap", name: "键帽层", visible: true, locked: false, opacity: 1 },
 ]
 
+function applyMaterialParameterPatch(
+  material: MaterialSettings,
+  patch: MaterialParameterPatch,
+): MaterialSettings {
+  return {
+    ...material,
+    roughness:
+      patch.roughness === undefined
+        ? material.roughness
+        : clampMaterialParameter(patch.roughness),
+    metalness:
+      patch.metalness === undefined
+        ? material.metalness
+        : clampMaterialParameter(patch.metalness),
+    transparency:
+      patch.transparency === undefined
+        ? material.transparency
+        : clampMaterialParameter(patch.transparency),
+  }
+}
+
 /**
  * 只追踪设计数据变更，排除纯 UI 选择态、实时预览态以及素材库（assetMap）。
  * assetMap 含大型 base64 字符串，不应随状态快照复制；素材去重也依赖其跨历史持久化。
@@ -355,7 +390,6 @@ export type UndoableDesignState = Omit<
   | "preview3dHeight"
   | "show3dCase"
   | "show3dRealism"
-  | "caseMaterialPreset"
   | "pressedKeyIds"
 >
 
@@ -406,7 +440,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     preview3dHeight: PREVIEW_3D_HEIGHT_DEFAULT,
     show3dCase: true,
     show3dRealism: true,
-    caseMaterialPreset: DEFAULT_CASE_MATERIAL_PRESET_ID,
+    caseMaterial: createMaterialSettings(DEFAULT_CASE_MATERIAL_ID),
+    keycapMaterial: createMaterialSettings(DEFAULT_KEYCAP_MATERIAL_ID),
     pressedKeyIds: [],
 
     resetAll: () =>
@@ -417,6 +452,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         globalKeycapStyle: initialGlobalKeycapStyle,
         layerKeycapOverrides: {},
         keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
+        caseMaterial: createMaterialSettings(DEFAULT_CASE_MATERIAL_ID),
+        keycapMaterial: createMaterialSettings(DEFAULT_KEYCAP_MATERIAL_ID),
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,
         fontStyle: "normal",
@@ -573,6 +610,8 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     resetGlobalKeycapStyleSettings: () =>
       set({
         keyboardCasePaint: DEFAULT_KEYBOARD_CASE_PAINT,
+        caseMaterial: createMaterialSettings(DEFAULT_CASE_MATERIAL_ID),
+        keycapMaterial: createMaterialSettings(DEFAULT_KEYCAP_MATERIAL_ID),
         globalKeycapStyle: initialGlobalKeycapStyle,
         fontFamily: "var(--font-ibm-plex-mono)",
         fontWeight: 400,
@@ -774,7 +813,18 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
     toggleShow3dCase: () => set((s) => ({ show3dCase: !s.show3dCase })),
     toggleShow3dRealism: () =>
       set((s) => ({ show3dRealism: !s.show3dRealism })),
-    setCaseMaterialPreset: (caseMaterialPreset) => set({ caseMaterialPreset }),
+    setCaseMaterialPreset: (preset) =>
+      set({ caseMaterial: createMaterialSettings(preset) }),
+    updateCaseMaterial: (patch) =>
+      set((s) => ({
+        caseMaterial: applyMaterialParameterPatch(s.caseMaterial, patch),
+      })),
+    setKeycapMaterialPreset: (preset) =>
+      set({ keycapMaterial: createMaterialSettings(preset) }),
+    updateKeycapMaterial: (patch) =>
+      set((s) => ({
+        keycapMaterial: applyMaterialParameterPatch(s.keycapMaterial, patch),
+      })),
     setPreview3dHeight: (height) => {
       const next = clampPreview3dHeight(height)
       persistPreview3dHeight(next)
@@ -813,7 +863,6 @@ export const useDesignUIStore = create<DesignUIState & DesignUIActions>()(
         "preview3dHeight",
         "show3dCase",
         "show3dRealism",
-        "caseMaterialPreset",
         "pressedKeyIds",
       ]
       for (const key of excluded) {

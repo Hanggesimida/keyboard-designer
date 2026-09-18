@@ -26,6 +26,12 @@ import {
   type TextDescriptor,
 } from "@/lib/export"
 import { normalizeDesignColorFields } from "@/modules/design/lib/design/normalizeKeycapColors"
+import {
+  DEFAULT_CASE_MATERIAL_ID,
+  DEFAULT_KEYCAP_MATERIAL_ID,
+  normalizeMaterialSettings,
+  type MaterialSettings,
+} from "@/modules/design/lib/design/materials"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import {
   getCurrentLayoutRevision,
@@ -33,6 +39,8 @@ import {
   migrateLayoutElements,
 } from "@/modules/design/lib/design/layoutRevision"
 const SVG_NS = "http://www.w3.org/2000/svg"
+const XLINK_NS = "http://www.w3.org/1999/xlink"
+const XMLNS_NS = "http://www.w3.org/2000/xmlns/"
 
 export interface ExportArtboardParams {
   artboardEl: HTMLElement | null
@@ -201,7 +209,7 @@ async function replaceSvgTextsWithPaths(svgStr: string): Promise<string> {
   // 移除 <style> 字体 CSS（字体已转曲为路径，不再需要 @font-face）
   doc.querySelectorAll("style").forEach((s) => s.remove())
 
-  return new XMLSerializer().serializeToString(doc.documentElement)
+  return serializeForIllustrator(doc.documentElement)
 }
 
 function buildExportFilename(
@@ -235,17 +243,60 @@ function triggerDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
+function getSvgHref(el: Element): string {
+  return el.getAttribute("href") || el.getAttributeNS(XLINK_NS, "href") || ""
+}
+
+/**
+ * Illustrator / 旧版 Inkscape 只认 SVG 1.1 的 xlink:href；
+ * 浏览器走 SVG 2 的 href。导出时两个都写，避免 AI 当成缺失的外部链接。
+ */
+function setSvgHref(el: Element, src: string) {
+  if (!src) return
+  el.setAttribute("href", src)
+  el.setAttributeNS(XLINK_NS, "xlink:href", src)
+}
+
+function applyIllustratorHrefs(root: Element) {
+  for (const el of root.querySelectorAll("image, use")) {
+    const src = getSvgHref(el)
+    if (src) setSvgHref(el, src)
+  }
+}
+
+/** XMLSerializer 偶尔会丢掉 xlink:href，序列化后再补一层。 */
+function ensureSerializedXlinkHrefs(svgText: string): string {
+  const withNs = svgText.includes("xmlns:xlink")
+    ? svgText
+    : svgText.replace(/<svg\b/, `<svg xmlns:xlink="${XLINK_NS}"`)
+
+  return withNs.replace(/<(image|use)\b([^>]*?)(\/?)>/gi, (full, tag, attrs, slash) => {
+    if (/\bxlink:href\s*=/i.test(attrs)) return full
+    const hrefMatch = /(?<![:\w])href\s*=\s*("([^"]*)"|'([^']*)')/i.exec(attrs)
+    if (!hrefMatch) return full
+    return `<${tag}${attrs} xlink:href=${hrefMatch[1]}${slash}>`
+  })
+}
+
+function serializeForIllustrator(root: Element): string {
+  root.setAttributeNS(XMLNS_NS, "xmlns", SVG_NS)
+  root.setAttributeNS(XMLNS_NS, "xmlns:xlink", XLINK_NS)
+  applyIllustratorHrefs(root)
+  return ensureSerializedXlinkHrefs(new XMLSerializer().serializeToString(root))
+}
+
 function createSvgImageEl(
   ns: string,
   el: Pick<CanvasImageElement, "x" | "y" | "width" | "height" | "opacity" | "rotation">,
   src: string,
 ): SVGImageElement {
   const img = document.createElementNS(ns, "image") as SVGImageElement
-  img.setAttribute("href", src)
+  setSvgHref(img, src)
   img.setAttribute("x", String(el.x))
   img.setAttribute("y", String(el.y))
   img.setAttribute("width", String(el.width))
   img.setAttribute("height", String(el.height))
+  img.setAttribute("preserveAspectRatio", "none")
   if (el.opacity !== 1) img.setAttribute("opacity", String(el.opacity))
   if (el.rotation) {
     const cx = el.x + el.width / 2
@@ -275,8 +326,9 @@ export function buildExportSvgString({
   if (!svgEl) return ""
 
   const exportSvg = document.createElementNS(SVG_NS, "svg")
-  exportSvg.setAttribute("xmlns", SVG_NS)
-  exportSvg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink")
+  exportSvg.setAttributeNS(XMLNS_NS, "xmlns", SVG_NS)
+  exportSvg.setAttributeNS(XMLNS_NS, "xmlns:xlink", XLINK_NS)
+  exportSvg.setAttribute("version", "1.1")
   exportSvg.setAttribute("width", String(artW))
   exportSvg.setAttribute("height", String(artH))
   exportSvg.setAttribute("viewBox", `0 0 ${artW} ${artH}`)
@@ -346,7 +398,7 @@ export function buildExportSvgString({
     }
   }
 
-  return new XMLSerializer().serializeToString(exportSvg)
+  return serializeForIllustrator(exportSvg)
 }
 
 /** 将画板 SVG 渲染到 Canvas（含转曲），供 PNG 导出与缩略图生成复用 */
@@ -445,6 +497,8 @@ export interface ImportPayload {
   keycapProfile: KeycapProfile
   layoutRevision?: number
   keyboardCasePaint: string
+  caseMaterial: MaterialSettings
+  keycapMaterial: MaterialSettings
   fontFamily: string
   globalKeycapStyle: GlobalKeycapStyle
   layers: Layer[]
@@ -519,6 +573,14 @@ export async function parseImportJson(
     data: normalizeDesignColorFields({
       ...(raw as ImportPayload),
       keycapProfile: normalizeKeycapProfile(obj["keycapProfile"]),
+      caseMaterial: normalizeMaterialSettings(
+        obj["caseMaterial"],
+        DEFAULT_CASE_MATERIAL_ID,
+      ),
+      keycapMaterial: normalizeMaterialSettings(
+        obj["keycapMaterial"],
+        DEFAULT_KEYCAP_MATERIAL_ID,
+      ),
     }),
   }
 }
@@ -533,6 +595,14 @@ export function applyImportData(data: ImportPayload) {
   const normalized = normalizeDesignColorFields({
     ...data,
     layoutRevision: migration.layoutRevision,
+    caseMaterial: normalizeMaterialSettings(
+      data.caseMaterial,
+      DEFAULT_CASE_MATERIAL_ID,
+    ),
+    keycapMaterial: normalizeMaterialSettings(
+      data.keycapMaterial,
+      DEFAULT_KEYCAP_MATERIAL_ID,
+    ),
     canvasElements: migration.elements,
   })
   // 将导出格式（内联 src）转换为运行时格式（assetId + assetMap）
@@ -551,6 +621,8 @@ export function applyImportData(data: ImportPayload) {
     templateId: normalized.templateId,
     keycapProfile: normalizeKeycapProfile(normalized.keycapProfile),
     keyboardCasePaint: normalized.keyboardCasePaint,
+    caseMaterial: normalized.caseMaterial,
+    keycapMaterial: normalized.keycapMaterial,
     fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
     globalKeycapStyle: normalized.globalKeycapStyle,
     layers: normalized.layers,
@@ -570,6 +642,8 @@ export function exportArtboardJson() {
     templateId,
     keycapProfile,
     keyboardCasePaint,
+    caseMaterial,
+    keycapMaterial,
     fontFamily,
     globalKeycapStyle,
     layers,
@@ -590,6 +664,8 @@ export function exportArtboardJson() {
     keycapProfile,
     layoutRevision: getCurrentLayoutRevision(templateId),
     keyboardCasePaint,
+    caseMaterial,
+    keycapMaterial,
     fontFamily,
     globalKeycapStyle,
     layers,

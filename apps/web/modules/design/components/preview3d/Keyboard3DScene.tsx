@@ -1,6 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useLayoutEffect, useRef, type ComponentRef } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type ComponentRef,
+} from "react"
 import { useTheme } from "next-themes"
 import { useThree } from "@react-three/fiber"
 import {
@@ -8,6 +15,7 @@ import {
   Environment,
   Lightformer,
   OrbitControls,
+  useTexture,
 } from "@react-three/drei"
 import { useLatestRef } from "@/hooks/useLatestRef"
 import { useSpacePressed } from "@/modules/design/hooks/useSpacePressed"
@@ -23,7 +31,11 @@ import {
 } from "@/modules/design/lib/preview3d/cameraFit"
 import type { PreviewSceneModel } from "@/modules/design/lib/preview3d/types"
 import type { Vec3 } from "@/modules/design/lib/preview3d/layoutToWorld"
-import type { CaseMaterialPresetId } from "@/modules/design/lib/preview3d/caseMaterialPresets"
+import type { MaterialSettings } from "@/modules/design/lib/design/materials"
+import {
+  configureWoodGrainTexture,
+  WOOD_GRAIN_TEXTURE_PATH,
+} from "@/modules/design/lib/preview3d/materialTextures"
 import { KeycapDecalProvider } from "./KeycapDecalProvider"
 import { KeyboardCaseMesh } from "./KeyboardCaseMesh"
 import { PlaceholderKeycap } from "./PlaceholderKeycap"
@@ -249,8 +261,8 @@ interface Keyboard3DSceneProps {
   showCase?: boolean
   /** 是否启用环境光与接触阴影 */
   showRealism?: boolean
-  /** 仅用于预览的外壳材质 */
-  caseMaterialPreset: CaseMaterialPresetId
+  caseMaterial: MaterialSettings
+  keycapMaterial: MaterialSettings
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
   onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
 }
@@ -261,10 +273,21 @@ export function Keyboard3DScene({
   cameraViewToken = 0,
   showCase = true,
   showRealism = true,
-  caseMaterialPreset,
+  caseMaterial,
+  keycapMaterial,
   onSelectKeycap,
 }: Keyboard3DSceneProps) {
   const invalidate = useThree((s) => s.invalidate)
+  const gl = useThree((s) => s.gl)
+  const woodTexture = useTexture(WOOD_GRAIN_TEXTURE_PATH)
+  const woodMap = useMemo(
+    () =>
+      configureWoodGrainTexture(
+        woodTexture,
+        gl.capabilities.getMaxAnisotropy(),
+      ),
+    [gl, woodTexture],
+  )
   const isSpacePressed = useSpacePressed()
   const isSpacePressedRef = useLatestRef(isSpacePressed)
   const handleSelectKeycap = useCallback(
@@ -330,7 +353,8 @@ export function Keyboard3DScene({
       {visibleCase ? (
         <KeyboardCaseMesh
           case={visibleCase}
-          materialPreset={caseMaterialPreset}
+          materialSettings={caseMaterial}
+          woodMap={woodMap}
           reflective={showRealism}
         />
       ) : null}
@@ -348,6 +372,8 @@ export function Keyboard3DScene({
                   key={key.id}
                   previewKey={key}
                   modelPath={key.modelPath}
+                  materialSettings={keycapMaterial}
+                  woodMap={woodMap}
                   onSelect={
                     onSelectKeycap
                       ? (shiftKey) => handleSelectKeycap(key.id, shiftKey)
@@ -371,3 +397,5 @@ export function Keyboard3DScene({
     </>
   )
 }
+
+useTexture.preload(WOOD_GRAIN_TEXTURE_PATH)

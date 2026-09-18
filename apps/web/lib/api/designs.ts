@@ -8,6 +8,7 @@ import type {
 } from '@/modules/design/store/designUiStore';
 import type { ExportCanvasElement } from '@/modules/design/lib/design/exportArtboard';
 import type { KeycapProfile } from '@/modules/design/types/design';
+import type { MaterialSettings } from '@/modules/design/lib/design/materials';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,10 @@ export interface DesignData {
   layoutRevision?: number;
   layers: Layer[];
   keyboardCasePaint: string;
+  /** 缺省时按旧设计使用默认外壳材质。 */
+  caseMaterial?: MaterialSettings;
+  /** 缺省时按旧设计使用默认键帽材质。 */
+  keycapMaterial?: MaterialSettings;
   fontFamily: string;
   fontWeight: number;
   fontStyle: string;

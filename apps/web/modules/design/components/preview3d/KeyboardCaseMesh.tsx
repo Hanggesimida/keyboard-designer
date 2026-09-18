@@ -4,11 +4,13 @@ import { useEffect, useMemo } from "react"
 import { useGLTF } from "@react-three/drei"
 import { useThree } from "@react-three/fiber"
 import {
+  MeshPhysicalMaterial,
   type Color,
   type Material,
   type Mesh,
   type MeshStandardMaterial,
   type Object3D,
+  type Texture,
 } from "three"
 import {
   CASE_BODY_MATERIAL_NAME,
@@ -16,15 +18,12 @@ import {
   CASE_MODEL_PATHS,
 } from "@/modules/design/lib/preview3d/caseModelContract"
 import {
-  getCaseMaterialPreset,
-  type CaseMaterialPresetId,
-} from "@/modules/design/lib/preview3d/caseMaterialPresets"
-import {
   createCaseGradientTexture,
   installCasePaintShader,
   type CasePaintUniforms,
 } from "@/modules/design/lib/preview3d/casePaintMaterial"
 import type { PreviewCase } from "@/modules/design/lib/preview3d/types"
+import type { MaterialSettings } from "@/modules/design/lib/design/materials"
 
 /** 壳体不参与拾取，点击穿透到键帽 / pointer missed */
 function disableRaycast() {}
@@ -54,6 +53,42 @@ function isStandardMaterial(
     material.isMeshStandardMaterial === true
 }
 
+function createCaseSurfaceMaterial(
+  source: MeshStandardMaterial,
+): MeshPhysicalMaterial {
+  const material = new MeshPhysicalMaterial({
+    color: source.color,
+    map: source.map,
+    roughness: source.roughness,
+    metalness: source.metalness,
+    emissive: source.emissive,
+    emissiveMap: source.emissiveMap,
+    emissiveIntensity: source.emissiveIntensity,
+    normalMap: source.normalMap,
+    normalScale: source.normalScale,
+    aoMap: source.aoMap,
+    aoMapIntensity: source.aoMapIntensity,
+    alphaMap: source.alphaMap,
+    alphaTest: source.alphaTest,
+    side: source.side,
+    transparent: source.transparent,
+    opacity: source.opacity,
+    depthTest: source.depthTest,
+    depthWrite: source.depthWrite,
+  })
+  material.name = source.name
+  return material
+}
+
+function caseEnvMapIntensity(
+  presetId: MaterialSettings["presetId"],
+): number {
+  if (presetId === "metal") return 1.15
+  if (presetId === "glass") return 1.3
+  if (presetId === "wood") return 0.58
+  return 0.75
+}
+
 function prepareCaseScene(source: Object3D): PreparedCaseScene {
   const object = source.clone(true)
   const materialClones = new Map<Material, Material>()
@@ -63,12 +98,15 @@ function prepareCaseScene(source: Object3D): PreparedCaseScene {
     const cached = materialClones.get(sourceMaterial)
     if (cached) return cached
 
-    const material = sourceMaterial.clone()
+    const isCaseSurface =
+      isStandardMaterial(sourceMaterial) &&
+      (sourceMaterial.name === CASE_BODY_MATERIAL_NAME ||
+        sourceMaterial.name === CASE_EDGE_MATERIAL_NAME)
+    const material = isCaseSurface
+      ? createCaseSurfaceMaterial(sourceMaterial)
+      : sourceMaterial.clone()
     materialClones.set(sourceMaterial, material)
     if (isStandardMaterial(material)) {
-      const isCaseSurface =
-        material.name === CASE_BODY_MATERIAL_NAME ||
-        material.name === CASE_EDGE_MATERIAL_NAME
       materials.push({
         material,
         baseColor: material.color.clone(),
@@ -100,14 +138,16 @@ function prepareCaseScene(source: Object3D): PreparedCaseScene {
 
 interface KeyboardCaseMeshProps {
   case: PreviewCase
-  materialPreset: CaseMaterialPresetId
+  materialSettings: MaterialSettings
+  woodMap: Texture
   /** 是否使用金属度、环境反射与清漆高光 */
   reflective?: boolean
 }
 
 export function KeyboardCaseMesh({
   case: keyboardCase,
-  materialPreset,
+  materialSettings,
+  woodMap,
   reflective = true,
 }: KeyboardCaseMeshProps) {
   const { scene } = useGLTF(keyboardCase.modelPath)
@@ -122,7 +162,6 @@ export function KeyboardCaseMesh({
   )
 
   useEffect(() => {
-    const preset = getCaseMaterialPreset(materialPreset)
     const projection = keyboardCase.paintProjection
     const useGradient =
       keyboardCase.bodyPaint.kind === "linear-gradient" &&
@@ -147,6 +186,9 @@ export function KeyboardCaseMesh({
         if (state.paintUniforms) {
           state.paintUniforms.enabled.value = useGradient ? 1 : 0
           state.paintUniforms.gradientMap.value = gradientTexture
+          state.paintUniforms.woodEnabled.value =
+            materialSettings.presetId === "wood" ? 1 : 0
+          state.paintUniforms.woodMap.value = woodMap
           if (projection) {
             state.paintUniforms.start.value.set(...projection.start)
             state.paintUniforms.end.value.set(...projection.end)
@@ -160,13 +202,31 @@ export function KeyboardCaseMesh({
         material.roughness = 0.9
         material.envMapIntensity = 0
       } else if (isCaseSurface) {
-        material.metalness = preset.metalness
-        material.roughness = preset.roughness
-        material.envMapIntensity = preset.envMapIntensity
+        material.metalness = materialSettings.metalness
+        material.roughness = materialSettings.roughness
+        material.envMapIntensity = caseEnvMapIntensity(
+          materialSettings.presetId,
+        )
       } else {
         material.metalness = state.metalness ?? 0
         material.roughness = state.roughness ?? 1
         material.envMapIntensity = state.envMapIntensity ?? 1
+      }
+
+      if (isCaseSurface && material instanceof MeshPhysicalMaterial) {
+        const hadTransmission = material.transmission > 0
+        const hasTransmission = materialSettings.transparency > 0
+        material.transmission = materialSettings.transparency
+        material.transparent = hasTransmission
+        material.depthWrite = !hasTransmission
+        material.thickness =
+          materialSettings.presetId === "glass" ? 0.24 : 0.18
+        material.ior =
+          materialSettings.presetId === "glass" ? 1.52 : 1.47
+        material.clearcoat =
+          materialSettings.presetId === "glass" ? 0.12 : 0
+        material.clearcoatRoughness = 0.08
+        if (hadTransmission !== hasTransmission) material.needsUpdate = true
       }
     }
     invalidate()
@@ -175,9 +235,10 @@ export function KeyboardCaseMesh({
     gradientTexture,
     keyboardCase.bodyPaint,
     keyboardCase.paintProjection,
-    materialPreset,
+    materialSettings,
     prepared,
     reflective,
+    woodMap,
   ])
 
   useEffect(

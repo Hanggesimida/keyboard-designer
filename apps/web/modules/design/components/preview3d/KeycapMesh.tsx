@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react"
 import { useGLTF } from "@react-three/drei"
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
-import { MathUtils, type Mesh } from "three"
+import { MathUtils, type Mesh, type Texture } from "three"
 import {
   KEYCAP_PRESS_TRAVEL_U,
   MODEL_SCALE,
@@ -15,8 +15,10 @@ import {
 import {
   createKeycapDyeSubMaterial,
   syncDyeSubAppearance,
+  syncKeycapMaterialSurface,
 } from "@/modules/design/lib/preview3d/keycapDyeSubMaterial"
 import type { PreviewKey } from "@/modules/design/lib/preview3d/types"
+import type { MaterialSettings } from "@/modules/design/lib/design/materials"
 import {
   DEFAULT_KEYCAP_PROFILE,
   type KeycapProfile,
@@ -29,6 +31,8 @@ const CLICK_DELTA_PX = 5
 interface KeycapMeshProps {
   previewKey: PreviewKey
   modelPath: string
+  materialSettings: MaterialSettings
+  woodMap: Texture
   /** shiftKey 为 true 表示 Shift+点击（追加/切换选中） */
   onSelect?: (shiftKey: boolean) => void
 }
@@ -97,7 +101,13 @@ function findKeycapGeometry(scene: SceneLike) {
  * 不克隆 / dispose GLTF 共享 geometry。
  * 贴花通过场景级 SharedDyeSubUniforms 世界空间采样。
  */
-export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps) {
+export function KeycapMesh({
+  previewKey,
+  modelPath,
+  materialSettings,
+  woodMap,
+  onSelect,
+}: KeycapMeshProps) {
   const { scene } = useGLTF(modelPath)
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
@@ -115,10 +125,12 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
         shared,
         color: previewKey.color,
         selected: previewKey.selected,
+        surface: materialSettings,
+        woodMap,
       }),
     // shared 稳定；首帧用当前色/选中态，后续用 effect 同步
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 材质实例按键生命周期创建一次
-    [shared],
+    [shared, woodMap],
   )
 
   useEffect(() => {
@@ -138,8 +150,17 @@ export function KeycapMesh({ previewKey, modelPath, onSelect }: KeycapMeshProps)
       color: previewKey.color,
       selected: previewKey.selected,
     })
+    syncKeycapMaterialSurface(material, materialSettings, woodMap)
     invalidate()
-  }, [geometry, invalidate, material, previewKey.color, previewKey.selected])
+  }, [
+    geometry,
+    invalidate,
+    material,
+    materialSettings,
+    previewKey.color,
+    previewKey.selected,
+    woodMap,
+  ])
 
   useEffect(() => {
     invalidate()

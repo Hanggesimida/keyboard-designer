@@ -22,6 +22,9 @@ export interface CasePaintUniforms {
   gradientMap: { value: Texture | null }
   start: { value: Vector2 }
   end: { value: Vector2 }
+  woodEnabled: { value: number }
+  woodMap: { value: Texture | null }
+  woodScale: { value: number }
 }
 
 /** 在 CPU 端生成线性空间色带，shader 只负责按外壳位置采样。 */
@@ -72,6 +75,9 @@ export function installCasePaintShader(
     gradientMap: { value: null },
     start: { value: new Vector2() },
     end: { value: new Vector2(1, 0) },
+    woodEnabled: { value: 0 },
+    woodMap: { value: null },
+    woodScale: { value: 0.38 },
   }
 
   material.onBeforeCompile = (shader) => {
@@ -79,17 +85,22 @@ export function installCasePaintShader(
     shader.uniforms.uCaseGradientMap = uniforms.gradientMap
     shader.uniforms.uCaseGradientStart = uniforms.start
     shader.uniforms.uCaseGradientEnd = uniforms.end
+    shader.uniforms.uCaseWoodEnabled = uniforms.woodEnabled
+    shader.uniforms.uCaseWoodMap = uniforms.woodMap
+    shader.uniforms.uCaseWoodScale = uniforms.woodScale
 
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
         `#include <common>
-varying vec2 vCasePaintWorldPosition;`,
+varying vec3 vCasePaintWorldPosition;
+varying vec3 vCasePaintWorldNormal;`,
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
-vCasePaintWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xz;`,
+vCasePaintWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
+vCasePaintWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`,
       )
 
     shader.fragmentShader = shader.fragmentShader
@@ -100,7 +111,11 @@ uniform float uCaseGradientEnabled;
 uniform sampler2D uCaseGradientMap;
 uniform vec2 uCaseGradientStart;
 uniform vec2 uCaseGradientEnd;
-varying vec2 vCasePaintWorldPosition;`,
+uniform float uCaseWoodEnabled;
+uniform sampler2D uCaseWoodMap;
+uniform float uCaseWoodScale;
+varying vec3 vCasePaintWorldPosition;
+varying vec3 vCasePaintWorldNormal;`,
       )
       .replace(
         "#include <color_fragment>",
@@ -109,7 +124,7 @@ if (uCaseGradientEnabled > 0.5) {
   vec2 caseGradientAxis = uCaseGradientEnd - uCaseGradientStart;
   float caseGradientLengthSq = max(dot(caseGradientAxis, caseGradientAxis), 0.000001);
   float caseGradientT = clamp(
-    dot(vCasePaintWorldPosition - uCaseGradientStart, caseGradientAxis) /
+    dot(vCasePaintWorldPosition.xz - uCaseGradientStart, caseGradientAxis) /
       caseGradientLengthSq,
     0.0,
     1.0
@@ -118,10 +133,34 @@ if (uCaseGradientEnabled > 0.5) {
     uCaseGradientMap,
     vec2(caseGradientT, 0.5)
   ).rgb;
+}
+if (uCaseWoodEnabled > 0.5) {
+  vec3 caseWoodNormal = abs(normalize(vCasePaintWorldNormal));
+  caseWoodNormal = pow(caseWoodNormal, vec3(4.0));
+  caseWoodNormal /= max(
+    caseWoodNormal.x + caseWoodNormal.y + caseWoodNormal.z,
+    0.0001
+  );
+  vec3 caseWoodX = texture2D(
+    uCaseWoodMap,
+    vCasePaintWorldPosition.zy * uCaseWoodScale
+  ).rgb;
+  vec3 caseWoodY = texture2D(
+    uCaseWoodMap,
+    vCasePaintWorldPosition.xz * uCaseWoodScale
+  ).rgb;
+  vec3 caseWoodZ = texture2D(
+    uCaseWoodMap,
+    vCasePaintWorldPosition.xy * uCaseWoodScale
+  ).rgb;
+  diffuseColor.rgb *=
+    caseWoodX * caseWoodNormal.x +
+    caseWoodY * caseWoodNormal.y +
+    caseWoodZ * caseWoodNormal.z;
 }`,
       )
   }
-  material.customProgramCacheKey = () => "keyboard-case-paint-v1"
+  material.customProgramCacheKey = () => "keyboard-case-paint-v2-wood"
   material.needsUpdate = true
   return uniforms
 }
