@@ -112,7 +112,6 @@ function CheckoutContent() {
             variant="outline"
             size="sm"
             onClick={() => router.back()}
-            className="cursor-pointer"
           >
             {t("goBack")}
           </Button>
@@ -136,7 +135,7 @@ function CheckoutContent() {
         variant="ghost"
         size="sm"
         onClick={() => router.back()}
-        className="-ml-2 mb-4 cursor-pointer text-muted-foreground hover:text-foreground"
+            className="-ml-2 mb-4 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft size={14} />
         {t("backToEditor")}

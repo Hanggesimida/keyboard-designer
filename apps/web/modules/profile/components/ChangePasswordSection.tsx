@@ -204,7 +204,6 @@ export function ChangePasswordSection({
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="cursor-pointer"
                   onClick={formWithCurrent.handleSubmit(onSubmitWithCurrent)}
                 >
                   {isSubmitting ? (
@@ -291,7 +290,6 @@ export function ChangePasswordSection({
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="cursor-pointer"
                   onClick={formWithoutCurrent.handleSubmit(onSubmitWithoutCurrent)}
                 >
                   {isSubmitting ? (

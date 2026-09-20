@@ -55,7 +55,7 @@ export function KeycapInspectorSection() {
       type="button"
       variant="ghost"
       size="icon-xs"
-      className="size-4 text-muted-foreground hover:text-foreground cursor-pointer"
+      className="size-4 text-muted-foreground hover:text-foreground"
       title={
         selectedKeycapIds.length > 1 ? t("resetSelected") : t("resetKey")
       }
@@ -80,7 +80,7 @@ export function KeycapInspectorSection() {
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="shrink-0 cursor-pointer"
+          className="shrink-0"
           title={t("cancelReuseStyle")}
           onClick={cancelKeycapStyleTransfer}
         >
@@ -93,7 +93,7 @@ export function KeycapInspectorSection() {
         variant="outline"
         size="xs"
         disabled={editorDisabled}
-        className="w-full cursor-pointer"
+        className="w-full"
         onClick={() =>
           beginKeycapStyleTransfer({
             targetLayerId: activeLayerId,

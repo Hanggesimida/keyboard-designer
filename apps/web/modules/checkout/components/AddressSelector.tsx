@@ -191,7 +191,7 @@ export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) 
         variant="outline"
         size="sm"
         onClick={openCreate}
-        className="w-full cursor-pointer border-dashed"
+        className="w-full border-dashed"
       >
         <Plus size={14} />
         {t("addAddress")}

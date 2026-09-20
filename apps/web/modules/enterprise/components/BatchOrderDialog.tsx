@@ -147,7 +147,6 @@ export function BatchOrderDialog({
               <Button
                 type="button"
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
               >
                 {t("done")}
               </Button>
@@ -244,7 +243,6 @@ export function BatchOrderDialog({
                 variant="outline"
                 disabled={isPending}
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
               >
                 {tCommon("cancel")}
               </Button>
@@ -252,7 +250,6 @@ export function BatchOrderDialog({
                 type="button"
                 disabled={isPending || !allAssigned || !hasAddresses}
                 onClick={handleSubmit}
-                className="cursor-pointer"
               >
                 {isPending ? (
                   <>

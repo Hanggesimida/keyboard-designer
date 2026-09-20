@@ -60,7 +60,7 @@ export function LocaleToggle({ className }: { className?: string }) {
       type="button"
       variant="ghost"
       size="icon-xs"
-      className={cn("cursor-pointer text-[10px] font-semibold", className)}
+      className={cn("text-[10px] font-semibold", className)}
       title={`${t("switchLanguage")}: ${LOCALE_LABELS[nextLocale]}`}
       aria-label={`${t("switchLanguage")}: ${LOCALE_LABELS[nextLocale]}`}
       onClick={() => router.replace(pathname, { locale: nextLocale })}

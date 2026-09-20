@@ -107,7 +107,7 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
                         size="sm"
                         disabled={isUpdating}
                         onClick={() => setResetTarget(sub)}
-                        className="cursor-pointer text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         <KeyRound size={13} />
                         {t("resetPassword")}
@@ -117,7 +117,7 @@ export function SubAccountsTable({ createOpen, onCreateOpenChange }: SubAccounts
                         size="sm"
                         disabled={isUpdating}
                         onClick={() => setToggleTarget(sub)}
-                        className="cursor-pointer text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         {sub.isActive ? (
                           <>

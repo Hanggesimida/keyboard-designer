@@ -56,7 +56,7 @@ export default function ProfileKeyboardsPage() {
         action={
           <Link
             href="/design"
-            className={buttonVariants({ className: "w-full sm:w-auto cursor-pointer" })}
+            className={buttonVariants({ className: "w-full sm:w-auto" })}
           >
             <Keyboard size={15} />
             {t("newDesign")}
@@ -113,7 +113,6 @@ export default function ProfileKeyboardsPage() {
                   <Button
                     size="sm"
                     onClick={() => router.push(`/design?id=${design.id}`)}
-                    className="cursor-pointer"
                   >
                     <Pencil />
                     {tHome("edit")}
@@ -122,7 +121,7 @@ export default function ProfileKeyboardsPage() {
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => handleOpenDelete(design.id)}
-                    className="ml-auto text-muted-foreground/55 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                    className="ml-auto text-muted-foreground/55 hover:text-destructive hover:bg-destructive/10"
                     aria-label={t("deleteThis")}
                   >
                     <Trash2 />
@@ -148,7 +147,6 @@ export default function ProfileKeyboardsPage() {
               variant="outline"
               onClick={() => setConfirmId(null)}
               disabled={isDeleting}
-              className="cursor-pointer"
             >
               {tCommon("cancel")}
             </Button>
@@ -156,7 +154,6 @@ export default function ProfileKeyboardsPage() {
               variant="destructive"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="cursor-pointer"
             >
               {isDeleting ? (
                 <>
@@ -192,11 +189,10 @@ export default function ProfileKeyboardsPage() {
             <Button
               variant="outline"
               onClick={() => setErrorMessage(null)}
-              className="cursor-pointer"
             >
               {tCommon("gotIt")}
             </Button>
-            <Link href="/profile/orders" className={buttonVariants({ className: "cursor-pointer" })}>
+            <Link href="/profile/orders" className={buttonVariants()}>
               {t("viewOrders")}
             </Link>
           </DialogFooter>

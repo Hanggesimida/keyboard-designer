@@ -216,6 +216,11 @@
       "title": "需要更大的屏幕",
       "body": "设计编辑器需要在 768px 以上的屏幕上使用，请切换到桌面端或平板横屏模式。"
     },
+    "sidebar": {
+      "resizeLeft": "调整左侧栏宽度",
+      "resizeRight": "调整右侧栏宽度",
+      "dragResize": "拖动调整宽度，双击恢复默认"
+    },
     "toolbar": {
       "noSaveHint": "设计不会自动保存，刷新后会丢失，请及时导出 JSON。",
       "undo": "撤销 (Ctrl+Z)",
@@ -325,8 +330,7 @@
       "rotation": "旋转：{value}°",
       "delete": "删除",
       "pasteImage": "粘贴图片",
-      "uploadImage": "上传图片",
-      "uploadSvg": "上传 SVG",
+      "uploadImage": "上传图片或 SVG",
       "fitToScreen": "适应屏幕",
       "undo": "撤销",
       "redo": "重做",
@@ -407,8 +411,7 @@
       "heightPx": "高度（px）",
       "deleteImage": "删除图片",
       "title": "素材",
-      "uploadSvg": "上传矢量图形（SVG）",
-      "uploadImage": "上传图片（PNG / JPG 等）",
+      "uploadImage": "上传图片或 SVG",
       "emptyHint": "点击上传 / 拖入画布"
     },
     "templates": {

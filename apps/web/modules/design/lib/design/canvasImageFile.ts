@@ -1,5 +1,8 @@
 import { isSvgFile, readSvgFile } from "./svgUtils"
 
+/** 画布素材文件选择器：位图 + SVG（Windows 上 `image/*` 常不包含 `.svg`） */
+export const CANVAS_IMAGE_ACCEPT = "image/*,.svg,image/svg+xml"
+
 export interface CanvasImageFileData {
   src: string
   width: number

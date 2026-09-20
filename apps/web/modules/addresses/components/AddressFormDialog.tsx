@@ -224,7 +224,6 @@ export function AddressFormDialog({
               size="sm"
               disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
-              className="cursor-pointer"
             >
               {tCommon("cancel")}
             </Button>
@@ -232,7 +231,6 @@ export function AddressFormDialog({
               type="submit"
               size="sm"
               disabled={isSubmitting}
-              className="cursor-pointer"
             >
               {isSubmitting ? (
                 <>

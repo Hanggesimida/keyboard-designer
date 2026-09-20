@@ -155,7 +155,7 @@ export function PaymentConfirmSection({
         size="lg"
         disabled={isProcessing || totalAmount == null}
         onClick={handleSubmit}
-        className="h-11 w-full cursor-pointer"
+        className="h-11 w-full"
       >
         {isProcessing ? (
           <>

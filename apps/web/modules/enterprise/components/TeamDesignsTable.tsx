@@ -98,7 +98,7 @@ export function TeamDesignsTable() {
         </Select>
 
         {selectedDesigns.length > 0 && (
-          <Button size="sm" className="cursor-pointer" onClick={() => setBatchOpen(true)}>
+          <Button size="sm" onClick={() => setBatchOpen(true)}>
             <PackageCheck size={14} />
             {selectedDesigns.length === 1
               ? t("placeOrder")
@@ -184,7 +184,7 @@ export function TeamDesignsTable() {
                       variant="ghost"
                       size="sm"
                       onClick={() => router.push(`/design?id=${design.id}&from=enterprise`)}
-                      className="cursor-pointer text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       <Pencil size={13} />
                       {t("view")}/{t("edit")}

@@ -88,10 +88,10 @@ export function ProfileSettingsContent() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} className="cursor-pointer">
+            <Button variant="outline" onClick={() => setOpen(false)}>
               {tCommon("cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleLogout} className="cursor-pointer">
+            <Button variant="destructive" onClick={handleLogout}>
               <LogOut />
               {t("signOut")}
             </Button>

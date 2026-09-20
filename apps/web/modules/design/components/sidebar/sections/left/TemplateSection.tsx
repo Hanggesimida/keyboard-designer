@@ -74,7 +74,7 @@ export function TemplateSection() {
                 variant="outline"
                 size="sm"
                 aria-expanded={open}
-                className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
+                className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none"
               />
             }
           >

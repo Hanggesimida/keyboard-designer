@@ -79,7 +79,7 @@ export function GlobalKeycapSection() {
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                className="size-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="size-4 text-muted-foreground hover:text-foreground"
                 title={t("resetAll")}
               />
             }
@@ -205,7 +205,7 @@ export function GlobalKeycapSection() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
               title={globalKeycapStyle.borderHidden ? t("showBorder") : t("hideBorder")}
               onClick={() =>
                 setGlobalKeycapStyle({

@@ -37,7 +37,6 @@ export function useViewport({
   layoutKey,
 }: UseViewportParams) {
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 })
-  const fittedRef = useRef(false)
   const layoutKeyRef = useRef(layoutKey)
 
   const fitToScreen = useCallback(() => {
@@ -91,13 +90,12 @@ export function useViewport({
     if (!el) return
 
     const ro = new ResizeObserver((entries) => {
-      if (fittedRef.current) return
       const entry = entries[0]
       if (!entry) return
       const { width, height } = entry.contentRect
       if (width === 0 || height === 0) return
+      // 侧栏改宽、3D 预览改高、窗口缩放都会走到这里；与 3D 相机随画布尺寸重算一致
       setViewport(calcFitViewport(width, height, artW, artH))
-      fittedRef.current = true
     })
 
     ro.observe(el)

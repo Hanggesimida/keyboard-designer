@@ -216,6 +216,11 @@
       "title": "A larger screen is required",
       "body": "The editor needs a screen wider than 768px. Please switch to desktop or landscape tablet."
     },
+    "sidebar": {
+      "resizeLeft": "Resize left sidebar",
+      "resizeRight": "Resize right sidebar",
+      "dragResize": "Drag to resize, double-click to reset"
+    },
     "toolbar": {
       "noSaveHint": "Designs are not saved automatically and will be lost on refresh. Export JSON in time.",
       "undo": "Undo (Ctrl+Z)",
@@ -325,8 +330,7 @@
       "rotation": "Rotation: {value}°",
       "delete": "Delete",
       "pasteImage": "Paste image",
-      "uploadImage": "Upload image",
-      "uploadSvg": "Upload SVG",
+      "uploadImage": "Upload image or SVG",
       "fitToScreen": "Fit to screen",
       "undo": "Undo",
       "redo": "Redo",
@@ -407,8 +411,7 @@
       "heightPx": "Height (px)",
       "deleteImage": "Delete image",
       "title": "Assets",
-      "uploadSvg": "Upload vector (SVG)",
-      "uploadImage": "Upload image (PNG / JPG, etc.)",
+      "uploadImage": "Upload image or SVG",
       "emptyHint": "Click to upload / drop onto canvas"
     },
     "templates": {

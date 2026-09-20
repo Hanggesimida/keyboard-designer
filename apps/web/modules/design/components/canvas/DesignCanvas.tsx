@@ -754,13 +754,13 @@ export function DesignCanvas() {
           size="icon-xs"
           title={t("backHome")}
           onClick={(e) => e.stopPropagation()}
-          className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"
+          className="bg-popover/80 backdrop-blur-sm border border-border text-foreground"
         >
           <Home className="size-3.5" />
         </Button>
         <ThemeToggle
           size="icon-xs"
-          className="cursor-pointer bg-popover/80 backdrop-blur-sm border border-border text-foreground"
+          className="bg-popover/80 backdrop-blur-sm border border-border text-foreground"
         />
         <LocaleToggle className="bg-popover/80 backdrop-blur-sm border border-border text-foreground" />
       </div>
@@ -906,7 +906,7 @@ export function DesignCanvas() {
             <Button
               variant="ghost"
               size="xs"
-              className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+              className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground"
               onClick={(e) => { e.stopPropagation(); fitToScreen() }}
             >
               {t("fit")}

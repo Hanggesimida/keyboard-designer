@@ -100,7 +100,7 @@ export default function ProfileAddressesPage() {
         title={t("title")}
         description={t("subtitle")}
         action={
-          <Button onClick={openCreate} className="w-full sm:w-auto cursor-pointer">
+          <Button onClick={openCreate} className="w-full sm:w-auto">
             <Plus size={15} />
             {t("new")}
           </Button>

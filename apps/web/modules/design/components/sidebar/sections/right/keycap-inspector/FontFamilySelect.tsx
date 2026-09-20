@@ -137,7 +137,7 @@ export function FontFamilySelect({
               size="sm"
               disabled={disabled}
               aria-expanded={open}
-              className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none cursor-pointer"
+              className="h-8 w-full justify-between gap-2 px-2.5 font-normal shadow-none"
               style={{
                 fontFamily: isMixed
                   ? undefined

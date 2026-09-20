@@ -2,13 +2,13 @@
 
 import { useRef, useCallback, useMemo } from "react"
 import { useTranslations } from "next-intl"
-import { ImagePlus, Trash2, Spline } from "lucide-react"
+import { ImagePlus, Trash2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { useDesignUIStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { PanelSection } from "../../panel-section"
-import { readCanvasImageFile } from "@/modules/design/lib/design/canvasImageFile"
+import { CANVAS_IMAGE_ACCEPT, readCanvasImageFile } from "@/modules/design/lib/design/canvasImageFile"
 import { useSyncedState } from "@/hooks/useSyncedState"
 
 // ─── 图片缩略图行 ──────────────────────────────────────
@@ -117,7 +117,7 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
+          className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
           title={t("deleteImage")}
           onClick={(e) => {
             e.stopPropagation()
@@ -135,7 +135,6 @@ function AssetRow({ element, src, isSelected, keyLabelMap, onSelect, onDelete, o
 export function AssetSection() {
   const t = useTranslations("Design.assets")
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const svgInputRef = useRef<HTMLInputElement>(null)
   const { allKeys } = useLayoutKeys()
   const keyLabelMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -195,42 +194,22 @@ export function AssetSection() {
     <PanelSection
       title={t("title")}
       action={
-        <div className="flex items-center gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            className="text-muted-foreground hover:text-foreground cursor-pointer"
-            title={t("uploadSvg")}
-            onClick={() => svgInputRef.current?.click()}
-          >
-            <Spline className="size-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            className="text-muted-foreground hover:text-foreground cursor-pointer"
-            title={t("uploadImage")}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <ImagePlus className="size-3.5" />
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className="text-muted-foreground hover:text-foreground"
+          title={t("uploadImage")}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <ImagePlus className="size-3.5" />
+        </Button>
       }
     >
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <input
-        ref={svgInputRef}
-        type="file"
-        accept=".svg,image/svg+xml"
+        accept={CANVAS_IMAGE_ACCEPT}
         multiple
         className="hidden"
         onChange={handleFileChange}

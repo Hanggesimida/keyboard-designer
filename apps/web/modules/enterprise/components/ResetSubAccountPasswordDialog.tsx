@@ -94,7 +94,6 @@ export function ResetSubAccountPasswordDialog({
                 type="button"
                 variant="outline"
                 onClick={handleCopy}
-                className="cursor-pointer"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? t("copied") : t("copyLogin")}
@@ -102,7 +101,6 @@ export function ResetSubAccountPasswordDialog({
               <Button
                 type="button"
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
               >
                 {t("done")}
               </Button>
@@ -129,7 +127,6 @@ export function ResetSubAccountPasswordDialog({
                 variant="outline"
                 disabled={isPending}
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
               >
                 {tCommon("cancel")}
               </Button>
@@ -137,7 +134,6 @@ export function ResetSubAccountPasswordDialog({
                 type="button"
                 disabled={isPending}
                 onClick={handleConfirm}
-                className="cursor-pointer"
               >
                 {isPending ? (
                   <>

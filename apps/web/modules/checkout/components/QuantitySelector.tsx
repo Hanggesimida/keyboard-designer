@@ -66,7 +66,7 @@ export function QuantitySelector({
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 shrink-0 cursor-pointer"
+        className="h-8 w-8 shrink-0"
         disabled={disabled || value <= min}
         onClick={() => updateValue(value - 1)}
         aria-label={t("decreaseQty")}
@@ -94,7 +94,7 @@ export function QuantitySelector({
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 shrink-0 cursor-pointer"
+        className="h-8 w-8 shrink-0"
         disabled={disabled || value >= max}
         onClick={() => updateValue(value + 1)}
         aria-label={t("increaseQty")}

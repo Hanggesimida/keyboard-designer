@@ -61,7 +61,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         disabled={!canMoveUp}
-        className="text-muted-foreground hover:text-foreground disabled:opacity-20 cursor-pointer"
+        className="text-muted-foreground hover:text-foreground disabled:opacity-20"
         title={t("moveUp")}
         onClick={onMoveUp}
       >
@@ -72,7 +72,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         disabled={!canMoveDown}
-        className="text-muted-foreground hover:text-foreground disabled:opacity-20 cursor-pointer"
+        className="text-muted-foreground hover:text-foreground disabled:opacity-20"
         title={t("moveDown")}
         onClick={onMoveDown}
       >
@@ -83,12 +83,11 @@ export function LayerControls({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className={cn(
-            "cursor-pointer",
+          className={
             labelsHidden
               ? "text-chart-4 hover:text-chart-4/80"
-              : "text-muted-foreground hover:text-foreground",
-          )}
+              : "text-muted-foreground hover:text-foreground"
+          }
           title={labelsHidden ? t("showLabels") : t("hideLabels")}
           onClick={onToggleLabelsHidden}
         >
@@ -99,7 +98,7 @@ export function LayerControls({
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="text-muted-foreground hover:text-foreground cursor-pointer"
+        className="text-muted-foreground hover:text-foreground"
         title={isVisible ? t("hide") : t("show")}
         onClick={onToggleVisible}
       >
@@ -110,7 +109,7 @@ export function LayerControls({
         variant="ghost"
         size="icon-xs"
         className={cn(
-          "hover:text-foreground cursor-pointer",
+          "hover:text-foreground",
           isLocked ? "text-chart-4" : "text-muted-foreground",
         )}
         title={isLocked ? t("unlock") : t("lock")}
@@ -123,7 +122,7 @@ export function LayerControls({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="text-muted-foreground hover:text-destructive cursor-pointer"
+          className="text-muted-foreground hover:text-destructive"
           title={t("delete")}
           onClick={onRemove}
         >

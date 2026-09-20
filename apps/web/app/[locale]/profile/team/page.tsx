@@ -32,7 +32,7 @@ export default function ProfileTeamPage() {
         description={t("subtitle")}
         action={
           <Button
-            className="w-full sm:w-auto cursor-pointer"
+            className="w-full sm:w-auto"
             onClick={() => setCreateOpen(true)}
           >
             <Plus size={15} />

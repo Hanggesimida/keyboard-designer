@@ -32,6 +32,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { Button } from "@workspace/ui/components/button"
 import { DEFAULT_KEYCAP_COLORS } from "@/modules/design/lib/designDefaults"
 import { isSvgFile, readSvgFile } from "@/modules/design/lib/design/svgUtils"
+import { CANVAS_IMAGE_ACCEPT } from "@/modules/design/lib/design/canvasImageFile"
 import {
   computeLabelAlignPatch,
   resolveTextHalfDimensionsSingle,
@@ -919,7 +920,7 @@ export function KeycapEditorModal({ keyId, layerId, keyDef, unit, artPad, onClos
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,.svg"
+          accept={CANVAS_IMAGE_ACCEPT}
           multiple
           className="hidden"
           onChange={handleFileInputChange}

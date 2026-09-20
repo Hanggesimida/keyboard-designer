@@ -44,7 +44,7 @@ export default function ProfilePage() {
           title={t("recent")}
           description={t("recentHint")}
           action={
-            <Link href="/design" className={buttonVariants({ size: "sm", className: "cursor-pointer" })}>
+            <Link href="/design" className={buttonVariants({ size: "sm" })}>
               <Plus />
               {t("newDesign")}
             </Link>
@@ -93,7 +93,6 @@ export default function ProfilePage() {
                   <Button
                     size="sm"
                     onClick={() => router.push(`/design?id=${design.id}`)}
-                    className="cursor-pointer"
                   >
                     <Pencil />
                     {t("edit")}

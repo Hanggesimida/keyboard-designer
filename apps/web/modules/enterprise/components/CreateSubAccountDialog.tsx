@@ -107,7 +107,6 @@ export function CreateSubAccountDialog({
                 type="button"
                 variant="outline"
                 onClick={handleCopy}
-                className="cursor-pointer"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? t("copied") : t("copyLogin")}
@@ -115,7 +114,6 @@ export function CreateSubAccountDialog({
               <Button
                 type="button"
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
               >
                 {t("done")}
               </Button>
@@ -170,11 +168,10 @@ export function CreateSubAccountDialog({
                   size="sm"
                   disabled={isPending}
                   onClick={() => handleOpenChange(false)}
-                  className="cursor-pointer"
                 >
                   {tCommon("cancel")}
                 </Button>
-                <Button type="submit" size="sm" disabled={isPending} className="cursor-pointer">
+                <Button type="submit" size="sm" disabled={isPending}>
                   {isPending ? (
                     <>
                       <Loader2 size={13} className="animate-spin" />

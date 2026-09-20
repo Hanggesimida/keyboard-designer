@@ -23,7 +23,6 @@ import {
   RotateCcw,
   Rows3,
   Scaling,
-  Spline,
   Trash2,
   Undo2,
   Unlink2,
@@ -44,6 +43,7 @@ import {
   ContextMenuSubTrigger,
 } from "@workspace/ui/components/context-menu"
 import type { useDesignCanvasContextMenu } from "@/modules/design/hooks/useDesignCanvasContextMenu"
+import { CANVAS_IMAGE_ACCEPT } from "@/modules/design/lib/design/canvasImageFile"
 
 type ContextMenuController = ReturnType<typeof useDesignCanvasContextMenu>
 
@@ -343,7 +343,7 @@ function BlankMenu({
   onFitToScreen,
   onUpload,
 }: DesignCanvasContextMenuProps & {
-  onUpload: (kind: "image" | "svg") => void
+  onUpload: () => void
 }) {
   const t = useTranslations("Design.contextMenu")
   const hasSelection =
@@ -358,13 +358,9 @@ function BlankMenu({
         <ClipboardPaste />
         {t("pasteImage")}
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => onUpload("image")}>
+      <ContextMenuItem onClick={onUpload}>
         <ImagePlus />
         {t("uploadImage")}
-      </ContextMenuItem>
-      <ContextMenuItem onClick={() => onUpload("svg")}>
-        <Spline />
-        {t("uploadSvg")}
       </ContextMenuItem>
 
       <ContextMenuSeparator />
@@ -414,14 +410,12 @@ export function DesignCanvasContextMenu({
   controller,
   onFitToScreen,
 }: DesignCanvasContextMenuProps) {
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const svgInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadPointRef = useRef(controller.target.point)
 
-  const openUpload = (kind: "image" | "svg") => {
+  const openUpload = () => {
     uploadPointRef.current = controller.target.point
-    const input = kind === "svg" ? svgInputRef.current : imageInputRef.current
-    input?.click()
+    fileInputRef.current?.click()
   }
 
   const handleUploadChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -446,17 +440,9 @@ export function DesignCanvasContextMenu({
         )}
       </ContextMenuContent>
       <input
-        ref={imageInputRef}
+        ref={fileInputRef}
         type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleUploadChange}
-      />
-      <input
-        ref={svgInputRef}
-        type="file"
-        accept=".svg,image/svg+xml"
+        accept={CANVAS_IMAGE_ACCEPT}
         multiple
         className="hidden"
         onChange={handleUploadChange}

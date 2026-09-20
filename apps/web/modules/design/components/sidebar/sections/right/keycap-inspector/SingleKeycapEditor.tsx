@@ -234,7 +234,7 @@ export function SingleKeycapEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
             disabled={disabled}
             title={borderEffectivelyHidden ? t("showBorder") : t("hideBorder")}
             onClick={() => {

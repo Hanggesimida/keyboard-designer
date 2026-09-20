@@ -246,7 +246,7 @@ export function CanvasToolbar({
 
   return (
     <div className="absolute top-3 left-1/2 z-30 -translate-x-1/2 flex flex-col items-center gap-2">
-      <div className="flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm [&_button:not(:disabled)]:cursor-pointer">
+      <div className="flex items-center select-none rounded-lg border border-border bg-popover/80 px-2 py-0.5 backdrop-blur-sm">
       <Button
         type="button"
         variant="ghost"

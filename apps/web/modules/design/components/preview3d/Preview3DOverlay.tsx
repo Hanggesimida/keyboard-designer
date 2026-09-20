@@ -89,7 +89,7 @@ export function Preview3DOverlay({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 text-foreground cursor-pointer"
+            className="size-7 text-foreground"
             title={t("resetView")}
             onClick={(e) => {
               e.stopPropagation()
@@ -102,7 +102,7 @@ export function Preview3DOverlay({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 text-foreground cursor-pointer"
+            className="size-7 text-foreground"
             title={t("topView")}
             onClick={(e) => {
               e.stopPropagation()
@@ -116,7 +116,7 @@ export function Preview3DOverlay({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-7 text-foreground cursor-pointer"
+              className="size-7 text-foreground"
               title={t("exportPng")}
               disabled={loading || exporting}
               onClick={(e) => {
@@ -137,8 +137,8 @@ export function Preview3DOverlay({
             size="icon"
             className={
               showCase
-                ? "size-7 text-foreground bg-accent cursor-pointer"
-                : "size-7 text-foreground cursor-pointer"
+                ? "size-7 text-foreground bg-accent"
+                : "size-7 text-foreground"
             }
             title={showCase ? t("hideCase") : t("showCase")}
             onClick={(e) => {
@@ -154,8 +154,8 @@ export function Preview3DOverlay({
             size="icon"
             className={
               showRealism
-                ? "size-7 text-foreground bg-accent cursor-pointer"
-                : "size-7 text-foreground cursor-pointer"
+                ? "size-7 text-foreground bg-accent"
+                : "size-7 text-foreground"
             }
             title={showRealism ? t("disableRealism") : t("enableRealism")}
             aria-pressed={showRealism}
@@ -177,7 +177,7 @@ export function Preview3DOverlay({
         type="button"
         variant="ghost"
         size="icon"
-        className="absolute bottom-3 right-3 z-10 size-7 cursor-pointer border border-border bg-popover/80 text-foreground backdrop-blur-sm"
+        className="absolute bottom-3 right-3 z-10 size-7 border border-border bg-popover/80 text-foreground backdrop-blur-sm"
         title={t("collapse")}
         onClick={(e) => {
           e.stopPropagation()

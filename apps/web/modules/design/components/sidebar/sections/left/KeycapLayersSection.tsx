@@ -110,7 +110,7 @@ function KeycapLayerRow({
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+        className="shrink-0 text-muted-foreground hover:text-foreground"
         title={isExpanded ? t("collapseKeys") : t("expandKeys")}
         onClick={onToggleExpand}
       >
@@ -125,12 +125,11 @@ function KeycapLayerRow({
         type="button"
         variant="ghost"
         size="icon-xs"
-        className={cn(
-          "cursor-pointer",
+        className={
           layer.labelsHidden
             ? "text-chart-4 hover:text-chart-4/80"
-            : "text-muted-foreground hover:text-foreground",
-        )}
+            : "text-muted-foreground hover:text-foreground"
+        }
         title={layer.labelsHidden ? t("showLabels") : t("hideLabels")}
         onClick={onToggleLabelsHidden}
       >
