@@ -33,7 +33,6 @@ export function useSingleKeycapEditor({
   const templateId = useDesignUIStore((s) => s.templateId)
   const LAYOUT_BASE_UNIT = getLayoutData(templateId).baseUnit
   const setKeycapOverride = useDesignUIStore((s) => s.setKeycapOverride)
-  const clearKeycapOverride = useDesignUIStore((s) => s.clearKeycapOverride)
   // 用 useShallow 只选取实际用到的字段，避免整个 globalKeycapStyle 对象变化触发重渲染
   const globalKeycapStyle = useDesignUIStore(
     useShallow((s) => ({
@@ -187,13 +186,6 @@ export function useSingleKeycapEditor({
     [LAYOUT_BASE_UNIT, currentFontSize, currentLabel, disabled, keyDef, patchOverride],
   )
 
-  const hasOverride = !!override && Object.keys(override).length > 0
-
-  const resetKeycap = useCallback(() => {
-    if (disabled) return
-    clearKeycapOverride(layerId, keyDef.keyId)
-  }, [clearKeycapOverride, disabled, keyDef.keyId, layerId])
-
   return {
     currentLabel,
     labelInput,
@@ -217,8 +209,5 @@ export function useSingleKeycapEditor({
     globalKeycapStyle,
     handleAlign,
     patchOverride,
-
-    hasOverride,
-    resetKeycap,
   }
 }

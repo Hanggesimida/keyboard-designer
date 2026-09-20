@@ -264,16 +264,6 @@ export function MultiKeycapEditor({
         }
       />
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        disabled={disabled || !e.hasAnyOverride}
-        onClick={e.resetSelection}
-        className="self-end"
-      >
-        {t("resetSelected")}
-      </Button>
     </div>
   )
 }

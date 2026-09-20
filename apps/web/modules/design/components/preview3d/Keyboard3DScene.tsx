@@ -103,11 +103,11 @@ function PreviewEnvironment({
       <hemisphereLight
         color={isDark ? "#94a3b8" : "#f8fafc"}
         groundColor={isDark ? "#080b14" : "#525866"}
-        intensity={isDark ? 0.08 : 0.32}
+        intensity={isDark ? 0.14 : 0.42}
       />
       <directionalLight
         ref={keyLightRef}
-        position={[center[0] + 6, 10, center[2] + 8]}
+        position={[center[0] + 2, 14, center[2] + 3]}
         color="#fffaf2"
         intensity={isDark ? 0.52 : 1.35}
         castShadow
@@ -143,7 +143,7 @@ function PreviewEnvironment({
         <Lightformer
           form="rect"
           color="#ffffff"
-          intensity={isDark ? 0.22 : 0.9}
+          intensity={isDark ? 0.4 : 1.6}
           position={[0, 4, -6]}
           rotation={[Math.PI / 2, 0, 0]}
           scale={[8, 3, 1]}
@@ -154,7 +154,7 @@ function PreviewEnvironment({
         key={shadowKey}
         position={[center[0], floorY, center[2]]}
         scale={shadowScale}
-        opacity={0.22}
+        opacity={0.16}
         blur={2.2}
         far={2.5}
         resolution={1024}
@@ -295,6 +295,8 @@ interface Keyboard3DSceneProps {
   lightingSettings: LightingSettings
   /** 单击选中；Shift+单击追加/切换。与 2D 画布一致 */
   onSelectKeycap?: (keyId: string, shiftKey: boolean) => void
+  /** 双击进入单键帽编辑模态。与 2D 画布一致 */
+  onEnterKeycapEdit?: (keyId: string) => void
 }
 
 export function Keyboard3DScene({
@@ -307,6 +309,7 @@ export function Keyboard3DScene({
   keycapMaterial,
   lightingSettings,
   onSelectKeycap,
+  onEnterKeycapEdit,
 }: Keyboard3DSceneProps) {
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
@@ -327,6 +330,13 @@ export function Keyboard3DScene({
       onSelectKeycap?.(keyId, shiftKey)
     },
     [isSpacePressedRef, onSelectKeycap],
+  )
+  const handleEnterKeycapEdit = useCallback(
+    (keyId: string) => {
+      if (isSpacePressedRef.current) return
+      onEnterKeycapEdit?.(keyId)
+    },
+    [isSpacePressedRef, onEnterKeycapEdit],
   )
   const visibleCase = showCase ? sceneModel.case : null
   const minX = visibleCase
@@ -419,6 +429,11 @@ export function Keyboard3DScene({
                       ? (shiftKey) => handleSelectKeycap(key.id, shiftKey)
                       : undefined
                   }
+                  onEnterEdit={
+                    onEnterKeycapEdit
+                      ? () => handleEnterKeycapEdit(key.id)
+                      : undefined
+                  }
                 />
               ) : (
                 <PlaceholderKeycap
@@ -427,6 +442,11 @@ export function Keyboard3DScene({
                   onSelect={
                     onSelectKeycap
                       ? (shiftKey) => handleSelectKeycap(key.id, shiftKey)
+                      : undefined
+                  }
+                  onEnterEdit={
+                    onEnterKeycapEdit
+                      ? () => handleEnterKeycapEdit(key.id)
                       : undefined
                   }
                 />

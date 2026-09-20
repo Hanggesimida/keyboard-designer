@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useTranslations } from "next-intl"
-import { EyeOff, Lock, Paintbrush, X } from "lucide-react"
+import { EyeOff, Lock, Paintbrush, RotateCcw, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
 import { useDesignUIStore } from "@/modules/design/store/designUiStore"
@@ -25,6 +25,9 @@ export function KeycapInspectorSection() {
   const cancelKeycapStyleTransfer = useDesignUIStore(
     (s) => s.cancelKeycapStyleTransfer,
   )
+  const clearMultipleKeycapOverrides = useDesignUIStore(
+    (s) => s.clearMultipleKeycapOverrides,
+  )
 
   const activeLayer = layers.find((l) => l.id === activeLayerId) ?? null
   const layerOverrides = activeLayerId
@@ -40,6 +43,31 @@ export function KeycapInspectorSection() {
   if (noActiveLayer) disabledReason = t("noLayer")
   else if (isLayerLocked) disabledReason = t("layerLocked")
   else if (isLayerHidden) disabledReason = t("layerHidden")
+
+  const hasSelectedOverrides = selectedKeycapIds.some(
+    (id) => Object.keys(layerOverrides[id] ?? {}).length > 0,
+  )
+  const resetDisabled =
+    editorDisabled || !!keycapStyleTransferRequest || !hasSelectedOverrides
+
+  const resetAction = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-xs"
+      className="size-4 text-muted-foreground hover:text-foreground cursor-pointer"
+      title={
+        selectedKeycapIds.length > 1 ? t("resetSelected") : t("resetKey")
+      }
+      disabled={resetDisabled}
+      onClick={() => {
+        if (!activeLayerId) return
+        clearMultipleKeycapOverrides(activeLayerId, selectedKeycapIds)
+      }}
+    >
+      <RotateCcw className="size-3" />
+    </Button>
+  )
 
   const styleTransferControls = activeLayerId ? (
     keycapStyleTransferRequest ? (
@@ -81,7 +109,7 @@ export function KeycapInspectorSection() {
 
   if (selectedKeycapIds.length > 1) {
     return (
-      <PanelSection title={t("selectionTitle")} first>
+      <PanelSection title={t("selectionTitle")} first action={resetAction}>
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] text-muted-foreground">
@@ -123,7 +151,7 @@ export function KeycapInspectorSection() {
   if (!key) return null
 
   return (
-    <PanelSection title={t("selectionTitle")} first>
+    <PanelSection title={t("selectionTitle")} first action={resetAction}>
       <div className="flex flex-col gap-2">
         {editorDisabled && disabledReason && (
           <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">

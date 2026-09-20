@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
-import { ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react"
+import { CaseSensitive, ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -14,7 +14,7 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { useDesignUIStore, type KeycapOverride, type Layer } from "@/modules/design/store/designUiStore"
 import { useLayoutKeys } from "@/modules/design/lib/keycap-inspector/layout104Keys"
-import { ZIndexBadge, LayerControls, SectionHeader } from "./LayerPrimitives"
+import { SectionHeader } from "./LayerPrimitives"
 
 interface KeyDef { keyId: string; label: string }
 
@@ -78,34 +78,20 @@ function KeycapSubRow({ keyDef, isSelected, hasOverride, hasImages, onSelect, on
 // ─── 键帽设计层行 ──────────────────────────────────────
 interface KeycapLayerRowProps {
   layer: Layer
-  zIndex: number
-  total: number
   isActive: boolean
   isExpanded: boolean
   onActivate: () => void
   onToggleExpand: (e: React.MouseEvent) => void
-  onMoveUp: (e: React.MouseEvent) => void
-  onMoveDown: (e: React.MouseEvent) => void
-  onToggleVisible: (e: React.MouseEvent) => void
-  onToggleLocked: (e: React.MouseEvent) => void
   onToggleLabelsHidden: (e: React.MouseEvent) => void
-  onRemove: (e: React.MouseEvent) => void
 }
 
 function KeycapLayerRow({
   layer,
-  zIndex,
-  total,
   isActive,
   isExpanded,
   onActivate,
   onToggleExpand,
-  onMoveUp,
-  onMoveDown,
-  onToggleVisible,
-  onToggleLocked,
   onToggleLabelsHidden,
-  onRemove,
 }: KeycapLayerRowProps) {
   const t = useTranslations("Design.layers")
   const displayName = layer.id === "layer-default-keycap" ? t("defaultName") : layer.name
@@ -120,8 +106,6 @@ function KeycapLayerRow({
           : "text-sidebar-foreground hover:bg-sidebar-accent/50",
       )}
     >
-      <ZIndexBadge index={zIndex} />
-
       <Button
         type="button"
         variant="ghost"
@@ -133,46 +117,25 @@ function KeycapLayerRow({
         {isExpanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
       </Button>
 
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate px-0.5 text-left text-[12px]",
-          !layer.visible && "opacity-40",
-        )}
-      >
+      <span className="min-w-0 flex-1 truncate px-0.5 text-left text-[12px]">
         {displayName}
       </span>
 
-      {!layer.visible && (
-        <Badge
-          variant="outline"
-          className="h-4 border-border px-1 text-[9px] font-normal text-muted-foreground shrink-0"
-        >
-          {t("hidden")}
-        </Badge>
-      )}
-      {layer.locked && (
-        <Badge
-          variant="outline"
-          className="h-4 border-chart-4/35 bg-chart-4/10 px-1 text-[9px] font-normal text-chart-4 shrink-0"
-        >
-          {t("locked")}
-        </Badge>
-      )}
-
-      <LayerControls
-        canMoveUp={zIndex > 1}
-        canMoveDown={zIndex < total}
-        canRemove={total > 1}
-        isVisible={layer.visible}
-        isLocked={layer.locked}
-        labelsHidden={layer.labelsHidden}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        onToggleVisible={onToggleVisible}
-        onToggleLocked={onToggleLocked}
-        onToggleLabelsHidden={onToggleLabelsHidden}
-        onRemove={onRemove}
-      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        className={cn(
+          "cursor-pointer",
+          layer.labelsHidden
+            ? "text-chart-4 hover:text-chart-4/80"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+        title={layer.labelsHidden ? t("showLabels") : t("hideLabels")}
+        onClick={onToggleLabelsHidden}
+      >
+        <CaseSensitive className="size-3" />
+      </Button>
     </li>
   )
 }
@@ -180,8 +143,6 @@ function KeycapLayerRow({
 // ─── 键帽设计层树节点（含可展开子键帽列表） ──────────
 interface KeycapLayerTreeNodeProps {
   layer: Layer
-  zIndex: number
-  total: number
   isActive: boolean
   isExpanded: boolean
   selectedKeycapIds: string[]
@@ -190,20 +151,13 @@ interface KeycapLayerTreeNodeProps {
   allKeys: KeyDef[]
   onActivate: () => void
   onToggleExpand: () => void
-  onMoveUp: (e: React.MouseEvent) => void
-  onMoveDown: (e: React.MouseEvent) => void
-  onToggleVisible: (e: React.MouseEvent) => void
-  onToggleLocked: (e: React.MouseEvent) => void
   onToggleLabelsHidden: (e: React.MouseEvent) => void
-  onRemove: (e: React.MouseEvent) => void
   onSelectKeycap: (keyId: string, shiftKey: boolean) => void
   onEnterKeycapEdit: (keyId: string) => void
 }
 
 function KeycapLayerTreeNode({
   layer,
-  zIndex,
-  total,
   isActive,
   isExpanded,
   selectedKeycapIds,
@@ -212,12 +166,7 @@ function KeycapLayerTreeNode({
   allKeys,
   onActivate,
   onToggleExpand,
-  onMoveUp,
-  onMoveDown,
-  onToggleVisible,
-  onToggleLocked,
   onToggleLabelsHidden,
-  onRemove,
   onSelectKeycap,
   onEnterKeycapEdit,
 }: KeycapLayerTreeNodeProps) {
@@ -225,18 +174,11 @@ function KeycapLayerTreeNode({
     <div className="flex flex-col gap-px">
       <KeycapLayerRow
         layer={layer}
-        zIndex={zIndex}
-        total={total}
         isActive={isActive}
         isExpanded={isExpanded}
         onActivate={onActivate}
         onToggleExpand={(e) => { e.stopPropagation(); onToggleExpand() }}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        onToggleVisible={onToggleVisible}
-        onToggleLocked={onToggleLocked}
         onToggleLabelsHidden={onToggleLabelsHidden}
-        onRemove={onRemove}
       />
 
       {isExpanded && (
@@ -266,7 +208,7 @@ function KeycapLayerTreeNode({
 }
 
 // ─── 键帽设计层区 ──────────────────────────────────────
-// layers[0] = 最顶层，面板中正序展示
+// 产品只暴露一层键帽层：无层叠序号 / 上下移 / 显隐 / 锁定，仅保留隐藏文字
 export function KeycapLayersSection() {
   const t = useTranslations("Design.layers")
   const { allKeys: ALL_KEYS } = useLayoutKeys()
@@ -280,11 +222,7 @@ export function KeycapLayersSection() {
   const toggleKeycapSelection = useDesignUIStore((s) => s.toggleKeycapSelection)
   const setKeycapEditTarget = useDesignUIStore((s) => s.setKeycapEditTarget)
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
-  const toggleLayerVisible = useDesignUIStore((s) => s.toggleLayerVisible)
-  const toggleLayerLocked = useDesignUIStore((s) => s.toggleLayerLocked)
   const toggleLayerLabelsHidden = useDesignUIStore((s) => s.toggleLayerLabelsHidden)
-  const removeLayer = useDesignUIStore((s) => s.removeLayer)
-  const reorderLayer = useDesignUIStore((s) => s.reorderLayer)
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {}
@@ -315,8 +253,6 @@ export function KeycapLayersSection() {
     return ids
   }, [canvasElements])
 
-  const total = layers.length
-
   return (
     <div className="flex flex-col gap-px">
       <SectionHeader
@@ -329,12 +265,10 @@ export function KeycapLayersSection() {
         </p>
       )}
       <div className="flex flex-col gap-px">
-        {layers.map((layer, i) => (
+        {layers.map((layer) => (
           <KeycapLayerTreeNode
             key={layer.id}
             layer={layer}
-            zIndex={i + 1}
-            total={total}
             isActive={layer.id === activeLayerId}
             isExpanded={Boolean(expanded[layer.id])}
             selectedKeycapIds={selectedKeycapIds}
@@ -343,12 +277,7 @@ export function KeycapLayersSection() {
             allKeys={ALL_KEYS}
             onActivate={() => { setActiveLayer(layer.id); clearSelection() }}
             onToggleExpand={() => toggleExpanded(layer.id)}
-            onMoveUp={(e) => { e.stopPropagation(); reorderLayer(layer.id, "up") }}
-            onMoveDown={(e) => { e.stopPropagation(); reorderLayer(layer.id, "down") }}
-            onToggleVisible={(e) => { e.stopPropagation(); toggleLayerVisible(layer.id) }}
-            onToggleLocked={(e) => { e.stopPropagation(); toggleLayerLocked(layer.id) }}
             onToggleLabelsHidden={(e) => { e.stopPropagation(); toggleLayerLabelsHidden(layer.id) }}
-            onRemove={(e) => { e.stopPropagation(); removeLayer(layer.id) }}
             onSelectKeycap={(keyId, shiftKey) => {
               setActiveLayer(layer.id)
               if (shiftKey) {

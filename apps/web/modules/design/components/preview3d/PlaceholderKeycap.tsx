@@ -18,6 +18,8 @@ interface PlaceholderKeycapProps {
   previewKey: PreviewKey
   /** shiftKey 为 true 表示 Shift+点击（追加/切换选中） */
   onSelect?: (shiftKey: boolean) => void
+  /** 双击进入单键帽编辑模态 */
+  onEnterEdit?: () => void
 }
 
 /**
@@ -27,7 +29,7 @@ interface PlaceholderKeycapProps {
  * 选中用 emissive，不替换设计色（与 KeycapMesh 一致）。
  * 同样参与世界空间贴花，便于缺模时仍能预览连续图案。
  */
-export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapProps) {
+export function PlaceholderKeycap({ previewKey, onSelect, onEnterEdit }: PlaceholderKeycapProps) {
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
   const groupRef = useRef<Group>(null)
@@ -93,6 +95,14 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
     onSelect?.(e.shiftKey)
   }
 
+  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation()
+    if (e.delta > CLICK_DELTA_PX) return
+    onEnterEdit?.()
+  }
+
+  const interactive = !!(onSelect || onEnterEdit)
+
   return (
     <group
       ref={groupRef}
@@ -103,8 +113,9 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
         position={[0, PLACEHOLDER_KEY_HEIGHT / 2, 0]}
         material={material as never}
         onClick={onSelect ? handleClick : undefined}
+        onDoubleClick={onEnterEdit ? handleDoubleClick : undefined}
         onPointerOver={
-          onSelect
+          interactive
             ? (e) => {
                 e.stopPropagation()
                 gl.domElement.style.cursor = "pointer"
@@ -112,7 +123,7 @@ export function PlaceholderKeycap({ previewKey, onSelect }: PlaceholderKeycapPro
             : undefined
         }
         onPointerOut={
-          onSelect
+          interactive
             ? () => {
                 gl.domElement.style.cursor = "auto"
               }

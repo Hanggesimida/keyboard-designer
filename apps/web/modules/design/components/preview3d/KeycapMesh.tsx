@@ -35,6 +35,8 @@ interface KeycapMeshProps {
   woodMap: Texture
   /** shiftKey 为 true 表示 Shift+点击（追加/切换选中） */
   onSelect?: (shiftKey: boolean) => void
+  /** 双击进入单键帽编辑模态 */
+  onEnterEdit?: () => void
 }
 
 /** 鸭子类型：避免直接依赖 three 类型包 */
@@ -107,6 +109,7 @@ export function KeycapMesh({
   materialSettings,
   woodMap,
   onSelect,
+  onEnterEdit,
 }: KeycapMeshProps) {
   const { scene } = useGLTF(modelPath)
   const invalidate = useThree((s) => s.invalidate)
@@ -187,6 +190,14 @@ export function KeycapMesh({
     onSelect?.(e.shiftKey)
   }
 
+  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation()
+    if (e.delta > CLICK_DELTA_PX) return
+    onEnterEdit?.()
+  }
+
+  const interactive = !!(onSelect || onEnterEdit)
+
   return (
     <mesh
       ref={meshRef}
@@ -198,8 +209,9 @@ export function KeycapMesh({
       castShadow
       receiveShadow
       onClick={onSelect ? handleClick : undefined}
+      onDoubleClick={onEnterEdit ? handleDoubleClick : undefined}
       onPointerOver={
-        onSelect
+        interactive
           ? (e) => {
               e.stopPropagation()
               gl.domElement.style.cursor = "pointer"
@@ -207,7 +219,7 @@ export function KeycapMesh({
           : undefined
       }
       onPointerOut={
-        onSelect
+        interactive
           ? () => {
               gl.domElement.style.cursor = "auto"
             }

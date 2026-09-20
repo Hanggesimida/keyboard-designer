@@ -383,7 +383,7 @@
       "hidden": "隐藏",
       "locked": "锁定",
       "keycapGroup": "键帽设计层",
-      "keycapGroupHint": "键帽设计层影响整个键盘的样式。列表中越靠上表示层叠越高（覆盖下方图层）。键帽设计层整体位于画布图片之下。",
+      "keycapGroupHint": "键帽层固定在图片之下，负责整盘键帽底色与文字。可用「隐藏文字」只关刻字、保留键帽颜色。",
       "noKeycapLayers": "暂无键帽设计层",
       "boundKeyCount": "{count} 个键",
       "boundToKeys": "限定到键位：",

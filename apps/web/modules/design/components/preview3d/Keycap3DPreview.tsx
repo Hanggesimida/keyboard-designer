@@ -72,6 +72,7 @@ export function Keycap3DPreview() {
   const setSelectedKeycapIds = useDesignUIStore((s) => s.setSelectedKeycapIds)
   const toggleKeycapSelection = useDesignUIStore((s) => s.toggleKeycapSelection)
   const clearSelection = useDesignUIStore((s) => s.clearSelection)
+  const setKeycapEditTarget = useDesignUIStore((s) => s.setKeycapEditTarget)
   const setShow3dPreview = useDesignUIStore((s) => s.setShow3dPreview)
   const show3dCase = useDesignUIStore((s) => s.show3dCase)
   const toggleShow3dCase = useDesignUIStore((s) => s.toggleShow3dCase)
@@ -171,6 +172,17 @@ export function Keycap3DPreview() {
     [setSelectedKeycapIds, toggleKeycapSelection],
   )
 
+  const handleEnterKeycapEdit = useCallback(
+    (keyId: string) => {
+      const { activeLayerId, layers } = useDesignUIStore.getState()
+      const layerId = activeLayerId ?? layers[0]?.id
+      if (!layerId) return
+      setSelectedKeycapIds([keyId])
+      setKeycapEditTarget({ layerId, keyId })
+    },
+    [setKeycapEditTarget, setSelectedKeycapIds],
+  )
+
   const handlePointerMissed = useCallback(
     (event: MouseEvent) => {
       const down = pointerDownRef.current
@@ -235,6 +247,7 @@ export function Keycap3DPreview() {
               keycapMaterial={keycapMaterial}
               lightingSettings={lightingSettings}
               onSelectKeycap={handleSelectKeycap}
+              onEnterKeycapEdit={handleEnterKeycapEdit}
             />
             <SceneReady onPending={markPending} onReady={markReady} />
           </Suspense>

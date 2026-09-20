@@ -913,24 +913,24 @@ export function DesignCanvas() {
             </Button>
           </div>
         )}
-
-        {/* 单键帽编辑模态框（portal 到容器 div 内，已有 fixed inset-0 覆盖） */}
-        {keycapEditTarget && editKeyDef && (
-          <KeycapEditorModal
-            keyId={keycapEditTarget.keyId}
-            layerId={keycapEditTarget.layerId}
-            keyDef={editKeyDef}
-            unit={unit}
-            artPad={ART_PAD}
-            onClose={() => setKeycapEditTarget(null)}
-          />
-        )}
         </ContextMenuTrigger>
         <DesignCanvasContextMenu
           controller={contextMenu}
           onFitToScreen={fitToScreen}
         />
       </ContextMenu>
+
+      {/* 提到画布根节点，覆盖 2D 与 3D 预览；fixed inset-0 铺满视口 */}
+      {keycapEditTarget && editKeyDef && (
+        <KeycapEditorModal
+          keyId={keycapEditTarget.keyId}
+          layerId={keycapEditTarget.layerId}
+          keyDef={editKeyDef}
+          unit={unit}
+          artPad={ART_PAD}
+          onClose={() => setKeycapEditTarget(null)}
+        />
+      )}
     </div>
   )
 }

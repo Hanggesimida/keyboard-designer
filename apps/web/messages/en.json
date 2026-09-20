@@ -383,7 +383,7 @@
       "hidden": "Hidden",
       "locked": "Locked",
       "keycapGroup": "Keycap layers",
-      "keycapGroupHint": "Keycap layers affect the whole keyboard. Higher in the list means higher z-order. Keycap layers sit below canvas images.",
+      "keycapGroupHint": "The keycap layer sits below canvas images and controls keycap colors and legends. Use Hide legends to hide text only.",
       "noKeycapLayers": "No keycap layers",
       "boundKeyCount": "{count, plural, one {# key} other {# keys}}",
       "boundToKeys": "Bound to keys: ",

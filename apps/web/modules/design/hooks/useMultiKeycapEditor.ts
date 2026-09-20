@@ -40,9 +40,6 @@ export function useMultiKeycapEditor({
   const setMultipleKeycapOverrides = useDesignUIStore(
     (s) => s.setMultipleKeycapOverrides,
   )
-  const clearMultipleKeycapOverrides = useDesignUIStore(
-    (s) => s.clearMultipleKeycapOverrides,
-  )
   const batchSetKeycapOverrides = useDesignUIStore(
     (s) => s.batchSetKeycapOverrides,
   )
@@ -75,10 +72,6 @@ export function useMultiKeycapEditor({
 
   const [fontSizeInput, setFontSizeInput] = useSyncedState(String(fontSize.value))
   const [fontPopoverOpen, setFontPopoverOpen] = useState(false)
-
-  const hasAnyOverride = selectedIds.some(
-    (id) => layerOverrides[id] && Object.keys(layerOverrides[id]!).length > 0,
-  )
 
   const applyPatch = useCallback(
     (patch: Partial<KeycapOverride>) => {
@@ -210,11 +203,6 @@ export function useMultiKeycapEditor({
     [applyPatch, globalFontFamily],
   )
 
-  const resetSelection = useCallback(() => {
-    if (disabled) return
-    clearMultipleKeycapOverrides(layerId, selectedIds)
-  }, [clearMultipleKeycapOverrides, disabled, layerId, selectedIds])
-
   return {
     globalKeycapStyle,
     globalFontFamily,
@@ -238,8 +226,5 @@ export function useMultiKeycapEditor({
     applyPatch,
     applyGradientAcrossSelection,
     handleAlignMulti,
-
-    hasAnyOverride,
-    resetSelection,
   }
 }

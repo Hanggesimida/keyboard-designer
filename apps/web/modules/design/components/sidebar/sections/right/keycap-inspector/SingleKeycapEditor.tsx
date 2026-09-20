@@ -258,16 +258,6 @@ export function SingleKeycapEditor({
         }
       />
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        disabled={disabled || !e.hasOverride}
-        onClick={e.resetKeycap}
-        className="self-end cursor-pointer"
-      >
-        {t("resetKey")}
-      </Button>
     </div>
   )
 }
