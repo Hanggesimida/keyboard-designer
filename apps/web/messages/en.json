@@ -202,14 +202,15 @@
   },
   "Design": {
     "layouts": {
-      "ansi-104": "ANSI 104 full size",
-      "ansi-99": "ANSI 99 compact full size",
-      "ansi-87": "ANSI 87 TKL",
-      "ansi-108": "ANSI 108 full size",
-      "ansi-61": "ANSI 61 (60%)",
-      "ansi-68": "ANSI 68 (68%)",
-      "ansi-81": "ANSI 81 (81%)",
-      "ansi-144": "ANSI 144 with numpad cluster"
+      "ansi-60": "ANSI 60% (61)",
+      "ansi-65": "ANSI 65% (68)",
+      "ansi-75": "ANSI 75% (80)",
+      "ansi-75-84": "ANSI 75% extra (84)",
+      "ansi-tkl": "ANSI TKL (87)",
+      "ansi-1800": "ANSI 1800 (99)",
+      "ansi-104": "ANSI 104 (104)",
+      "ansi-108": "ANSI 108 (108)",
+      "ansi-108-kit": "108 + kit (144)"
     },
     "loading": {
       "initializing": "Initializing workspace…"

@@ -128,10 +128,12 @@ The editor is desktop-first (≥ 768px). On a small screen it asks you to switch
 
 | Layout ID | Notes |
 |-----------|--------|
-| `ansi-61` | 60% |
-| `ansi-68` | 68% |
-| `ansi-81` | 81% |
-| `ansi-87` | TKL 87 |
-| `ansi-104` | Full-size 104 |
-| `ansi-108` | Full-size 108 (default) |
-| `ansi-144` | 144-key |
+| `ansi-60` | ANSI 60% (61-key) |
+| `ansi-65` | ANSI 65% (68-key) |
+| `ansi-75` | ANSI 75% (80-key) |
+| `ansi-75-84` | ANSI 75% extra F-row (84-key) |
+| `ansi-tkl` | ANSI TKL (87-key) |
+| `ansi-1800` | ANSI 1800 (99-key) |
+| `ansi-104` | ANSI full size (104-key) |
+| `ansi-108` | ANSI full size + media keys (108-key, default) |
+| `ansi-108-kit` | Full size 108 + supplement kit (144) |

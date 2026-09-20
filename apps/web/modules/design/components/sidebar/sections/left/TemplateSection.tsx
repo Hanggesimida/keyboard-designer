@@ -29,16 +29,7 @@ function getBaseKeysBounds(templateId: string) {
   }
 }
 
-const LAYOUT_IDS = [
-  "ansi-104",
-  "ansi-99",
-  "ansi-87",
-  "ansi-108",
-  "ansi-61",
-  "ansi-68",
-  "ansi-81",
-  "ansi-144",
-] as const
+const LAYOUT_IDS = TEMPLATES.map((item) => item.id)
 
 export function TemplateSection() {
   const t = useTranslations("Design")
@@ -48,7 +39,7 @@ export function TemplateSection() {
   const [open, setOpen] = useState(false)
 
   const layoutLabel = (id: string) =>
-    (LAYOUT_IDS as readonly string[]).includes(id)
+    LAYOUT_IDS.includes(id as (typeof LAYOUT_IDS)[number])
       ? t(`layouts.${id as (typeof LAYOUT_IDS)[number]}`)
       : tCommon("unknown")
 

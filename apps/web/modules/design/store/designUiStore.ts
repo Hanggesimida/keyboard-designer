@@ -165,14 +165,15 @@ export interface GlobalKeycapStyle {
 }
 
 export const TEMPLATES = [
-  { id: "ansi-104", label: "ANSI 104 全尺寸", enabled: true },
-  { id: "ansi-99", label: "ANSI 99 紧凑全尺寸", enabled: true },
-  { id: "ansi-87", label: "ANSI 87 TKL", enabled: true },
-  { id: "ansi-108", label: "ANSI 108 全尺寸", enabled: true },
-  { id: "ansi-61", label: "ANSI 61 (60%)", enabled: true },
-  { id: "ansi-68", label: "ANSI 68 (68%)", enabled: true },
-  { id: "ansi-81", label: "ANSI 81 (81%)", enabled: true },
-  { id: "ansi-144", label: "ANSI 144 带增补区", enabled: true },
+  { id: "ansi-60", label: "ANSI 60%（61键）", enabled: true },
+  { id: "ansi-65", label: "ANSI 65%（68键）", enabled: true },
+  { id: "ansi-75", label: "ANSI 75%（80键）", enabled: true },
+  { id: "ansi-75-84", label: "ANSI 75% 加长（84键）", enabled: true },
+  { id: "ansi-tkl", label: "ANSI TKL（87键）", enabled: true },
+  { id: "ansi-1800", label: "ANSI 1800（99键）", enabled: true },
+  { id: "ansi-104", label: "ANSI 104（104键）", enabled: true },
+  { id: "ansi-108", label: "ANSI 108（108键）", enabled: true },
+  { id: "ansi-108-kit", label: "108 +增补区（144键）", enabled: true },
 ] as const
 
 export type TemplateId = (typeof TEMPLATES)[number]["id"]

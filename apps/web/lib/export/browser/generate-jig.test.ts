@@ -36,7 +36,7 @@ describe("browser jig export", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     const result = await generateJigSvg({
-      templateId: "ansi-61",
+      templateId: "ansi-60",
       globalKeycapStyle: {
         color: "#123456",
         labelColor: "#ffffff",

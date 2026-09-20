@@ -1,7 +1,7 @@
 import { resolveFontFamily } from "@/lib/fontAssets"
 import { isUserFontRef, toCssFontFamily } from "@/lib/fonts/fontRef"
 import {
-  LAYOUT_REGISTRY,
+  getLayoutData,
   type LayoutData,
 } from "@/modules/design/data/layouts"
 import {
@@ -201,7 +201,7 @@ function createContext(
   design: DesignPayload,
   positions: JigPosition[],
 ): RenderContext {
-  const layout = LAYOUT_REGISTRY[design.templateId]
+  const layout = getLayoutData(design.templateId)
   const keys = layoutKeys(layout)
   const assignment = buildAssignment(keys, positions)
   const positionsByKey = new Map<string, JigPosition>()
@@ -571,7 +571,7 @@ async function loadJigPositions(): Promise<JigPosition[]> {
 }
 
 export async function generateJigSvg(design: DesignPayload): Promise<string> {
-  const layout = LAYOUT_REGISTRY[design.templateId]
+  const layout = getLayoutData(design.templateId)
   const migration = layout
     ? migrateLayoutElements(
         design.templateId,

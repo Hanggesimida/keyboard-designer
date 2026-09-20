@@ -38,7 +38,7 @@ export function resolveBundledFontPath(relativePath: string): string | null {
   return firstExisting(...fromAssets, ...fromWebPublic);
 }
 
-/** segments 相对 design-data，如 ('layouts','ansi-87.json') 或 ('jig','keycap_jig.svg') */
+/** segments 相对 design-data，如 ('layouts','ansi-tkl.json') 或 ('jig','keycap_jig.svg') */
 export function resolveDesignDataPath(...segments: string[]): string | null {
   const fromAssets = candidateAssetRoots().map((root) =>
     path.join(root, 'design-data', ...segments),

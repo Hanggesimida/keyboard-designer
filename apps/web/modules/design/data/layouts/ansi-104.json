@@ -1,6 +1,6 @@
 {
   "id": "ansi-104",
-  "name": "ANSI 104 Fullsize",
+  "name": "ANSI full size (104-key)",
   "totalKeys": 104,
   "revision": 1,
   "baseUnit": 54,

@@ -84,7 +84,7 @@ export interface PreviewSceneBounds {
 /** 按布局解析后的真实 GLB 外壳 */
 export interface PreviewCase {
   modelPath: string
-  /** GLB 内声明的布局 ID；144 的值为 ansi-108 */
+  /** GLB 内声明的布局 ID；108-kit 复用 108 外壳，值为 ansi-108 */
   assetLayoutId: string
   /** 模型原点放置位置；XZ 为对应 base 键区中心 */
   position: [number, number, number]

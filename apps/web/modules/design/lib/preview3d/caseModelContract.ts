@@ -4,13 +4,18 @@
  * - 单位：米；Y-up，X 为宽、Z 为深
  * - 原点：键区中心；资产内 CaseRoot 已包含垂直偏移
  * - localBoundsMeters：包含脚垫与 USB 结构的完整场景 AABB
+ *
+ * GLB 文件名沿用历史资产 ID（如 ansi-61.glb），与当前模板规范 ID 通过
+ * CASE_MODEL_REGISTRY 映射，避免改名导致现有外壳资产失效。
  */
+
+import { resolveLayoutId } from "@/modules/design/data/layouts"
 
 export type CaseModelVec3 = readonly [number, number, number]
 
 export interface CaseModelAsset {
   path: string
-  /** GLB 内声明的真实布局；144 复用 108，因此两者不同 */
+  /** GLB 文件及资产内声明的布局 ID；可与当前模板 ID 不同 */
   layoutId: string
   localBoundsMeters: {
     min: CaseModelVec3
@@ -23,15 +28,15 @@ const MIN_Y_METERS = -0.02415
 const MAX_Y_METERS = 0.00213
 
 function defineCaseAsset(
-  layoutId: string,
+  assetLayoutId: string,
   minX: number,
   maxX: number,
   minZ: number,
   maxZ: number,
 ): CaseModelAsset {
   return {
-    path: `${CASE_DIR}/${layoutId}.glb`,
-    layoutId,
+    path: `${CASE_DIR}/${assetLayoutId}.glb`,
+    layoutId: assetLayoutId,
     localBoundsMeters: {
       min: [minX, MIN_Y_METERS, minZ],
       max: [maxX, MAX_Y_METERS, maxZ],
@@ -39,28 +44,35 @@ function defineCaseAsset(
   }
 }
 
-const ANSI_61_CASE = defineCaseAsset(
+const ANSI_60_CASE = defineCaseAsset(
   "ansi-61",
   -0.149375,
   0.149375,
   -0.05538,
   0.054125,
 )
-const ANSI_68_CASE = defineCaseAsset(
+const ANSI_65_CASE = defineCaseAsset(
   "ansi-68",
   -0.1589,
   0.1589,
   -0.05538,
   0.054125,
 )
-const ANSI_81_CASE = defineCaseAsset(
+const ANSI_75_CASE = defineCaseAsset(
+  "ansi-80",
+  -0.1589,
+  0.1589,
+  -0.067286,
+  0.066031,
+)
+const ANSI_75_84_CASE = defineCaseAsset(
   "ansi-81",
   -0.1589,
   0.1589,
   -0.064905,
   0.06365,
 )
-const ANSI_87_CASE = defineCaseAsset(
+const ANSI_TKL_CASE = defineCaseAsset(
   "ansi-87",
   -0.180331,
   0.180331,
@@ -74,7 +86,7 @@ const ANSI_104_CASE = defineCaseAsset(
   -0.067286,
   0.066031,
 )
-const ANSI_99_CASE = defineCaseAsset(
+const ANSI_1800_CASE = defineCaseAsset(
   "ansi-99",
   -0.189856,
   0.189856,
@@ -89,16 +101,18 @@ const ANSI_108_CASE = defineCaseAsset(
   0.066031,
 )
 
+/** 以规范模板 ID 为键。 */
 export const CASE_MODEL_REGISTRY: Readonly<Record<string, CaseModelAsset>> = {
-  "ansi-61": ANSI_61_CASE,
-  "ansi-68": ANSI_68_CASE,
-  "ansi-81": ANSI_81_CASE,
-  "ansi-87": ANSI_87_CASE,
+  "ansi-60": ANSI_60_CASE,
+  "ansi-65": ANSI_65_CASE,
+  "ansi-75": ANSI_75_CASE,
+  "ansi-75-84": ANSI_75_84_CASE,
+  "ansi-tkl": ANSI_TKL_CASE,
   "ansi-104": ANSI_104_CASE,
-  "ansi-99": ANSI_99_CASE,
+  "ansi-1800": ANSI_1800_CASE,
   "ansi-108": ANSI_108_CASE,
-  // 144 的 base 区与 108 完全一致；supplement 区不需要外壳。
-  "ansi-144": ANSI_108_CASE,
+  // 108-kit 的 base 区与 108 完全一致；supplement 区不需要外壳。
+  "ansi-108-kit": ANSI_108_CASE,
 }
 
 export const CASE_MODEL_PATHS: readonly string[] = Array.from(
@@ -111,5 +125,5 @@ export const CASE_EDGE_MATERIAL_NAME = "CaseEdge_Anodized"
 export function resolveCaseModelAsset(
   templateId: string,
 ): CaseModelAsset | null {
-  return CASE_MODEL_REGISTRY[templateId] ?? null
+  return CASE_MODEL_REGISTRY[resolveLayoutId(templateId)] ?? null
 }

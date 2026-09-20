@@ -20,13 +20,13 @@ const INITIAL_LAYOUT_REVISION = 1
 const COORDINATE_MIGRATIONS: Readonly<
   Record<string, readonly CoordinateMigration[]>
 > = {
-  "ansi-61": [
+  "ansi-60": [
     { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -1.25 },
   ],
-  "ansi-68": [
+  "ansi-65": [
     { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -1.25 },
   ],
-  "ansi-81": [
+  "ansi-75-84": [
     { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -0.25 },
   ],
 }

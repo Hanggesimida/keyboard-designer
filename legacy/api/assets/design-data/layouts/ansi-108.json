@@ -1,6 +1,6 @@
 {
   "id": "ansi-108",
-  "name": "ANSI 108 Fullsize",
+  "name": "ANSI full size + media keys (108-key)",
   "totalKeys": 108,
   "revision": 1,
   "baseUnit": 54,

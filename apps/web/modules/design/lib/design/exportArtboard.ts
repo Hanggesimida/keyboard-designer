@@ -5,7 +5,6 @@
   type GlobalKeycapStyle,
   type Layer,
   type LayerKeycapOverrides,
-  TEMPLATES,
 } from "@/modules/design/store/designUiStore"
 import type { TemplateId } from "@/modules/design/store/designUiStore"
 import { keycapProjectionPaths } from "@/modules/design/lib/design/imageProjection"
@@ -36,7 +35,7 @@ import {
   normalizeLightingSettings,
   type LightingSettings,
 } from "@/modules/design/lib/design/lighting"
-import { getLayoutData } from "@/modules/design/data/layouts"
+import { getLayoutData, isKnownLayoutId, resolveLayoutId } from "@/modules/design/data/layouts"
 import {
   getCurrentLayoutRevision,
   isSupportedLayoutRevision,
@@ -539,15 +538,14 @@ export async function parseImportJson(
     }
   }
 
-  const validTemplateIds = TEMPLATES.map((t) => t.id) as string[]
-  if (typeof obj["templateId"] !== "string" || !validTemplateIds.includes(obj["templateId"])) {
+  if (typeof obj["templateId"] !== "string" || !isKnownLayoutId(obj["templateId"])) {
     return {
       ok: false,
       error: "notExportedFile",
     }
   }
-
-  const layout = getLayoutData(obj["templateId"])
+  const templateId = resolveLayoutId(obj["templateId"]) as TemplateId
+  const layout = getLayoutData(templateId)
   if (
     obj["layoutRevision"] !== undefined &&
     !isSupportedLayoutRevision(layout, obj["layoutRevision"])
@@ -577,6 +575,7 @@ export async function parseImportJson(
     ok: true,
     data: normalizeDesignColorFields({
       ...(raw as ImportPayload),
+      templateId,
       keycapProfile: normalizeKeycapProfile(obj["keycapProfile"]),
       caseMaterial: normalizeMaterialSettings(
         obj["caseMaterial"],

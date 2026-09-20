@@ -51,6 +51,20 @@ const KEY_LABEL_OPTICAL_CENTER_RATIO = 0.09
 const ART_PAD = 28
 const INITIAL_LAYOUT_REVISION = 1
 
+const LAYOUT_ID_ALIASES: Readonly<Record<string, string>> = {
+  "ansi-61": "ansi-60",
+  "ansi-68": "ansi-65",
+  "ansi-80": "ansi-75",
+  "ansi-81": "ansi-75-84",
+  "ansi-87": "ansi-tkl",
+  "ansi-99": "ansi-1800",
+  "ansi-144": "ansi-108-kit",
+}
+
+function resolveLayoutId(templateId: string): string {
+  return LAYOUT_ID_ALIASES[templateId] ?? templateId
+}
+
 const LAYOUT_COORDINATE_MIGRATIONS: Readonly<
   Record<
     string,
@@ -62,13 +76,13 @@ const LAYOUT_COORDINATE_MIGRATIONS: Readonly<
     }>
   >
 > = {
-  "ansi-61": [
+  "ansi-60": [
     { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -1.25 },
   ],
-  "ansi-68": [
+  "ansi-65": [
     { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -1.25 },
   ],
-  "ansi-81": [
+  "ansi-75-84": [
     { fromRevision: 1, toRevision: 2, offsetXU: 0, offsetYU: -0.25 },
   ],
 }
@@ -397,7 +411,7 @@ function parseDesign(design: DesignPayload): ParsedDesign {
 }
 
 function loadTemplateLayout(templateId: string): Layout {
-  const layoutPath = resolveDesignDataPath('layouts', `${templateId}.json`);
+  const layoutPath = resolveDesignDataPath('layouts', `${resolveLayoutId(templateId)}.json`);
   if (!layoutPath || !fs.existsSync(layoutPath)) {
     return { keys: {}, baseUnit: 54, revision: 1 };
   }
@@ -433,6 +447,7 @@ function migrateCanvasElements(
   layout: Layout,
   elements: ReadonlyArray<CanvasElement>,
 ): CanvasElement[] {
+  const canonicalId = resolveLayoutId(templateId)
   let revision = sourceRevision ?? INITIAL_LAYOUT_REVISION
   if (
     !Number.isInteger(revision) ||
@@ -440,18 +455,18 @@ function migrateCanvasElements(
     revision > layout.revision
   ) {
     throw new Error(
-      `不支持布局 ${templateId} 的坐标修订 ${String(sourceRevision)}`,
+      `不支持布局 ${canonicalId} 的坐标修订 ${String(sourceRevision)}`,
     )
   }
 
   let migrated = elements.map((element) => ({ ...element }))
   while (revision < layout.revision) {
-    const migration = LAYOUT_COORDINATE_MIGRATIONS[templateId]?.find(
+    const migration = LAYOUT_COORDINATE_MIGRATIONS[canonicalId]?.find(
       (candidate) => candidate.fromRevision === revision,
     )
     if (!migration) {
       throw new Error(
-        `缺少布局 ${templateId} 从修订 ${revision} 到 ${layout.revision} 的坐标迁移`,
+        `缺少布局 ${canonicalId} 从修订 ${revision} 到 ${layout.revision} 的坐标迁移`,
       )
     }
 
