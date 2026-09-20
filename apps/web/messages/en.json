@@ -48,6 +48,8 @@
       "previewAlt": "Keyboard designer editor"
     },
     "features": {
+      "headingMuted": "Built for custom-keyboard fans,",
+      "heading": "a live visual design tool",
       "wysiwygTitle": "What-you-see-is-what-you-get editor",
       "wysiwygBody": "An intuitive keyboard editor with live preview of every keycap’s color, legend, and icon. Drag to arrange and see results instantly.",
       "colorTitle": "Rich color system",

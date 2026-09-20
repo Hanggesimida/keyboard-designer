@@ -1,9 +1,10 @@
 'use client'
 
-import { Download, Layout, Palette, Sparkles, Play } from 'lucide-react'
+import { Download, Palette, Sparkles, Play } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { Card } from '@workspace/ui/components/card'
+import { homeSectionTitleClass } from '../typography'
 
 export function FeaturesSection() {
   const t = useTranslations('Home.features')
@@ -13,33 +14,33 @@ export function FeaturesSection() {
     <section id="features">
       <div className="py-24">
         <div className="mx-auto w-full max-w-6xl px-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-full overflow-hidden pl-6 pt-6 gap-0">
-              <Layout className="text-primary size-5" />
-              <h3 className="mt-5 text-lg font-semibold">{t('wysiwygTitle')}</h3>
-              <p className="text-muted-foreground mt-3 max-w-xl text-balance">
-                {t('wysiwygBody')}
-              </p>
-              <div className="[mask-image:linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)] -ml-2 -mt-2 mr-0.5 pl-2 pt-2">
-                <div className="bg-background rounded-tl-xl relative mx-auto mt-8 h-96 overflow-hidden border border-transparent shadow ring-1 ring-foreground/5">
-                  <Image
-                    src={`/images/feature_light_${locale}.png`}
-                    alt={t('previewAlt')}
-                    width={2700}
-                    height={1440}
-                    className="object-top h-full w-full object-cover dark:hidden"
-                  />
-                  <Image
-                    src={`/images/feature_dark_${locale}.png`}
-                    alt={t('previewAlt')}
-                    width={2700}
-                    height={1440}
-                    className="object-top hidden h-full w-full object-cover dark:block"
-                  />
-                </div>
-              </div>
-            </Card>
+          <h2 className={`text-foreground max-w-3xl ${homeSectionTitleClass}`}>
+            <span className="text-muted-foreground">{t('headingMuted')}</span>{' '}
+            {t('heading')}
+          </h2>
+          <p className="text-muted-foreground mt-4 max-w-xl text-balance">
+            {t('wysiwygBody')}
+          </p>
+          <div className="[mask-image:linear-gradient(to_bottom,transparent_0%,black_8%,black_88%,transparent_100%)] mt-10">
+            <div className="bg-background relative mx-auto h-96 overflow-hidden rounded-xl">
+              <Image
+                src={`/images/feature_light_${locale}.png`}
+                alt={t('previewAlt')}
+                width={2700}
+                height={1440}
+                className="h-full w-full object-cover object-top dark:hidden"
+              />
+              <Image
+                src={`/images/feature_dark_${locale}.png`}
+                alt={t('previewAlt')}
+                width={2700}
+                height={1440}
+                className="hidden h-full w-full object-cover object-top dark:block"
+              />
+            </div>
+          </div>
 
+          <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card className="overflow-hidden p-6 gap-0">
               <Palette className="text-primary size-5" />
               <h3 className="mt-5 text-lg font-semibold">{t('colorTitle')}</h3>

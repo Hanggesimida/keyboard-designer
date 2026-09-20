@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react"
 import type { Variants } from "motion/react"
 import { buttonVariants } from "@workspace/ui/components/button"
 import { AnimatedGroup } from "@/components/animate/animated-group"
+import { homeDisplayTitleClass } from "../typography"
 
 const transitionVariants: { item: Variants } = {
   item: {
@@ -66,7 +67,7 @@ export function HeroSection() {
                   </div>
                 </Link>
 
-                <h1 className="mt-8 max-w-4xl mx-auto text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]">
+                <h1 className={`mt-8 max-w-4xl mx-auto lg:mt-16 ${homeDisplayTitleClass}`}>
                   {t("titleLine1")}
                   <br />
                   {t("titleLine2")}

@@ -7,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@workspace/ui/components/accordion'
+import { homeSectionTitleClass } from '../typography'
 
 const FAQ_IDS = ['0', '1', '2', '3', '4'] as const
 
@@ -18,7 +19,7 @@ export function FaqSection() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-8 md:grid-cols-5 md:gap-12">
           <div className="md:col-span-2">
-            <h2 className="text-foreground text-4xl font-semibold">{t('title')}</h2>
+            <h2 className={`text-foreground ${homeSectionTitleClass}`}>{t('title')}</h2>
             <p className="text-muted-foreground mt-4 text-balance text-lg">
               {t('subtitle')}
             </p>

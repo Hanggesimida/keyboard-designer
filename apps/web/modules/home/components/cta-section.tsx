@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react'
 import type { Variants } from 'motion/react'
 import { buttonVariants } from '@workspace/ui/components/button'
 import { AnimatedGroup } from '@/components/animate/animated-group'
+import { homeSectionTitleClass } from '../typography'
 
 const transitionVariants: { item: Variants } = {
   item: {
@@ -38,7 +39,7 @@ export function CtaSection() {
           <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase mb-4">
             {t('eyebrow')}
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold text-balance mb-6">
+          <h2 className={`${homeSectionTitleClass} mb-6`}>
             {t('title')}
           </h2>
           <p className="text-muted-foreground text-lg text-balance max-w-xl mx-auto mb-10">
