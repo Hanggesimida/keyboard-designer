@@ -9,7 +9,7 @@ import {
 } from '@workspace/ui/components/accordion'
 import { homeSectionTitleClass } from '../typography'
 
-const FAQ_IDS = ['0', '1', '2', '3', '4'] as const
+const FAQ_IDS = ['0', '1', '2', '3', '4', '5'] as const
 
 export function FaqSection() {
   const t = useTranslations('Home.faq')

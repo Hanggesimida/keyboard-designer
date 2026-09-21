@@ -3,6 +3,8 @@
     "title": "键盘设计器",
     "description": "在浏览器中免费设计键盘键帽，所见即所得。无需注册，不收取任何费用。",
     "designTitle": "键盘设计器",
+    "assetsTitle": "项目资产下载",
+    "assetsDescription": "从 GitHub 查看和下载键盘设计器项目已有的模型、布局、治具、字体与媒体资产。",
     "loginTitle": "登录",
     "adminTitle": "键盘设计器后台"
   },
@@ -33,6 +35,7 @@
     "home": "首页",
     "features": "功能特性",
     "faq": "常见问题",
+    "assets": "项目资产",
     "start": "开始设计",
     "openMenu": "打开菜单",
     "closeMenu": "关闭菜单"
@@ -111,6 +114,10 @@
         "4": {
           "q": "导出的设计可以用于制作吗？",
           "a": "可以。导出的 SVG 文件包含完整的键帽颜色与标注信息，可作为后续制作参考。"
+        },
+        "5": {
+          "q": "可以下载项目使用的资产吗？",
+          "a": "可以。项目资产页面列出了仓库内的 3D 模型、Blender 源文件、布局、治具、字体、纹理和媒体素材，并提供对应的 GitHub 下载入口。"
         }
       }
     },
@@ -121,11 +128,63 @@
       "openEditor": "打开设计编辑器",
       "viewFeatures": "查看功能介绍"
     },
+    "assets": {
+      "eyebrow": "开源项目资产",
+      "title": "下载项目已有的设计与媒体资产",
+      "description": "浏览项目仓库内维护的模型、布局数据、治具、字体、纹理和媒体素材。所有文件均从 GitHub 打开和下载，不经过本站的文件传输。",
+      "noticeTitle": "GitHub 仓库资产",
+      "noticeBody": "这里列出的是项目自身使用或保留的文件，不是当前设计稿的导出结果。点击文件或目录后会前往 GitHub；第三方字体等资源在再次分发或商用前请自行核对对应许可。",
+      "openDirectory": "在 GitHub 打开目录",
+      "files": "文件",
+      "keycaps": {
+        "title": "标准键帽 GLB",
+        "description": "设计器 3D 预览使用的标准键帽网格，包含常用行位、尺寸和异形键。"
+      },
+      "cases": {
+        "title": "键盘外壳 GLB",
+        "description": "各固定配列使用的外壳模型。部分历史文件名与当前模板 ID 不同，下方同时列出对应模板。",
+        "templates": "对应模板：{templates}"
+      },
+      "blender": {
+        "title": "Blender 源文件",
+        "description": "当前保留的键床源文件和 MOA 键帽源文件。标准键帽暂未提供对应的 Blender 源文件。"
+      },
+      "supporting": {
+        "title": "数据与配套素材",
+        "description": "除 3D 模型外，仓库中还保留了布局、治具、内置字体、材质纹理和项目媒体文件。"
+      },
+      "layouts": {
+        "title": "键盘布局 JSON",
+        "description": "设计器当前使用的固定键盘配列定义，包含键位、尺寸、行位和布局坐标。"
+      },
+      "jig": {
+        "title": "治具模板与坐标",
+        "description": "浏览器端治具导出使用的 SVG 底板和键帽治具位置数据。"
+      },
+      "fonts": {
+        "title": "内置字体",
+        "description": "设计器随仓库提供的 TTF 与 WOFF2 字体，按字体家族打开目录。字体可能适用独立许可，再分发或商用前请核对。",
+        "families": "字体家族"
+      },
+      "materials": {
+        "title": "材质纹理",
+        "description": "项目生成并用于 3D 材质预览的木纹贴图，以及对应的许可说明。"
+      },
+      "siteImages": {
+        "title": "网站展示图片",
+        "description": "首页在中英文和明暗主题下使用的产品展示截图，以及应用图标。"
+      },
+      "endcard": {
+        "title": "视频片尾素材",
+        "description": "项目视频片尾使用的背景源图和生成后的片尾图片。"
+      }
+    },
     "footer": {
       "blurb": "在浏览器中设计键盘键帽，所见即所得。完全开源，无需注册。",
       "product": "产品",
       "features": "功能特性",
       "editor": "设计编辑器",
+      "assets": "项目资产",
       "about": "关于",
       "authorSite": "作者网站"
     }

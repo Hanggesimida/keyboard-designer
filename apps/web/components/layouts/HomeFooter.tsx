@@ -3,8 +3,9 @@
 import { Link } from "@/i18n/navigation"
 import type { ComponentType } from "react"
 import { useTranslations } from "next-intl"
-import { Globe, Keyboard, LayoutGrid } from "lucide-react"
+import { Boxes, Globe, Keyboard, LayoutGrid } from "lucide-react"
 import { Logo } from "@/components/layouts/Logo"
+import { siteConfig } from "@/lib/site"
 
 /** GitHub Invertocat mark from Simple Icons / Octicons (MIT). */
 function GitHubIcon({ className }: { className?: string }) {
@@ -39,6 +40,7 @@ export function HomeFooter() {
       links: [
         { name: t("features"), href: "/#features", icon: LayoutGrid },
         { name: t("editor"), href: "/design", icon: Keyboard },
+        { name: t("assets"), href: "/assets", icon: Boxes },
       ],
     },
     {
@@ -46,7 +48,7 @@ export function HomeFooter() {
       links: [
         {
           name: "GitHub",
-          href: "https://github.com/Hanggesimida/keyboard-designer",
+          href: siteConfig.githubRepo,
           icon: GitHubIcon,
           external: true,
         },

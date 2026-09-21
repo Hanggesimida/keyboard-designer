@@ -3,6 +3,8 @@
     "title": "Keyboard Designer",
     "description": "Design custom keycaps in the browser, free and what-you-see-is-what-you-get. No sign-up, no fees.",
     "designTitle": "Keyboard Designer",
+    "assetsTitle": "Project asset downloads",
+    "assetsDescription": "Browse and download the Keyboard Designer project's models, layouts, jig files, fonts, and media assets from GitHub.",
     "loginTitle": "Sign in",
     "adminTitle": "Keyboard Designer Admin"
   },
@@ -33,6 +35,7 @@
     "home": "Home",
     "features": "Features",
     "faq": "FAQ",
+    "assets": "Project assets",
     "start": "Start",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -111,6 +114,10 @@
         "4": {
           "q": "Can exports be used for production?",
           "a": "Yes. Exported SVG includes keycap colors and legends, and can be used as a production reference."
+        },
+        "5": {
+          "q": "Can I download the assets used by the project?",
+          "a": "Yes. The project assets page lists the repository's 3D models, Blender sources, layouts, jig files, fonts, textures, and media, with download links to GitHub."
         }
       }
     },
@@ -121,11 +128,63 @@
       "openEditor": "Open the editor",
       "viewFeatures": "See features"
     },
+    "assets": {
+      "eyebrow": "Open-source project assets",
+      "title": "Download the project's design and media assets",
+      "description": "Browse the models, layout data, jig files, fonts, textures, and media maintained in the project repository. Every file opens and downloads from GitHub rather than being transferred by this site.",
+      "noticeTitle": "Assets from the GitHub repository",
+      "noticeBody": "These are files used or retained by the project, not exports of your current design. Selecting a file or directory opens GitHub. Check the applicable license before redistributing or commercially using third-party resources such as fonts.",
+      "openDirectory": "Open directory on GitHub",
+      "files": "Files",
+      "keycaps": {
+        "title": "Standard keycap GLB",
+        "description": "Standard keycap meshes used by the 3D preview, including common rows, sizes, and special shapes."
+      },
+      "cases": {
+        "title": "Keyboard case GLB",
+        "description": "Case models for the fixed layouts. Some historical filenames differ from current template IDs, so both are shown below.",
+        "templates": "Templates: {templates}"
+      },
+      "blender": {
+        "title": "Blender source files",
+        "description": "The current keybed sources and MOA keycap source. Blender sources for the standard keycaps are not currently available."
+      },
+      "supporting": {
+        "title": "Data and supporting media",
+        "description": "In addition to 3D models, the repository retains layouts, jig files, bundled fonts, material textures, and project media."
+      },
+      "layouts": {
+        "title": "Keyboard layout JSON",
+        "description": "Fixed keyboard layout definitions used by the editor, including keys, sizes, rows, and layout coordinates."
+      },
+      "jig": {
+        "title": "Jig template and coordinates",
+        "description": "The SVG base plate and keycap jig-position data used by the browser-side jig exporter."
+      },
+      "fonts": {
+        "title": "Bundled fonts",
+        "description": "TTF and WOFF2 fonts bundled with the editor, grouped by family. Fonts may have separate licenses; check them before redistribution or commercial use.",
+        "families": "Font families"
+      },
+      "materials": {
+        "title": "Material textures",
+        "description": "The project-generated wood texture used by the 3D material preview, together with its license notes."
+      },
+      "siteImages": {
+        "title": "Website showcase images",
+        "description": "Product screenshots used by the homepage across English, Chinese, light, and dark variants, plus the app icon."
+      },
+      "endcard": {
+        "title": "Video end-card media",
+        "description": "The source background and generated end-card image used by project videos."
+      }
+    },
     "footer": {
       "blurb": "Design keycaps in the browser, what-you-see-is-what-you-get. Fully open source, no sign-up.",
       "product": "Product",
       "features": "Features",
       "editor": "Design editor",
+      "assets": "Project assets",
       "about": "About",
       "authorSite": "Author site"
     }

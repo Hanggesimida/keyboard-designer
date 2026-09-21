@@ -19,6 +19,7 @@ export function HomeHeader() {
     { name: t("home"), href: "/" },
     { name: t("features"), href: "/#features" },
     { name: t("faq"), href: "/#faq" },
+    { name: t("assets"), href: "/assets" },
   ]
 
   useEffect(() => {
