@@ -7,26 +7,18 @@ from PIL import Image, ImageDraw, ImageFont
 
 WIDTH, HEIGHT = 1800, 1200
 HERE = Path(__file__).resolve().parent
-BACKGROUND = HERE / "background.png"
-OUTPUT = HERE / "endcard-1800x1200.png"
+BACKGROUND = HERE / "background-2.png"
+OUTPUT = HERE / "endcard-2-1800x1200.png"
 
-FONT_CANDIDATES = {
-    "regular": [
-        Path(r"C:\Windows\Fonts\msyh.ttc"),
-        Path("/System/Library/Fonts/PingFang.ttc"),
-        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
-    ],
-    "bold": [
-        Path(r"C:\Windows\Fonts\msyhbd.ttc"),
-        Path("/System/Library/Fonts/PingFang.ttc"),
-        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"),
-    ],
-}
+FONT_CANDIDATES = [
+    Path(r"C:\Windows\Fonts\msyh.ttc"),
+    Path("/System/Library/Fonts/PingFang.ttc"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+]
 
 
-def load_font(size: int, *, bold: bool = False) -> ImageFont.FreeTypeFont:
-    kind = "bold" if bold else "regular"
-    for path in FONT_CANDIDATES[kind]:
+def load_font(size: int) -> ImageFont.FreeTypeFont:
+    for path in FONT_CANDIDATES:
         if path.exists():
             return ImageFont.truetype(str(path), size)
     raise FileNotFoundError("No supported Chinese font was found.")
@@ -52,6 +44,9 @@ def text_width(
     return bounds[2] - bounds[0]
 
 
+TEXT_COLOR = (247, 249, 253)
+
+
 def draw_centered_text(
     draw: ImageDraw.ImageDraw,
     y: int,
@@ -59,85 +54,7 @@ def draw_centered_text(
     text_font: ImageFont.FreeTypeFont,
 ) -> None:
     x = (WIDTH - text_width(draw, text, text_font)) // 2
-    draw.text((x + 2, y + 3), text, font=text_font, fill=(37, 44, 91))
-    draw.text((x, y), text, font=text_font, fill=(247, 249, 253))
-
-
-def draw_globe(draw: ImageDraw.ImageDraw, center_x: int, center_y: int) -> None:
-    color = (247, 249, 253)
-    draw.ellipse(
-        (center_x - 23, center_y - 23, center_x + 23, center_y + 23),
-        outline=color,
-        width=3,
-    )
-    draw.ellipse(
-        (center_x - 10, center_y - 23, center_x + 10, center_y + 23),
-        outline=color,
-        width=3,
-    )
-    draw.line(
-        (center_x - 21, center_y, center_x + 21, center_y),
-        fill=color,
-        width=3,
-    )
-    draw.arc(
-        (center_x - 22, center_y - 12, center_x + 22, center_y + 12),
-        180,
-        360,
-        fill=color,
-        width=2,
-    )
-    draw.arc(
-        (center_x - 22, center_y - 12, center_x + 22, center_y + 12),
-        0,
-        180,
-        fill=color,
-        width=2,
-    )
-
-
-def draw_website_row(draw: ImageDraw.ImageDraw) -> None:
-    label = "网址："
-    url = "https://kbd.weihangli.dev/"
-    label_font = load_font(36, bold=True)
-    url_font = load_font(36)
-    label_width = text_width(draw, label, label_font)
-    total_width = (
-        52
-        + 22
-        + label_width
-        + text_width(draw, url, url_font)
-    )
-    x = (WIDTH - total_width) // 2
-    draw_globe(draw, x + 26, 591)
-    text_x = x + 74
-    draw.text((text_x, 565), label, font=label_font, fill=(247, 249, 253))
-    draw.text(
-        (text_x + label_width, 565),
-        url,
-        font=url_font,
-        fill=(247, 249, 253),
-    )
-
-
-def draw_github_row(draw: ImageDraw.ImageDraw) -> None:
-    label = "GitHub 仓库："
-    url = "https://github.com/Hanggesimida/keyboard-designer"
-    label_font = load_font(29, bold=True)
-    url_font = load_font(29)
-    label_width = text_width(draw, label, label_font)
-    x = (
-        WIDTH
-        - label_width
-        - text_width(draw, url, url_font)
-    ) // 2
-    draw.text((x, 690), label, font=label_font, fill=(247, 249, 253))
-    draw.text(
-        (x + label_width, 690),
-        url,
-        font=url_font,
-        fill=(247, 249, 253),
-    )
+    draw.text((x, y), text, font=text_font, fill=TEXT_COLOR)
 
 
 def main() -> None:
@@ -148,12 +65,22 @@ def main() -> None:
 
     draw_centered_text(
         draw,
-        370,
+        430,
         "如果您有什么想法或者建议，请在评论区留言，我每一条都会看",
-        load_font(38),
+        load_font(44),
     )
-    draw_website_row(draw)
-    draw_github_row(draw)
+    draw_centered_text(
+        draw,
+        560,
+        "网址：https://kbd.weihangli.dev/",
+        load_font(34),
+    )
+    draw_centered_text(
+        draw,
+        640,
+        "GitHub 仓库：https://github.com/Hanggesimida/keyboard-designer",
+        load_font(34),
+    )
 
     image.convert("RGB").save(OUTPUT, "PNG", optimize=True)
     print(f"Generated {OUTPUT} ({WIDTH}x{HEIGHT})")

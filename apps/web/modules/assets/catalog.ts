@@ -166,6 +166,8 @@ export const siteImageAssets: readonly RepositoryAsset[] = [
 ]
 
 export const endcardAssets: readonly RepositoryAsset[] = [
-  `${ENDCARD_DIRECTORY}/background.png`,
-  `${ENDCARD_DIRECTORY}/endcard-1800x1200.png`,
+  `${ENDCARD_DIRECTORY}/background-1.png`,
+  `${ENDCARD_DIRECTORY}/endcard-1-1800x1200.png`,
+  `${ENDCARD_DIRECTORY}/background-2.png`,
+  `${ENDCARD_DIRECTORY}/endcard-2-1800x1200.png`,
 ].map(repositoryFileAsset)
