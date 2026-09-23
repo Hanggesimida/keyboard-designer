@@ -23,7 +23,10 @@ import {
   type CasePaintUniforms,
 } from "@/modules/design/lib/preview3d/casePaintMaterial"
 import type { PreviewCase } from "@/modules/design/lib/preview3d/types"
-import type { MaterialSettings } from "@/modules/design/lib/design/materials"
+import {
+  materialSurfaceFinish,
+  type MaterialSettings,
+} from "@/modules/design/lib/design/materials"
 
 /** 壳体不参与拾取，点击穿透到键帽 / pointer missed */
 function disableRaycast() {}
@@ -85,6 +88,7 @@ function caseEnvMapIntensity(
 ): number {
   if (presetId === "metal") return 1.15
   if (presetId === "glass") return 1.3
+  if (presetId === "ceramic") return 0.95
   if (presetId === "wood") return 0.58
   return 0.75
 }
@@ -216,16 +220,15 @@ export function KeyboardCaseMesh({
       if (isCaseSurface && material instanceof MeshPhysicalMaterial) {
         const hadTransmission = material.transmission > 0
         const hasTransmission = materialSettings.transparency > 0
+        const finish = materialSurfaceFinish(materialSettings.presetId)
         material.transmission = materialSettings.transparency
         material.transparent = hasTransmission
         material.depthWrite = !hasTransmission
         material.thickness =
           materialSettings.presetId === "glass" ? 0.24 : 0.18
-        material.ior =
-          materialSettings.presetId === "glass" ? 1.52 : 1.47
-        material.clearcoat =
-          materialSettings.presetId === "glass" ? 0.12 : 0
-        material.clearcoatRoughness = 0.08
+        material.ior = finish.ior
+        material.clearcoat = finish.clearcoat
+        material.clearcoatRoughness = finish.clearcoatRoughness
         if (hadTransmission !== hasTransmission) material.needsUpdate = true
       }
     }

@@ -19,7 +19,10 @@ import {
   KEYCAP_MATERIAL_METALNESS,
   KEYCAP_MATERIAL_ROUGHNESS,
 } from "@/modules/design/lib/preview3d/constants"
-import type { MaterialSettings } from "@/modules/design/lib/design/materials"
+import {
+  materialSurfaceFinish,
+  type MaterialSettings,
+} from "@/modules/design/lib/design/materials"
 
 /** 场景级共享的贴花 uniform（多颗键帽引用同一对象） */
 export interface SharedDyeSubUniforms {
@@ -72,13 +75,10 @@ const SHADER_CACHE_KEY = "keycap-dyesub-v6-physical-wood"
 function materialEnvMapIntensity(presetId: MaterialSettings["presetId"]): number {
   if (presetId === "metal") return 1.2
   if (presetId === "glass") return 1.35
+  if (presetId === "ceramic") return 1.05
   if (presetId === "translucentPlastic") return 1
   if (presetId === "wood") return 0.58
   return KEYCAP_MATERIAL_ENV_MAP_INTENSITY
-}
-
-function materialIor(presetId: MaterialSettings["presetId"]): number {
-  return presetId === "glass" ? 1.52 : 1.47
 }
 
 function materialThickness(presetId: MaterialSettings["presetId"]): number {
@@ -95,6 +95,9 @@ export function createKeycapDyeSubMaterial(
   const selected = options.selected ?? false
   const surface = options.surface
   const transparency = surface?.transparency ?? 0
+  const finish = surface
+    ? materialSurfaceFinish(surface.presetId)
+    : materialSurfaceFinish("mattePlastic")
   const mat = new MeshPhysicalMaterial({
     color: options.color,
     roughness:
@@ -115,9 +118,9 @@ export function createKeycapDyeSubMaterial(
     wireframe: options.wireframe ?? false,
     transmission: transparency,
     thickness: surface ? materialThickness(surface.presetId) : 0.12,
-    ior: surface ? materialIor(surface.presetId) : 1.47,
-    clearcoat: surface?.presetId === "glass" ? 0.12 : 0,
-    clearcoatRoughness: 0.08,
+    ior: finish.ior,
+    clearcoat: finish.clearcoat,
+    clearcoatRoughness: finish.clearcoatRoughness,
     depthWrite: options.transparent ? false : transparency === 0,
   })
   const surfaceUniforms: KeycapSurfaceUniforms = {
@@ -274,10 +277,11 @@ export function syncKeycapMaterialSurface(
   material.transmission = surface.transparency
   material.transparent = hasTransmission
   material.depthWrite = !hasTransmission
+  const finish = materialSurfaceFinish(surface.presetId)
   material.thickness = materialThickness(surface.presetId)
-  material.ior = materialIor(surface.presetId)
-  material.clearcoat = surface.presetId === "glass" ? 0.12 : 0
-  material.clearcoatRoughness = 0.08
+  material.ior = finish.ior
+  material.clearcoat = finish.clearcoat
+  material.clearcoatRoughness = finish.clearcoatRoughness
   if (uniforms) {
     uniforms.woodEnabled.value = surface.presetId === "wood" ? 1 : 0
     uniforms.woodMap.value = woodMap

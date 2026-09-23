@@ -527,6 +527,7 @@
         "mattePlastic": "Matte plastic",
         "translucentPlastic": "Translucent plastic",
         "glass": "Glass",
+        "ceramic": "Ceramic",
         "wood": "Wood grain"
       },
       "lighting": {

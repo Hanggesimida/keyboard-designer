@@ -527,6 +527,7 @@
         "mattePlastic": "哑光塑料",
         "translucentPlastic": "半透明塑料",
         "glass": "玻璃",
+        "ceramic": "陶瓷",
         "wood": "木纹"
       },
       "lighting": {

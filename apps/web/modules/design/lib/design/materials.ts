@@ -24,6 +24,12 @@ export const MATERIAL_PRESETS = [
     transparency: 0.92,
   },
   {
+    id: "ceramic",
+    roughness: 0.22,
+    metalness: 0,
+    transparency: 0,
+  },
+  {
     id: "wood",
     roughness: 0.58,
     metalness: 0,
@@ -62,6 +68,21 @@ export function isMaterialPresetId(value: unknown): value is MaterialPresetId {
 
 export function getMaterialPreset(id: MaterialPresetId): MaterialPreset {
   return PRESET_BY_ID.get(id)!
+}
+
+/** 釉面与玻璃的固定光学参数；粗糙度滑块不覆盖这层清漆。 */
+export function materialSurfaceFinish(presetId: MaterialPresetId): {
+  clearcoat: number
+  clearcoatRoughness: number
+  ior: number
+} {
+  if (presetId === "ceramic") {
+    return { clearcoat: 0.9, clearcoatRoughness: 0.12, ior: 1.5 }
+  }
+  if (presetId === "glass") {
+    return { clearcoat: 0.12, clearcoatRoughness: 0.08, ior: 1.52 }
+  }
+  return { clearcoat: 0, clearcoatRoughness: 0.08, ior: 1.47 }
 }
 
 export function createMaterialSettings(
