@@ -494,6 +494,16 @@ export type ExportCanvasElement = Omit<CanvasElement, "assetId"> & {
   assetId?: string
 }
 
+/** 旧文件没有字重时按常规体处理；只承认设计器实际写入的 400 / 700。 */
+function normalizeImportedFontWeight(value: unknown): number {
+  return value === 700 ? 700 : 400
+}
+
+/** 旧文件没有字形时按正体处理。 */
+function normalizeImportedFontStyle(value: unknown): string {
+  return value === "italic" ? "italic" : "normal"
+}
+
 export interface ImportPayload {
   version: number
   templateId: TemplateId
@@ -504,6 +514,10 @@ export interface ImportPayload {
   keycapMaterial: MaterialSettings
   lightingSettings: LightingSettings
   fontFamily: string
+  /** 全局字重：400 = 常规，700 = 加粗。旧文件缺省为 400。 */
+  fontWeight: number
+  /** 全局字形：'normal' | 'italic'。旧文件缺省为 normal。 */
+  fontStyle: string
   globalKeycapStyle: GlobalKeycapStyle
   layers: Layer[]
   layerKeycapOverrides: LayerKeycapOverrides
@@ -586,6 +600,8 @@ export async function parseImportJson(
         DEFAULT_KEYCAP_MATERIAL_ID,
       ),
       lightingSettings: normalizeLightingSettings(obj["lightingSettings"]),
+      fontWeight: normalizeImportedFontWeight(obj["fontWeight"]),
+      fontStyle: normalizeImportedFontStyle(obj["fontStyle"]),
     }),
   }
 }
@@ -631,6 +647,8 @@ export function applyImportData(data: ImportPayload) {
     keycapMaterial: normalized.keycapMaterial,
     lightingSettings: normalized.lightingSettings,
     fontFamily: normalized.fontFamily ?? "var(--font-ibm-plex-mono)",
+    fontWeight: normalizeImportedFontWeight(normalized.fontWeight),
+    fontStyle: normalizeImportedFontStyle(normalized.fontStyle),
     globalKeycapStyle: normalized.globalKeycapStyle,
     layers: normalized.layers,
     layerKeycapOverrides: normalized.layerKeycapOverrides,
@@ -653,6 +671,8 @@ export function exportArtboardJson() {
     keycapMaterial,
     lightingSettings,
     fontFamily,
+    fontWeight,
+    fontStyle,
     globalKeycapStyle,
     layers,
     layerKeycapOverrides,
@@ -676,6 +696,8 @@ export function exportArtboardJson() {
     keycapMaterial,
     lightingSettings,
     fontFamily,
+    fontWeight,
+    fontStyle,
     globalKeycapStyle,
     layers,
     layerKeycapOverrides,
