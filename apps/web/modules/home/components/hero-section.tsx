@@ -145,6 +145,7 @@ export function HeroSection() {
                   alt={t("previewAlt")}
                   width={2700}
                   height={1440}
+                  loading="eager"
                 />
                 <Image
                   className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
@@ -152,6 +153,7 @@ export function HeroSection() {
                   alt={t("previewAlt")}
                   width={2700}
                   height={1440}
+                  loading="eager"
                 />
               </div>
             </div>
