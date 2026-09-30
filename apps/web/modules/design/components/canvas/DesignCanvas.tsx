@@ -4,7 +4,6 @@ import { useRef, useState, useEffect, useCallback, useId, useMemo, type PointerE
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { Home } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   ContextMenu,
@@ -12,6 +11,7 @@ import {
 } from "@workspace/ui/components/context-menu"
 import { LocaleToggle } from "@/components/i18n/LocaleSwitcher"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
+import { LogoIcon } from "@/components/layouts/Logo"
 import { useDesignUIStore, useTemporalDesignStore, type CanvasImageElement } from "@/modules/design/store/designUiStore"
 import { getLayoutData } from "@/modules/design/data/layouts"
 import {
@@ -753,10 +753,11 @@ export function DesignCanvas() {
           variant="ghost"
           size="icon-xs"
           title={t("backHome")}
+          aria-label={t("backHome")}
           onClick={(e) => e.stopPropagation()}
-          className="bg-popover/80 backdrop-blur-sm border border-border text-foreground"
+          className="bg-popover/80 backdrop-blur-sm border border-border"
         >
-          <Home className="size-3.5" />
+          <LogoIcon className="size-4" />
         </Button>
         <ThemeToggle
           size="icon-xs"

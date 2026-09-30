@@ -52,6 +52,9 @@
     --color-design-keycap-fill-top: var(--design-keycap-fill);
     --color-design-keycap-stroke: var(--design-keycap-stroke);
     --color-design-keycap-label: var(--design-keycap-label);
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --font-code: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -75,6 +78,46 @@
 
 @utility inset-shadow-white {
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+@utility bg-dot-grid {
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 22px 22px;
+}
+
+/* 键帽造型：单一颜色（与设计器一致，不区分侧壁/顶面），靠投影表现高度，按下时下沉 */
+@utility keycap {
+    position: relative;
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / 0.12),
+        0 3px 0 -1px rgb(0 0 0 / 0.12),
+        0 8px 18px -10px rgb(0 0 0 / 0.45);
+    transition:
+        transform 120ms ease,
+        box-shadow 120ms ease,
+        background-color 150ms ease;
+    &:active {
+        transform: translateY(2px);
+        box-shadow: 0 1px 1px rgb(0 0 0 / 0.1);
+    }
+}
+
+@utility kbd-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    padding: 0 0.625rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--foreground);
+    font-family: var(--font-code);
+    font-size: 0.8125rem;
+    box-shadow:
+        0 2px 0 -1px color-mix(in oklch, var(--foreground) 14%, transparent),
+        0 1px 2px rgb(0 0 0 / 0.06);
 }
 
 :root {
@@ -122,6 +165,9 @@
     --design-keycap-fill-top: var(--design-keycap-fill);
     --design-keycap-stroke: oklch(0.222 0 0);
     --design-keycap-label: oklch(0.855 0 0);
+    --brand: #e0703a;
+    --brand-foreground: #ffffff;
+    --grid-dot: oklch(0 0 0 / 9%);
 }
 
 .dark {
@@ -167,6 +213,70 @@
     --design-keycap-fill-top: var(--design-keycap-fill);
     --design-keycap-stroke: oklch(0.222 0 0);
     --design-keycap-label: oklch(0.855 0 0);
+    --brand: #f08a4b;
+    --brand-foreground: #16181f;
+    --grid-dot: oklch(1 0 0 / 7%);
+}
+
+/* 官网页面（首页、资产页、404）的“键帽工坊”主题；编辑器保持中性灰阶 */
+.theme-workshop {
+    --background: #f3f1e9;
+    --foreground: #1b1f2e;
+    --card: #fbfaf6;
+    --card-foreground: #1b1f2e;
+    --popover: #fbfaf6;
+    --popover-foreground: #1b1f2e;
+    --primary: #262b40;
+    --primary-foreground: #f5f3ec;
+    --secondary: #e7e4d9;
+    --secondary-foreground: #1b1f2e;
+    --muted: #e9e6dc;
+    --muted-foreground: #67665f;
+    --accent: #e7e4d9;
+    --accent-foreground: #1b1f2e;
+    --border: #dfdbd0;
+    --input: #dfdbd0;
+    --ring: #e0703a;
+    --brand: #e0703a;
+    --brand-foreground: #ffffff;
+    --grid-dot: rgb(27 31 46 / 0.09);
+}
+
+.dark .theme-workshop {
+    --background: #101219;
+    --foreground: #ecebe2;
+    --card: #171a24;
+    --card-foreground: #ecebe2;
+    --popover: #171a24;
+    --popover-foreground: #ecebe2;
+    --primary: #ecebe2;
+    --primary-foreground: #161925;
+    --secondary: #212534;
+    --secondary-foreground: #ecebe2;
+    --muted: #1d202c;
+    --muted-foreground: #9b9ca6;
+    --accent: #212534;
+    --accent-foreground: #ecebe2;
+    --border: rgb(236 235 226 / 0.1);
+    --input: rgb(236 235 226 / 0.14);
+    --ring: #f08a4b;
+    --brand: #f08a4b;
+    --brand-foreground: #16181f;
+    --grid-dot: rgb(236 235 226 / 0.07);
+}
+
+/* 设计器只借用品牌的 primary 与焦点色，背景和面板保持中性灰阶，避免干扰对键帽颜色的判断。
+   挂在 :root 上是为了让 portal 渲染到 body 的弹层也生效。 */
+:root:has(.theme-editor) {
+    --primary: #262b40;
+    --primary-foreground: #f5f3ec;
+    --ring: #e0703a;
+}
+
+.dark:has(.theme-editor) {
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --ring: #f08a4b;
 }
 
 html[lang="en"] {

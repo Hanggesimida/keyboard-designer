@@ -1,87 +1,55 @@
-'use client'
+import { useTranslations } from "next-intl"
+import { ArrowRight, Monitor } from "lucide-react"
+import { Link } from "@/i18n/navigation"
+import { getLayoutData } from "@/modules/design/data/layouts"
+import { DEFAULT_COLORWAY, getLayoutKeys } from "../keyboard"
+import { KeyboardSvg } from "./keyboard-svg"
+import { Container, Eyebrow, keycapButtonClass } from "./primitives"
 
-import { Link } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
-import { ArrowRight } from 'lucide-react'
-import type { Variants } from 'motion/react'
-import { buttonVariants } from '@workspace/ui/components/button'
-import { AnimatedGroup } from '@/components/animate/animated-group'
-import { homeSectionTitleClass } from '../typography'
-
-const transitionVariants: { item: Variants } = {
-  item: {
-    hidden: {
-      opacity: 0,
-      filter: 'blur(12px)',
-      y: 12,
-    },
-    visible: {
-      opacity: 1,
-      filter: 'blur(0px)',
-      y: 0,
-      transition: {
-        type: 'spring',
-        bounce: 0.3,
-        duration: 1.5,
-      },
-    },
-  },
-}
+const CTA_KEYS = getLayoutKeys(getLayoutData("ansi-60"))
 
 export function CtaSection() {
-  const t = useTranslations('Home.cta')
+  const t = useTranslations("Home.cta")
 
   return (
-    <section className="relative overflow-hidden py-24">
-
-      <div className="mx-auto max-w-5xl px-6 text-center">
-        <AnimatedGroup variants={transitionVariants}>
-          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase mb-4">
-            {t('eyebrow')}
-          </p>
-          <h2 className={`${homeSectionTitleClass} mb-6`}>
-            {t('title')}
-          </h2>
-          <p className="text-muted-foreground text-lg text-balance max-w-xl mx-auto mb-10">
-            {t('body')}
-          </p>
-        </AnimatedGroup>
-
-        <AnimatedGroup
-          variants={{
-            container: {
-              visible: {
-                transition: {
-                  staggerChildren: 0.05,
-                  delayChildren: 0.4,
-                },
-              },
-            },
-            ...transitionVariants,
-          }}
-          className="flex flex-col items-center justify-center gap-3 sm:flex-row"
-        >
-          <div className="bg-foreground/10 rounded-[14px] border p-0.5">
-            <Link
-              href="/design"
-              className={buttonVariants({ size: "lg", className: "rounded-xl px-6 text-base" })}
-            >
-              <span className="text-nowrap">{t('openEditor')}</span>
-              <ArrowRight className="ml-2 size-4" />
-            </Link>
+    <section className="py-20 md:py-28">
+      <Container>
+        <div className="relative overflow-hidden rounded-3xl bg-[#1b1f2e] px-6 py-14 text-[#ecebe2] md:px-14 md:py-16 dark:bg-[#171a24] dark:ring-1 dark:ring-white/10">
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-[radial-gradient(rgb(236_235_226/0.08)_1px,transparent_1px)] [background-size:22px_22px]"
+          />
+          <div className="relative grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <Eyebrow>{t("eyebrow")}</Eyebrow>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-balance md:text-[2.625rem] md:leading-[1.15]">
+                {t("title")}
+              </h2>
+              <p className="mt-4 max-w-md leading-relaxed text-[#ecebe2]/70">
+                {t("body")}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+                <Link href="/design" className={keycapButtonClass("brand")}>
+                  {t("start")}
+                  <ArrowRight aria-hidden />
+                </Link>
+                <span className="inline-flex items-center gap-2 text-sm text-[#ecebe2]/60">
+                  <Monitor className="size-4" aria-hidden />
+                  {t("desktopNote")}
+                </span>
+              </div>
+            </div>
+            <div aria-hidden className="hidden lg:block">
+              <KeyboardSvg
+                keys={CTA_KEYS}
+                colorway={DEFAULT_COLORWAY}
+                label=""
+                className="rotate-[-4deg] drop-shadow-[0_30px_40px_rgb(0_0_0/0.5)]"
+              />
+            </div>
           </div>
-          <Link
-            href="#features"
-            className={buttonVariants({
-              size: "lg",
-              variant: "ghost",
-              className: "h-10.5 rounded-xl px-6",
-            })}
-          >
-            <span className="text-nowrap">{t('viewFeatures')}</span>
-          </Link>
-        </AnimatedGroup>
-      </div>
+        </div>
+      </Container>
     </section>
   )
 }

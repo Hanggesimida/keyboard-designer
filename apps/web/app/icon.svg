@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#171717"/>
-  <g transform="translate(4 4)" fill="none" stroke="#FAFAFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M10 8h.01"/>
-    <path d="M12 12h.01"/>
-    <path d="M14 8h.01"/>
-    <path d="M16 12h.01"/>
-    <path d="M18 8h.01"/>
-    <path d="M6 8h.01"/>
-    <path d="M7 16h10"/>
-    <path d="M8 12h.01"/>
-    <rect width="20" height="16" x="2" y="4" rx="2"/>
-  </g>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.24"/>
+      <stop offset="0.65" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="30" height="30" rx="7.5" fill="#e0703a"/>
+  <rect x="1" y="1" width="30" height="30" rx="7.5" fill="url(#wall)"/>
+  <rect x="6.5" y="3" width="19" height="20.5" rx="4.5" fill="#e0703a"/>
+  <rect x="6.5" y="3" width="19" height="20.5" rx="4.5" fill="url(#top)"/>
+  <rect x="9.5" y="6.5" width="6.5" height="2.4" rx="1.2" fill="#fff"/>
 </svg>

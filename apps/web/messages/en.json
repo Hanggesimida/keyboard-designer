@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Keyboard Designer",
-    "description": "Design custom keycaps in the browser, free and what-you-see-is-what-you-get. No sign-up, no fees.",
+    "description": "An open-source keycap designer in your browser: pick a layout, set colors, add artwork, preview in 3D, and export PNG, SVG, JSON, or a production jig. No sign-up.",
     "designTitle": "Keyboard Designer",
     "assetsTitle": "Project asset downloads",
     "assetsDescription": "Browse and download the Keyboard Designer project's models, layouts, jig files, fonts, and media assets from GitHub.",
@@ -32,101 +32,183 @@
     "description": "This address doesn’t match any page. Check the link, or go back home."
   },
   "Nav": {
-    "home": "Home",
     "features": "Features",
     "faq": "FAQ",
-    "assets": "Project assets",
-    "start": "Start",
+    "assets": "Assets",
+    "start": "Start designing",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "layouts": "Layouts",
+    "openSource": "Open source"
   },
   "Home": {
     "hero": {
-      "badge": "Fully open source, no sign-up",
-      "titleLine1": "Personalize",
-      "titleLine2": "your own keyboard",
-      "subtitle": "A free keyboard editor with live preview. No sign-up — open it and start designing.",
-      "openEditor": "Open the editor",
-      "learnMore": "Learn more",
-      "previewAlt": "Keyboard designer editor"
+      "badge": "Open source · View on GitHub",
+      "title": "Design a full <em>keycap set</em><br></br>right in your browser",
+      "subtitle": "Pick a layout, set colors, add artwork, preview in 3D, and export PNG, SVG, JSON, or a production jig. No sign-up — your designs stay in your browser.",
+      "start": "Start designing",
+      "github": "View source",
+      "desktopNote": "The editor needs a desktop browser",
+      "keyboardAlt": "Interactive 75% keyboard preview",
+      "colorwayLabel": "Colorway",
+      "colorways": {
+        "mist": "Mist",
+        "ember": "Ember",
+        "mint": "Mint",
+        "sakura": "Sakura"
+      },
+      "tryHint": "Try pressing keys on your keyboard",
+      "lastKey": "You pressed"
     },
-    "features": {
-      "headingMuted": "Built for custom-keyboard fans,",
-      "heading": "a live visual design tool",
-      "wysiwygTitle": "What-you-see-is-what-you-get editor",
-      "wysiwygBody": "An intuitive keyboard editor with live preview of every keycap’s color, legend, and icon. Drag to arrange and see results instantly.",
-      "colorTitle": "Rich color system",
-      "colorBody": "Custom colors and gradients, covering the palettes mechanical keyboards actually use.",
-      "exportTitle": "Export SVG / images",
-      "exportBody": "Export SVG vectors or high-res PNG in one click, ready to share or print.",
-      "layoutTitle": "Smart layout fitting",
-      "layoutBody": "Recognizes 60%, 75%, TKL and other common layouts, with one-click key alignment.",
-      "exportFileLabel": "Export files",
-      "chooseLayoutLabel": "Choose a layout",
-      "previewAlt": "Keyboard designer editor"
+    "stats": {
+      "layouts": "fixed layouts",
+      "exports": "export formats",
+      "preview": "live preview",
+      "backend": "accounts or servers needed"
     },
-    "testimonials": {
-      "title": "Built for custom-keyboard fans",
-      "subtitle": "From color ideas and layout fitting to file export — design a full keycap set in the browser, for free.",
-      "items": {
-        "0": {
-          "quote": "Keyboard Designer completely changed my workflow. I used to paint keycaps one by one in Photoshop; now I drag, recolor, and preview live. A full palette in ten minutes.",
-          "name": "Ming Zhang",
-          "role": "Mechanical keyboard enthusiast"
+    "workflow": {
+      "eyebrow": "How it works",
+      "title": "From a blank layout to production files in four steps",
+      "description": "Everything runs locally in your browser — nothing to install, nothing uploaded.",
+      "steps": {
+        "layout": {
+          "title": "Pick a layout",
+          "body": "Nine fixed ANSI layouts, from 60% up to 144 keys with a supplement kit.",
+          "meta": "ansi-60 … ansi-108-kit"
         },
-        "1": {
-          "quote": "The UI is intuitive and easy to pick up. You can make pro-looking palettes without learning complex software.",
-          "name": "Ya Li",
-          "role": "Custom-keyboard hobbyist"
+        "design": {
+          "title": "Design keycaps",
+          "body": "Set colors, legends, and fonts per key or in bulk, and drop images onto the board.",
+          "meta": "color · font · artwork · layers"
         },
-        "2": {
-          "quote": "Finally a tool made for keyboard design. Switching layouts is so convenient.",
-          "name": "Hao Wang",
-          "role": "Keyboard community blogger"
+        "preview": {
+          "title": "Preview in 3D",
+          "body": "Check the result on a 3D keyboard — orbit, zoom, and tune materials and lighting.",
+          "meta": "orbit · zoom · material · light"
         },
-        "3": {
-          "quote": "From idea to finished set in one afternoon. Love the palettes and export quality — highly recommend.",
-          "name": "Si Chen",
-          "role": "UI designer"
+        "export": {
+          "title": "Export files",
+          "body": "Export PNG, SVG, design JSON, and jig SVG for your manufacturer or your backups.",
+          "meta": "PNG · SVG · JSON · JIG"
         }
       }
     },
+    "features": {
+      "eyebrow": "Features",
+      "title": "Everything a keycap set needs",
+      "description": "From the weight of a single legend to full-board artwork and production jigs, the editor covers the whole custom keycap workflow.",
+      "preview3d": {
+        "title": "Live 3D preview",
+        "body": "Every color, legend, and image change syncs to a 3D keyboard. Orbit, zoom, switch materials and lighting, then export a render.",
+        "alt": "3D keyboard preview"
+      },
+      "export": {
+        "title": "One-click export",
+        "body": "PNG, SVG with outlined text, design JSON, 3D renders, and production jigs — all generated locally in your browser."
+      },
+      "keycap": {
+        "title": "Per-key styling",
+        "body": "Legend, font, weight, solid or gradient fill, border, padding, and alignment — set for every key individually."
+      },
+      "batch": {
+        "title": "Marquee batch edits",
+        "body": "Box-select or multi-select keys and restyle them together. A full colorway takes minutes."
+      },
+      "fonts": {
+        "title": "Built-in and local fonts",
+        "body": "A dozen built-in fonts, plus local TTF / OTF files loaded for the session. Fonts stay in memory and are never uploaded.",
+        "upload": "Load a local TTF / OTF"
+      },
+      "history": {
+        "title": "Full undo history",
+        "body": "Every step in the session can be undone and redone, so experiment freely.",
+        "undo": "Undo",
+        "redo": "Redo"
+      },
+      "artwork": {
+        "title": "Artwork and layers",
+        "body": "Drag images onto the board, scale and rotate them across multiple keys, and manage images and keycaps as separate layers.",
+        "alt": "Keyboard design with full-board artwork"
+      }
+    },
+    "layouts": {
+      "eyebrow": "Layouts",
+      "title": "Nine layouts, ready to go",
+      "description": "Every layout is defined by a JSON file in the repository — the keyboards below are rendered straight from that data.",
+      "cta": "Open the editor to pick one",
+      "tabsLabel": "Keyboard layouts"
+    },
+    "openSource": {
+      "eyebrow": "Open source",
+      "title": "Code, models, and data — all public",
+      "description": "Keyboard Designer is MIT-licensed. The editor, keycap and case 3D models, layout data, and jig templates all live in the repository, free to study, modify, and deploy.",
+      "star": "Star on GitHub",
+      "assetsCta": "Browse assets",
+      "license": {
+        "title": "MIT License",
+        "body": "Use, modify, and redistribute freely. Third-party fonts and models follow their own licenses.",
+        "link": "Read the license"
+      },
+      "stack": {
+        "title": "Front-end only",
+        "body": "No accounts, database, or cloud storage — exports are generated in your browser."
+      },
+      "assets": {
+        "title": "Downloadable assets",
+        "body": "Standard keycap and case GLBs, Blender sources, layout JSON, jig templates, and bundled fonts.",
+        "link": "Go to project assets"
+      },
+      "contribute": {
+        "title": "Contribute",
+        "body": "Found a bug or have an idea? Issues and pull requests are welcome.",
+        "link": "Open an issue"
+      }
+    },
     "faq": {
-      "title": "FAQ",
-      "subtitle": "Common questions about Keyboard Designer",
+      "eyebrow": "FAQ",
+      "title": "Frequently asked questions",
+      "description": "Didn't find your answer? Open an issue on GitHub.",
       "items": {
-        "0": {
-          "q": "Does Keyboard Designer cost money?",
-          "a": "This site is completely free. No sign-up required — every feature is available immediately."
+        "price": {
+          "q": "Is it free? Do I need an account?",
+          "a": "It's free and MIT-licensed open source. There's no account system — open the page and every feature is available."
         },
-        "1": {
+        "layouts": {
           "q": "Which layouts are supported?",
-          "a": "60%, 75%, TKL and other common mechanical layouts. The editor aligns keys automatically, and you can switch layouts anytime."
+          "a": "Nine fixed ANSI layouts: 60% (61 keys), 65% (68), 75% (80), 75% extended (84), TKL (87), 1800 (99), 104, 108, and 108 with a supplement kit (144). Free-form layout editing isn't supported yet."
         },
-        "2": {
+        "exports": {
           "q": "What can I export?",
-          "a": "SVG vectors and high-res PNG, for sharing mockups or print previews."
+          "a": "The 2D board exports PNG, SVG with outlined text, and design JSON; the 3D preview exports PNG renders; and you can export a production jig SVG. STEP, STL, GLB, and other 3D/CAD formats aren't available."
         },
-        "3": {
-          "q": "Can I save my design?",
-          "a": "Designs live in the current browser session. Refreshing or closing the tab discards unsaved work — export JSON as a backup. No sign-up, no fees."
+        "storage": {
+          "q": "Where are my designs saved?",
+          "a": "Only in the current browser tab — nothing is uploaded. Refreshing or closing the tab discards unexported changes, so export JSON regularly and import it later to keep editing."
         },
-        "4": {
-          "q": "Can exports be used for production?",
-          "a": "Yes. Exported SVG includes keycap colors and legends, and can be used as a production reference."
+        "production": {
+          "q": "Can exports go straight to production?",
+          "a": "The jig SVG is the production-oriented file, with every keycap placed at its jig position. PNG and SVG work best as design mockups and references. Confirm colors, sizes, and file specs with your manufacturer before ordering."
         },
-        "5": {
-          "q": "Can I download the assets used by the project?",
-          "a": "Yes. The project assets page lists the repository's 3D models, Blender sources, layouts, jig files, fonts, textures, and media, with download links to GitHub."
+        "preview3d": {
+          "q": "What can the 3D preview do?",
+          "a": "See keycaps and case together in real time, orbit, zoom, and pan, adjust materials and lighting, and export a render."
+        },
+        "mobile": {
+          "q": "Does it work on phones?",
+          "a": "You can browse the homepage, but the editor is built for desktop and needs a screen at least 768px wide."
+        },
+        "assets": {
+          "q": "Can I download the project's assets?",
+          "a": "Yes. The assets page lists the repository's 3D models, Blender sources, layouts, jig files, fonts, textures, and media, with download links on GitHub."
         }
       }
     },
     "cta": {
       "eyebrow": "Get started",
-      "title": "Start designing your keycaps",
-      "body": "Fully open source, no sign-up. Open the editor, pick a layout, dial in your palette, and finish in minutes.",
-      "openEditor": "Open the editor",
-      "viewFeatures": "See features"
+      "title": "Design your first keycap set today",
+      "body": "Opens instantly — no sign-up, nothing to install.",
+      "start": "Open the editor",
+      "desktopNote": "Requires a desktop browser (768px+)"
     },
     "assets": {
       "eyebrow": "Open-source project assets",
@@ -180,13 +262,20 @@
       }
     },
     "footer": {
-      "blurb": "Design keycaps in the browser, what-you-see-is-what-you-get. Fully open source, no sign-up.",
+      "blurb": "An open-source keycap designer in your browser. Pick a layout, set colors, preview in 3D, export production files.",
       "product": "Product",
+      "editor": "Editor",
       "features": "Features",
-      "editor": "Design editor",
-      "assets": "Project assets",
+      "layouts": "Layouts",
+      "assets": "Assets",
+      "openSource": "Open source",
+      "issues": "Report an issue",
+      "license": "MIT License",
       "about": "About",
-      "authorSite": "Author site"
+      "authorSite": "Author site",
+      "star": "Star on GitHub",
+      "copyright": "© {year} Keyboard Designer · MIT licensed",
+      "madeWith": "Next.js · React · Three.js"
     }
   },
   "Validation": {

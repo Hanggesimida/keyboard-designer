@@ -108,7 +108,7 @@ export function DesignWorkspaceLayout() {
   }, [undo, redo])
 
   return (
-    <>
+    <div className="theme-editor contents">
       {/* 移动端不支持提示（768px 以下） */}
       <div className="flex md:hidden h-dvh w-full flex-col items-center justify-center bg-background px-6 text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-card border border-border">
@@ -168,6 +168,6 @@ export function DesignWorkspaceLayout() {
         {/* 初始加载进度条 */}
         <DesignLoadingScreen />
       </div>
-    </>
+    </div>
   )
 }

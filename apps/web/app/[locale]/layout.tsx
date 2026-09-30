@@ -31,6 +31,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       template: `%s | ${t("title")}`,
     },
     description: t("description"),
+    openGraph: {
+      type: "website",
+      siteName: t("title"),
+      title: t("title"),
+      description: t("description"),
+      locale: locale === "zh" ? "zh_CN" : "en_US",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("description"),
+    },
   }
 }
 

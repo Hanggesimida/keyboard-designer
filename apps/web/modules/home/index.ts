@@ -1,5 +1,7 @@
 export { HeroSection } from "./components/hero-section"
+export { StatsStrip, WorkflowSection } from "./components/workflow-section"
 export { FeaturesSection } from "./components/features-section"
-export { TestimonialsSection } from "./components/testimonials-section"
+export { LayoutsSection } from "./components/layouts-section"
+export { OpenSourceSection } from "./components/open-source-section"
 export { FaqSection } from "./components/faq-section"
 export { CtaSection } from "./components/cta-section"

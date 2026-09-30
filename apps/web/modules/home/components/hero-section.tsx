@@ -1,166 +1,69 @@
-"use client"
-
+import { useTranslations } from "next-intl"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { Link } from "@/i18n/navigation"
-import { useLocale, useTranslations } from "next-intl"
-import Image from "next/image"
-import { ArrowRight } from "lucide-react"
-import type { Variants } from "motion/react"
-import { buttonVariants } from "@workspace/ui/components/button"
-import { AnimatedGroup } from "@/components/animate/animated-group"
-import { homeDisplayTitleClass } from "../typography"
-
-const transitionVariants: { item: Variants } = {
-  item: {
-    hidden: {
-      opacity: 0,
-      filter: "blur(12px)",
-      y: 12,
-    },
-    visible: {
-      opacity: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        bounce: 0.3,
-        duration: 1.5,
-      },
-    },
-  },
-}
+import { GitHubIcon } from "@/components/layouts/GitHubIcon"
+import { siteConfig } from "@/lib/site"
+import { Container, keycapButtonClass } from "./primitives"
+import { HeroKeyboard } from "./hero-keyboard"
 
 export function HeroSection() {
   const t = useTranslations("Home.hero")
-  const locale = useLocale()
 
   return (
-    <main className="overflow-hidden">
+    <section className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-28">
       <div
         aria-hidden
-        className="z-[2] absolute inset-0 pointer-events-none isolate opacity-50 contain-strict hidden lg:block"
-      >
-        <div className="w-[35rem] h-[80rem] -translate-y-[350px] absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
-        <div className="h-[80rem] absolute left-0 top-0 w-56 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
-        <div className="h-[80rem] -translate-y-[350px] absolute left-0 top-0 w-56 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
-      </div>
-      <section className="pb-16 md:pb-32">
-        <div className="relative pt-24 md:pt-36">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
-              <AnimatedGroup variants={transitionVariants}>
-                <Link
-                  href="/design"
-                  className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-black/5 transition-all duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
-                >
-                  <span className="text-foreground text-sm">{t("badge")}</span>
-                  <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700" />
-
-                  <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
-                    <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-                      <span className="flex size-6">
-                        <ArrowRight className="m-auto size-3" />
-                      </span>
-                      <span className="flex size-6">
-                        <ArrowRight className="m-auto size-3" />
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-
-                <h1 className={`mt-8 max-w-4xl mx-auto lg:mt-16 ${homeDisplayTitleClass}`}>
-                  {t("titleLine1")}
-                  <br />
-                  {t("titleLine2")}
-                </h1>
-                <p className="mx-auto mt-8 max-w-2xl text-balance text-lg">
-                  {t("subtitle")}
-                </p>
-              </AnimatedGroup>
-
-              <AnimatedGroup
-                variants={{
-                  container: {
-                    visible: {
-                      transition: {
-                        staggerChildren: 0.05,
-                        delayChildren: 0.75,
-                      },
-                    },
-                  },
-                  ...transitionVariants,
-                }}
-                className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
-              >
-                <div
-                  key={1}
-                  className="bg-foreground/10 rounded-[14px] border p-0.5"
-                >
-                  <Link
-                    href="/design"
-                    className={buttonVariants({
-                      size: "lg",
-                      className: "rounded-xl px-5 text-base",
-                    })}
-                  >
-                    <span className="text-nowrap">{t("openEditor")}</span>
-                  </Link>
-                </div>
-                <Link
-                  key={2}
-                  href="#features"
-                  className={buttonVariants({
-                    size: "lg",
-                    variant: "ghost",
-                    className: "h-10.5 rounded-xl px-5",
-                  })}
-                >
-                  <span className="text-nowrap">{t("learnMore")}</span>
-                </Link>
-              </AnimatedGroup>
-            </div>
-          </div>
-
-          <AnimatedGroup
-            variants={{
-              container: {
-                visible: {
-                  transition: {
-                    staggerChildren: 0.05,
-                    delayChildren: 0.75,
-                  },
-                },
-              },
-              ...transitionVariants,
-            }}
+        className="absolute inset-0 bg-dot-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_40%,transparent_100%)]"
+      />
+      <Container className="relative">
+        <div className="mx-auto max-w-3xl animate-in text-center duration-500 fade-in slide-in-from-bottom-2 motion-reduce:animate-none">
+          <a
+            href={siteConfig.githubRepo}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border bg-card/70 py-1 pr-3 pl-1.5 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
           >
-            <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
-              <div
-                aria-hidden
-                className="bg-gradient-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
-              />
-              <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
-                <Image
-                  className="bg-background aspect-15/8 relative rounded-2xl dark:hidden"
-                  src={`/images/hero_light_${locale}.png`}
-                  alt={t("previewAlt")}
-                  width={2700}
-                  height={1440}
-                  loading="eager"
-                />
-                <Image
-                  className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                  src={`/images/hero_dark_${locale}.png`}
-                  alt={t("previewAlt")}
-                  width={2700}
-                  height={1440}
-                  loading="eager"
-                />
-              </div>
-            </div>
-          </AnimatedGroup>
-        </div>
-      </section>
+            <span className="rounded-full bg-primary px-2 py-0.5 font-code text-[11px] font-medium text-primary-foreground">
+              MIT
+            </span>
+            <GitHubIcon className="size-3.5" />
+            {t("badge")}
+            <ArrowUpRight className="size-3.5" aria-hidden />
+          </a>
 
-    </main>
+          <h1 className="mt-7 text-[2.5rem] leading-[1.1] font-bold tracking-tight text-balance sm:text-5xl md:text-6xl lg:text-[4.25rem]">
+            {t.rich("title", {
+              em: (chunks) => <span className="text-brand">{chunks}</span>,
+              br: () => <br />,
+            })}
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-balance text-muted-foreground md:text-lg">
+            {t("subtitle")}
+          </p>
+
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link href="/design" className={keycapButtonClass("brand")}>
+              {t("start")}
+              <ArrowRight aria-hidden />
+            </Link>
+            <a
+              href={siteConfig.githubRepo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={keycapButtonClass("secondary")}
+            >
+              <GitHubIcon />
+              {t("github")}
+            </a>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground md:hidden">
+            {t("desktopNote")}
+          </p>
+        </div>
+
+        <HeroKeyboard className="mt-14 animate-in delay-150 duration-700 fill-mode-both fade-in slide-in-from-bottom-4 motion-reduce:animate-none md:mt-20" />
+      </Container>
+    </section>
   )
 }

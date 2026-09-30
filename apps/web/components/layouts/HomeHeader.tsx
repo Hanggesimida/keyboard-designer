@@ -1,105 +1,135 @@
 "use client"
 
-import { Link } from "@/i18n/navigation"
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Menu, X } from "lucide-react"
-import { buttonVariants } from "@workspace/ui/components/button"
+import { ArrowRight, Menu, X } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
+import { Link } from "@/i18n/navigation"
 import { Logo } from "@/components/layouts/Logo"
 import { ThemeToggle } from "@/components/layouts/ThemeToggle"
 import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher"
+import { GitHubIcon } from "@/components/layouts/GitHubIcon"
+import { siteConfig } from "@/lib/site"
 
 export function HomeHeader() {
   const t = useTranslations("Nav")
-  const [menuState, setMenuState] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  const tCommon = useTranslations("Common")
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   const menuItems = [
-    { name: t("home"), href: "/" },
     { name: t("features"), href: "/#features" },
+    { name: t("layouts"), href: "/#layouts" },
+    { name: t("openSource"), href: "/#open-source" },
     { name: t("faq"), href: "/#faq" },
     { name: t("assets"), href: "/assets" },
   ]
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
-    window.addEventListener("scroll", handleScroll)
+    const handleScroll = () => setScrolled(window.scrollY > 24)
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  const githubLink = (
+    <a
+      href={siteConfig.githubRepo}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="GitHub"
+      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      <GitHubIcon className="size-4" />
+    </a>
+  )
+
   return (
-    <header>
+    <header className="fixed inset-x-0 top-0 z-30 px-3 pt-3">
       <nav
-        data-state={menuState && "active"}
-        className="fixed z-20 w-full px-2 group">
-        <div
-          className={cn(
-            "mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
-            isScrolled && "bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5",
-          )}>
-          <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
-            <div className="flex w-full justify-between lg:w-auto">
-              <Link
-                href="/"
-                aria-label="home"
-                className="flex items-center space-x-2">
-                <Logo />
-              </Link>
+        className={cn(
+          "mx-auto max-w-6xl rounded-2xl border border-transparent transition-[background-color,border-color,box-shadow] duration-300",
+          (scrolled || menuOpen) &&
+            "border-border bg-background/90 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.18)] backdrop-blur-xl"
+        )}
+      >
+        <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-5">
+          <Link href="/" aria-label={tCommon("backHome")} className="shrink-0">
+            <Logo />
+          </Link>
 
-              <div className="flex items-center gap-1 lg:hidden">
-                <LocaleSwitcher />
-                <ThemeToggle />
-                <button
-                  onClick={() => setMenuState(!menuState)}
-                  aria-label={menuState === true ? t("closeMenu") : t("openMenu")}
-                  className="relative z-20 -m-2.5 -mr-2 cursor-pointer p-2.5">
-                  <Menu className="in-data-[state=active]:rotate-180 group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
-                  <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
-                </button>
-              </div>
-            </div>
-
-            <div className="absolute inset-0 m-auto hidden size-fit lg:block">
-              <ul className="flex gap-8 text-sm">
-                {menuItems.map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      href={item.href}
-                      className="text-muted-foreground hover:text-accent-foreground block duration-150">
-                      <span>{item.name}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-background group-data-[state=active]:block lg:group-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
-              <div className="lg:hidden">
-                <ul className="space-y-6 text-base">
-                  {menuItems.map((item, index) => (
-                    <li key={index}>
-                      <Link
-                        href={item.href}
-                        className="text-muted-foreground hover:text-accent-foreground block duration-150">
-                        <span>{item.name}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:items-center sm:gap-3 sm:space-y-0 md:w-fit">
-                <LocaleSwitcher className="hidden lg:inline-flex" />
-                <ThemeToggle className="hidden lg:inline-flex" />
-                <Link href="/design" className={buttonVariants()}>
-                  <span>{t("start")}</span>
+          <ul className="hidden items-center gap-1 lg:flex">
+            {menuItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {item.name}
                 </Link>
-              </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center gap-1">
+            <div className="hidden items-center gap-1 sm:flex">
+              {githubLink}
+              <LocaleSwitcher />
+              <ThemeToggle />
             </div>
+            <Link
+              href="/design"
+              className="keycap ml-2 hidden h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-semibold text-brand-foreground hover:bg-brand/90 sm:inline-flex"
+            >
+              {t("start")}
+              <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-expanded={menuOpen}
+              aria-label={menuOpen ? t("closeMenu") : t("openMenu")}
+              className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg hover:bg-muted lg:hidden"
+            >
+              {menuOpen ? (
+                <X className="size-5" />
+              ) : (
+                <Menu className="size-5" />
+              )}
+            </button>
           </div>
         </div>
+
+        {menuOpen ? (
+          <div className="border-t px-4 pt-3 pb-4 lg:hidden">
+            <ul className="flex flex-col">
+              {menuItems.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-lg px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex items-center justify-between border-t pt-3 sm:hidden">
+              <div className="flex items-center gap-1">
+                {githubLink}
+                <LocaleSwitcher />
+                <ThemeToggle />
+              </div>
+              <Link
+                href="/design"
+                className="keycap inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-semibold text-brand-foreground"
+              >
+                {t("start")}
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </nav>
     </header>
   )

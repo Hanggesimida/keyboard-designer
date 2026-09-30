@@ -134,14 +134,14 @@ export async function AssetsPage() {
   const t = await getTranslations("Home.assets")
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
+    <div className="theme-workshop bg-background text-foreground min-h-screen">
       <HomeHeader />
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-32">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-primary text-sm font-medium tracking-wide uppercase">
+          <p className="font-code text-brand text-xs font-medium tracking-[0.18em] uppercase">
             {t("eyebrow")}
           </p>
-          <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+          <h1 className="mt-4 text-balance text-4xl font-bold tracking-tight md:text-5xl">
             {t("title")}
           </h1>
           <p className="text-muted-foreground mt-5 text-balance text-lg leading-relaxed">
